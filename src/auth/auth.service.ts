@@ -5,6 +5,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { SignOptions } from 'jsonwebtoken';
 
+import { AuthAdapter } from '@auth/auth.adapter';
 import { AuthRepository } from '@auth/auth.repository';
 import { LoginRequestDTO } from '@auth/dtos/login-request.dto';
 import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto';
@@ -68,10 +69,12 @@ export class AuthService {
 	async newUser(payload: NewUserRequestDTO): Promise<UserCreated> {
 		const salt = bcrypt.genSaltSync(10);
 		const cryptedPassword = bcrypt.hashSync(payload.password, salt);
-		return await this.authRepository.registerNewUser({
+		const newUser = await this.authRepository.registerNewUser({
 			...payload,
 			password: cryptedPassword
 		});
+
+		return AuthAdapter.adaptCreatedUser(newUser);
 	}
 
 	private generateTokens(
