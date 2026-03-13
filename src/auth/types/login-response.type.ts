@@ -1,7 +1,7 @@
-import { User } from '@auth/types/user/user.type';
+import { Tokens } from '@auth/types/tokens.type'
+import { UserLoginResponse } from '@auth/types/user/user-login-response.type'
 
 export type LoginResponse = {
-  user: Omit<User, 'hashedRefreshToken'>
-  accessToken: string;
-  refreshToken: string;
+  user: UserLoginResponse
+  tokens: Tokens
 }
