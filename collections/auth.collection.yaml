@@ -1,82 +1,114 @@
 type: collection.insomnia.rest/5.0
 schema_version: "5.1"
-name: nino-auth-service
+name: Scratch Pad
 meta:
-  id: wrk_2f5a6a637dbb46bab26138d284cad3a9
-  created: 1771276146324
-  modified: 1771276146324
+  id: wrk_scratchpad
+  created: 1772544141333
+  modified: 1772544141333
   description: ""
 collection:
-  - url: "{{ _.baseUrl }}"
-    name: HelloWorld
+  - name: auth
     meta:
-      id: req_58ed56c044cc48c788196a8741280100
-      created: 1771276338140
-      modified: 1771470560752
-      isPrivate: false
+      id: fld_077785d02d834f52a1d49413ac2a7b7d
+      created: 1772545962012
+      modified: 1773429890255
+      sortKey: -1772545962012
       description: ""
-      sortKey: -1771276338140
-    method: GET
-    headers:
-      - name: User-Agent
-        value: insomnia/12.3.1
-        description: ""
-        disabled: false
-    settings:
-      renderRequestBody: true
-      encodeUrl: true
-      followRedirects: global
-      cookies:
-        send: true
-        store: true
-      rebuildPath: true
-  - url: "{{ _.baseUrl }}/register"
-    name: register
+    children:
+      - url: "{{ _.baseUrl }}/auth/create-user"
+        name: new-user
+        meta:
+          id: req_7655c01ab37b4c86adcebaecaedeb922
+          created: 1772545965527
+          modified: 1773428864577
+          isPrivate: false
+          description: ""
+          sortKey: -1772545965527
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"email": "paulo@ninomia.com",
+              "password": "321ahnes",
+              "firstName": "Paulo",
+              "lastName": "Ferreira",
+              "role": 1
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{ _.baseUrl }}/auth/login"
+        name: login
+        meta:
+          id: req_b95605a21c994869ab631f7faae1cc60
+          created: 1773403915109
+          modified: 1773403933047
+          isPrivate: false
+          description: ""
+          sortKey: -1772545963819.5
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"email": "paulo@ninomia.com",
+              "password": "321ahnes"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+  - name: hello-world
     meta:
-      id: req_4ac3c9f5807b4e439680c25554fa4189
-      created: 1772540008495
-      modified: 1772540301732
-      isPrivate: false
+      id: fld_e110e6b4d7574cb6aa323baa5cd8f2a4
+      created: 1773430005160
+      modified: 1773430005160
+      sortKey: -1773430005160
       description: ""
-      sortKey: -1772540008495
-    method: POST
-    body:
-      mimeType: application/json
-      text: |-
-        {
-          "email": "paulo.weskley@ninomia.com",
-          "password": "senha123",
-        	"first_name": "Paulo Weskley",
-        	"last_name": "de Almeida Ferreira",
-        	"role": 1
-        }
-    headers:
-      - name: Content-Type
-        value: application/json
-      - name: User-Agent
-        value: insomnia/12.3.1
-        description: ""
-        disabled: false
-    settings:
-      renderRequestBody: true
-      encodeUrl: true
-      followRedirects: global
-      cookies:
-        send: true
-        store: true
-      rebuildPath: true
 cookieJar:
   name: Default Jar
   meta:
-    id: jar_ba56ff9074f5f111b1b06c1bd186bc19890d7105
-    created: 1771276146325
-    modified: 1771276146325
+    id: jar_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1772544250337
+    modified: 1772544250337
 environments:
   name: Base Environment
   meta:
-    id: env_ba56ff9074f5f111b1b06c1bd186bc19890d7105
-    created: 1771276146325
-    modified: 1772539987909
+    id: env_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1772544250329
+    modified: 1772544250329
     isPrivate: false
-  data:
-    baseUrl: http://127.0.0.1:3000
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_3797b70db58f43fd933f736c07e97054
+        created: 1772546029598
+        modified: 1772546048752
+        isPrivate: false
+        sortKey: 1772546029598
+      data:
+        baseUrl: http://localhost:3000
