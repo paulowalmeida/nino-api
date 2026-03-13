@@ -1,15 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 
-import { User } from '@auth/types/user/user.repository.type';
-import { PrismaService } from '@shared/services/prisma/prisma.service';
-import { UserSchema } from '@auth/schemas/user.schema';
 import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto';
+import { UserSchemaParsed } from '@auth/schemas/user.schema';
+import { User } from '@auth/types/user/user.repository.type';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '@shared/services/prisma/prisma.service';
+import { UserParsed } from './types/user/user-parsed.type';
 
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<UserParsed | null> {
     const userFound = await this.prisma.user.findFirst({
       where: {
         personalData: { email }
@@ -24,35 +26,42 @@ export class AuthRepository {
       return null;
     }
 
-    return UserSchema.parse(userFound);
+    return UserSchemaParsed.parse(userFound);
   }
 
-  async createUser(newRegister: NewUserRequestDTO): Promise<User> {
-    const newUser =
-      await this.prisma.user.create({
-        data: {
-          hashedRefreshToken: null,
-          role: {
-            connect: {
-              code: newRegister.role as unknown as number,
-            }
+  async createUser(newRegister: NewUserRequestDTO): Promise<UserParsed> {
+    try {
+      const newUser =
+        await this.prisma.user.create({
+          data: {
+            hashedRefreshToken: null,
+            role: {
+              connect: {
+                code: newRegister.role as unknown as number,
+              }
+            },
+            personalData: {
+              create: {
+                email: newRegister.email,
+                password: newRegister.password,
+                firstName: newRegister.firstName,
+                lastName: newRegister.lastName
+              }
+            },
           },
-          personalData: {
-            create: {
-              email: newRegister.email,
-              password: newRegister.password,
-              firstName: newRegister.firstName,
-              lastName: newRegister.lastName
-            }
-          },
-        },
-        include: {
-          personalData: true,
-          role: true,
-        }
-      });
+          include: {
+            personalData: true,
+            role: true,
+          }
+        });
 
-    return UserSchema.parse(newUser);
+      return UserSchemaParsed.parse(newUser);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('User already exists');
+      }
+      throw error;
+    }
   }
 
   async updateRefreshToken(userId: string, hashedRefreshToken: string) {

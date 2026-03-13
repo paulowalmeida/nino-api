@@ -1,6 +1,6 @@
 import z from 'zod'
 
-import { 
+import {
   UserSchema as UserPrismaSchema,
   PersonalDataSchema,
   UserRoleSchema
@@ -18,10 +18,20 @@ const UserBaseSchema = UserPrismaSchema.omit({
   })
 })
 
+// user.schema.ts
 export const UserSchema = UserBaseSchema.extend({
-  createdAt: z.date().transform(d => d.toISOString()),
-  updatedAt: z.date().transform(d => d.toISOString()),
   personalData: UserBaseSchema.shape.personalData.extend({
-    birthDate: z.date().nullable().transform(d => d?.toISOString() ?? null),
+    birthDate: z.date().nullable(),
   }),
 })
+
+// schema com transforms separado — usado só no parse do repository
+export const UserSchemaParsed = UserSchema.transform(data => ({
+  ...data,
+  createdAt: data.createdAt.toISOString(),
+  updatedAt: data.updatedAt.toISOString(),
+  personalData: {
+    ...data.personalData,
+    birthDate: data.personalData.birthDate?.toISOString() ?? null,
+  }
+}))

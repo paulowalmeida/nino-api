@@ -15,10 +15,10 @@ export class AuthController {
     return await this.authService.login(payload)
   }
 
-  @Post('new-user')
-  async newUser(
+  @Post('create-user')
+  async createUser(
     @Body() payload: NewUserRequestDTO
   ): Promise<UserCreated> {
-    return await this.authService.newUser(payload)
+    return await this.authService.createUser(payload)
   }
 }

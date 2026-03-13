@@ -56,7 +56,7 @@ export class AuthService {
 		}
 	}
 
-	async newUser(payload: NewUserRequestDTO): Promise<UserCreated> {
+	async createUser(payload: NewUserRequestDTO): Promise<UserCreated> {
 		const cryptedPassword = await bcrypt.hash(payload.password, 10)
 		const newUser = await this.authRepository.createUser({
 			...payload,
