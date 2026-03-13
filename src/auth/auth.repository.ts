@@ -23,7 +23,29 @@ export class AuthRepository {
 
   async registerNewUser(newRegister: NewUserRequestDTO) {
     const newUser =
-      await this.prisma.user.create(AuthAdapter.adaptNewRegister(newRegister));
+      await this.prisma.user.create({
+        data: {
+          hashedRefreshToken: null,
+          role: {
+            connect: {
+              code: newRegister.role as unknown as number,
+            }
+          },
+          personalData: {
+            create: {
+              email: newRegister.email,
+              password: newRegister.password,
+              firstName: newRegister.firstName,
+              lastName: newRegister.lastName
+            }
+          },
+        },
+        include: {
+          personalData: true,
+          role: true,
+        }
+      });
+
     return {
       ...newUser,
       createdAt: newUser.createdAt.toISOString(),

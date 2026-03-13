@@ -1,36 +1,11 @@
-import { AuthRepository } from '@auth/auth.repository';
-import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto';
 import { UserCreated } from '@auth/types/user/user-created.type';
-import { UserRegisterOrm } from '@auth/types/user/user-register-orm.type';
+import { UserFoundByEmail } from './types/user/user-found-by-email.type';
+import { UserLoginResponse } from './types/user/user-login-response.type';
+import { NewUser } from './types/user/user-new.type';
 
 export class AuthAdapter {
-  static adaptNewRegister = (data: NewUserRequestDTO): UserRegisterOrm => {
-    return {
-      data: {
-        hashedRefreshToken: null,
-        role: {
-          connect: {
-            code: data.role as unknown as number,
-          }
-        },
-        personalData: {
-          create: {
-            email: data.email,
-            password: data.password,
-            firstName: data.firstName,
-            lastName: data.lastName
-          }
-        },
-      },
-      include: {
-        personalData: true,
-        role: true,
-      }
-    }
-  }
-
   static adaptCreatedUser = (
-    newUser: Awaited<ReturnType<typeof AuthRepository.prototype.registerNewUser>>
+    newUser: NewUser
   ): UserCreated => ({
     id: newUser.id,
     personalData: newUser.personalData ? {
@@ -43,6 +18,32 @@ export class AuthAdapter {
       description: newUser.role.description,
     }
   })
+
+  static adaptUserLoginResponse = (
+    data: UserFoundByEmail,
+  ): UserLoginResponse => {
+    const user = data?.user;
+    const role = user?.role;
+
+    return {
+      user: {
+        id: data?.id,
+        createdAt: user?.createdAt,
+        updatedAt: user?.updatedAt,
+        personalData: {
+          avatarUrl: data?.avatarUrl,
+          birthDate: data?.birthDate,
+          email: data?.email,
+          firstName: data?.firstName,
+          lastName: data?.lastName,
+        },
+        role: {
+          code: role?.code,
+          description: role?.description,
+        }
+      },
+    }
+  }
 }
 
 

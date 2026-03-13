@@ -1,4 +1,4 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 
@@ -11,6 +11,7 @@ import { LoginRequestDTO } from '@auth/dtos/login-request.dto';
 import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto';
 import { UserTokenData } from '@auth/types/user/use-token-data.type';
 import { UserCreated } from '@auth/types/user/user-created.type';
+import { LoginResponse } from './types/login-response.type';
 
 @Injectable()
 export class AuthService {
@@ -20,31 +21,19 @@ export class AuthService {
 		private readonly configService: ConfigService,
 	) { }
 
-	async getTokens(id: string, email: string, role: number) {
-		const objUser: UserTokenData = {
-			sub: id,
-			email,
-			role,
-		};
-
-		const accessToken = await this.generateTokens(objUser, '15m', 'JWT_ACCESS_SECRET');
-		const refreshToken = await this.generateTokens(objUser, '7d', 'JWT_REFRESH_SECRET');
-
-		return {
-			accessToken,
-			refreshToken,
-		};
-	}
-
-	async login(payload: LoginRequestDTO) {
+	async login(payload: LoginRequestDTO): Promise<LoginResponse> {
 		const userFound = await this.authRepository.findByEmail(payload.email);
 
 		if (!userFound) {
 			throw new NotFoundException('User not found');
 		}
 
-		if (!bcrypt.compareSync(payload.password, userFound.password)) {
-			throw new HttpException('Invalid password', 401);
+		if (await !bcrypt.compare(payload.password, userFound.password)) {
+			throw new UnauthorizedException('Invalid password');
+		}
+
+		if (!userFound.user?.role) {
+			throw new HttpException('User role not found', 500);
 		}
 
 		const tokens = await this.getTokens(
@@ -61,14 +50,13 @@ export class AuthService {
 		);
 
 		return {
-			user: userFound,
-			tokens,
-		}
+			user: AuthAdapter.adaptUserLoginResponse(userFound),
+			tokens
+		};
 	}
 
 	async newUser(payload: NewUserRequestDTO): Promise<UserCreated> {
-		const salt = bcrypt.genSaltSync(10);
-		const cryptedPassword = bcrypt.hashSync(payload.password, salt);
+		const cryptedPassword = await bcrypt.hash(payload.password, 10);
 		const newUser = await this.authRepository.registerNewUser({
 			...payload,
 			password: cryptedPassword
@@ -89,5 +77,21 @@ export class AuthService {
 				expiresIn: expiresIn,
 			}
 		);
+	}
+
+	private async getTokens(id: string, email: string, role: number) {
+		const objUser: UserTokenData = {
+			sub: id,
+			email,
+			role,
+		};
+
+		const accessToken = await this.generateTokens(objUser, '15m', 'JWT_ACCESS_SECRET');
+		const refreshToken = await this.generateTokens(objUser, '7d', 'JWT_REFRESH_SECRET');
+
+		return {
+			accessToken,
+			refreshToken,
+		};
 	}
 }
