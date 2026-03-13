@@ -1,10 +1,25 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+
+import { join } from 'path';
+
+import { AuthModule } from '@auth/auth.module';
+import { AuthRepository } from '@auth/auth.repository';
+import { PrismaModule } from '@shared/services/prisma/prisma.module';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 @Module({
-  imports: [],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: join(process.cwd(), '.env')
+    }),
+    AuthModule,
+    PrismaModule
+  ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AuthRepository],
 })
-export class AppModule {}
+export class AppModule { }

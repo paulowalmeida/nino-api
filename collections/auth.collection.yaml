@@ -1,0 +1,82 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: nino-auth-service
+meta:
+  id: wrk_2f5a6a637dbb46bab26138d284cad3a9
+  created: 1771276146324
+  modified: 1771276146324
+  description: ""
+collection:
+  - url: "{{ _.baseUrl }}"
+    name: HelloWorld
+    meta:
+      id: req_58ed56c044cc48c788196a8741280100
+      created: 1771276338140
+      modified: 1771470560752
+      isPrivate: false
+      description: ""
+      sortKey: -1771276338140
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/12.3.1
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: "{{ _.baseUrl }}/register"
+    name: register
+    meta:
+      id: req_4ac3c9f5807b4e439680c25554fa4189
+      created: 1772540008495
+      modified: 1772540301732
+      isPrivate: false
+      description: ""
+      sortKey: -1772540008495
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+          "email": "paulo.weskley@ninomia.com",
+          "password": "senha123",
+        	"first_name": "Paulo Weskley",
+        	"last_name": "de Almeida Ferreira",
+        	"role": 1
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/12.3.1
+        description: ""
+        disabled: false
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_ba56ff9074f5f111b1b06c1bd186bc19890d7105
+    created: 1771276146325
+    modified: 1771276146325
+environments:
+  name: Base Environment
+  meta:
+    id: env_ba56ff9074f5f111b1b06c1bd186bc19890d7105
+    created: 1771276146325
+    modified: 1772539987909
+    isPrivate: false
+  data:
+    baseUrl: http://127.0.0.1:3000

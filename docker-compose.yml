@@ -1,0 +1,27 @@
+networks:
+  network:
+    name: ${CONTAINER_NAME}-network
+    driver: bridge
+
+volumes:
+  db_data:
+    name: ${CONTAINER_NAME}_db_data
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: ${DB_NAME}
+    restart: always
+    ports: 
+      - "${DB_PORT}:${DB_PORT}"
+
+    #set shared memory limit when using docker compose
+    shm_size: 250mb
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - network
