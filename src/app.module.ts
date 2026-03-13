@@ -4,7 +4,6 @@ import { ConfigModule } from '@nestjs/config';
 import { join } from 'path';
 
 import { AuthModule } from '@auth/auth.module';
-import { AuthRepository } from '@auth/auth.repository';
 import { PrismaModule } from '@shared/services/prisma/prisma.module';
 
 import { AppController } from './app.controller';
@@ -20,6 +19,6 @@ import { AppService } from './app.service';
     PrismaModule
   ],
   controllers: [AppController],
-  providers: [AppService, AuthRepository],
+  providers: [AppService],
 })
 export class AppModule { }

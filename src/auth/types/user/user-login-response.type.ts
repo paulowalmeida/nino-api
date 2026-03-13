@@ -1,10 +1,5 @@
-import { User } from '@auth/types/user/user.type';
+import z from 'zod'
 
-export type UserLoginResponse =
-  Omit<
-    User, 'hashedRefreshToken' |
-    User['personalData']['password'] |
-    User['personalData']['id'] |
-    User['role']['id']
-  >
+import { UserLoginResponseSchema } from '@auth/schemas/user-login-response.schema'
 
+export type UserLoginResponse = z.infer<typeof UserLoginResponseSchema>

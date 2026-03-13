@@ -1,27 +1,33 @@
 import { Injectable } from '@nestjs/common';
 
-import { AuthAdapter } from '@auth/auth.adapter';
-import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto';
+import { User } from '@auth/types/user/user.repository.type';
 import { PrismaService } from '@shared/services/prisma/prisma.service';
+import { UserSchema } from '@auth/schemas/user.schema';
+import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto';
 
 @Injectable()
 export class AuthRepository {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findByEmail(email: string) {
-    return await this.prisma.personalData.findUnique({
-      where: { email },
+  async findByEmail(email: string): Promise<User | null> {
+    const userFound = await this.prisma.user.findFirst({
+      where: {
+        personalData: { email }
+      },
       include: {
-        user: {
-          include: {
-            role: true,
-          }
-        }
+        personalData: true,
+        role: true,
       }
     });
+
+    if (!userFound) {
+      return null;
+    }
+
+    return UserSchema.parse(userFound);
   }
 
-  async registerNewUser(newRegister: NewUserRequestDTO) {
+  async createUser(newRegister: NewUserRequestDTO): Promise<User> {
     const newUser =
       await this.prisma.user.create({
         data: {
@@ -46,11 +52,7 @@ export class AuthRepository {
         }
       });
 
-    return {
-      ...newUser,
-      createdAt: newUser.createdAt.toISOString(),
-      updatedAt: newUser.updatedAt.toISOString(),
-    };
+    return UserSchema.parse(newUser);
   }
 
   async updateRefreshToken(userId: string, hashedRefreshToken: string) {
