@@ -1,0 +1,70 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Scratch Pad
+meta:
+  id: wrk_scratchpad
+  created: 1772544141333
+  modified: 1772544141333
+  description: ""
+collection:
+  - name: auth
+    meta:
+      id: fld_077785d02d834f52a1d49413ac2a7b7d
+      created: 1772545962012
+      modified: 1773429890255
+      sortKey: -1772545962012
+      description: ""
+  - name: hello-world
+    meta:
+      id: fld_e110e6b4d7574cb6aa323baa5cd8f2a4
+      created: 1773430005160
+      modified: 1773430005160
+      sortKey: -1773430005160
+      description: ""
+    children:
+      - url: "{{ _.baseUrl }}"
+        name: hello-world
+        meta:
+          id: req_d85dacc3af194a47a8d9801471ee476a
+          created: 1772546067870
+          modified: 1773430012607
+          isPrivate: false
+          description: ""
+          sortKey: -1773430012562
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1772544250337
+    modified: 1772544250337
+environments:
+  name: Base Environment
+  meta:
+    id: env_99d30891da4bdcebc63947a8fc17f076de878684
+    created: 1772544250329
+    modified: 1772544250329
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_3797b70db58f43fd933f736c07e97054
+        created: 1772546029598
+        modified: 1772546048752
+        isPrivate: false
+        sortKey: 1772546029598
+      data:
+        baseUrl: http://localhost:3000
