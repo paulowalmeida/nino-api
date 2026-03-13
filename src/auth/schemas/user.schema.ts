@@ -21,7 +21,7 @@ const UserBaseSchema = UserPrismaSchema.omit({
 export const UserSchema = UserBaseSchema.extend({
   createdAt: z.date().transform(d => d.toISOString()),
   updatedAt: z.date().transform(d => d.toISOString()),
-  personalData: PersonalDataSchema.extend({
+  personalData: UserBaseSchema.shape.personalData.extend({
     birthDate: z.date().nullable().transform(d => d?.toISOString() ?? null),
   }),
 })

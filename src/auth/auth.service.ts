@@ -9,10 +9,10 @@ import { AuthRepository } from '@auth/auth.repository'
 import { LoginRequestDTO } from '@auth/dtos/login-request.dto'
 import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto'
 import { UserCreatedSchema } from '@auth/schemas/user-created.schema'
-import { UserLoginResponseSchema } from '@auth/schemas/user-login-response.schema'
 import { LoginResponse } from '@auth/types/login-response.type'
 import { UserCreated } from '@auth/types/user/user-created.respository.type'
 import { UserTokenData } from '@auth/types/user/user-token.data.type'
+import { UserLoginResponseSchema } from './schemas/user-login-response.schema'
 
 @Injectable()
 export class AuthService {
@@ -29,7 +29,7 @@ export class AuthService {
 			throw new NotFoundException('User not found')
 		}
 
-		if (await !bcrypt.compare(payload.password, userFound.personalData.password)) {
+		if (!await bcrypt.compare(payload.password, userFound.personalData.password)) {
 			throw new UnauthorizedException('Invalid password')
 		}
 
