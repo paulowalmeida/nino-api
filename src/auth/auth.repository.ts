@@ -1,73 +1,141 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common'
 
-import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto';
-import { UserSchemaParsed } from '@auth/schemas/user.schema';
-import { User } from '@auth/types/user/user.repository.type';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from '@shared/services/prisma/prisma.service';
-import { UserParsed } from './types/user/user-parsed.type';
+import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto'
+import { UserCreated } from '@auth/types/user/user-created.type'
+import { UserFoundRepository } from '@auth/types/user/user-found.repository.type'
+import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 
 @Injectable()
 export class AuthRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly prismaErrorService: PrismaErrorService,
+  ) {}
 
-  async findByEmail(email: string): Promise<UserParsed | null> {
-    const userFound = await this.prisma.user.findFirst({
-      where: {
-        personalData: { email }
-      },
-      include: {
-        personalData: true,
-        role: true,
-      }
-    });
-
-    if (!userFound) {
-      return null;
-    }
-
-    return UserSchemaParsed.parse(userFound);
-  }
-
-  async createUser(newRegister: NewUserRequestDTO): Promise<UserParsed> {
+  async createUser(newRegister: NewUserRequestDTO): Promise<UserCreated> {
     try {
-      const newUser =
-        await this.prisma.user.create({
-          data: {
-            hashedRefreshToken: null,
-            role: {
-              connect: {
-                code: newRegister.role as unknown as number,
-              }
-            },
-            personalData: {
-              create: {
-                email: newRegister.email,
-                password: newRegister.password,
-                firstName: newRegister.firstName,
-                lastName: newRegister.lastName
-              }
+      const newUser = await this.prisma.user.create({
+        data: {
+          hashedRefreshToken: null,
+          role: {
+            connect: {
+              code: newRegister.role as unknown as number,
             },
           },
-          include: {
-            personalData: true,
-            role: true,
-          }
-        });
+          personalData: {
+            create: {
+              email: newRegister.email,
+              password: newRegister.password,
+              firstName: newRegister.firstName,
+              lastName: newRegister.lastName,
+            },
+          },
+        },
+        include: {
+          personalData: {
+            select: {
+              email: true,
+              firstName: true,
+              lastName: true,
+            },
+          },
+          role: {
+            omit: {
+              id: true,
+            },
+          },
+        },
+        omit: {
+          hashedRefreshToken: true,
+          personalDataId: true,
+          roleId: true,
+        },
+      })
 
-      return UserSchemaParsed.parse(newUser);
+      return newUser
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('User already exists');
-      }
-      throw error;
+      this.prismaErrorService.handleError(error, 'User already exists')
     }
   }
 
-  async updateRefreshToken(userId: string, hashedRefreshToken: string) {
-    return await this.prisma.user.update({
-      where: { id: userId },
-      data: { hashedRefreshToken }
-    });
+  async findUserByEmail(email: string): Promise<UserFoundRepository | null> {
+    try {
+      return await this.prisma.user.findFirst({
+        where: {
+          personalData: { email },
+        },
+        omit: {
+          hashedRefreshToken: true,
+          personalDataId: true,
+          roleId: true,
+        },
+        include: {
+          personalData: {
+            omit: {
+              id: true,
+            },
+          },
+          role: {
+            omit: {
+              id: true,
+            },
+          },
+        },
+      })
+    } catch (error) {
+      console.log(error)
+      this.prismaErrorService.handleError(error)
+    }
+  }
+
+  // async findUserById(id: string): Promise<User | null> {
+  //   const userFound = await this.prisma.user.findUnique({
+  //     where: { id },
+  //     include: {
+  //       personalData: true,
+  //       role: true,
+  //     },
+  //   })
+
+  //   return userFound ? UserSchema.parse(userFound) : null
+  // }
+
+  // async getRefreshTokenHash(id: string): Promise<string | null> {
+  //   const userFound = await this.prisma.user.findUnique({
+  //     where: { id },
+  //     select: { hashedRefreshToken: true },
+  //   })
+
+  //   if (!userFound) {
+  //     throw new NotFoundException('User not found')
+  //   }
+
+  //   return userFound.hashedRefreshToken
+  // }
+
+  async removeHashedRefreshToken(id: string): Promise<void> {
+    try {
+      await this.prisma.user.update({
+        where: { id },
+        data: { hashedRefreshToken: null },
+      })
+    } catch (error) {
+      this.prismaErrorService.handleError(error)
+    }
+  }
+
+  async updateRefreshToken(
+    userId: string,
+    hashedRefreshToken: string,
+  ): Promise<void> {
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { hashedRefreshToken },
+      })
+    } catch (error) {
+      this.prismaErrorService.handleError(error)
+    }
   }
 }
