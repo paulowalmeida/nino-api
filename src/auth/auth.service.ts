@@ -15,8 +15,8 @@ import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto'
 import { LoginResponse } from '@auth/types/login-response.type'
 import { UserCreated } from '@auth/types/user/user-created.type'
 import { UserFoundRepository } from '@auth/types/user/user-found.repository.type'
-import { UserFound } from './types/user/user-found.type'
-import { UserTokenData } from './types/user/user-token.data.type'
+import { UserFound } from '@auth/types/user/user-found.type'
+import { UserTokenData } from '@auth/types/user/user-token.data.type'
 
 @Injectable()
 export class AuthService {
@@ -54,7 +54,12 @@ export class AuthService {
       payload.password,
     )
 
-    const tokens = await this.getTokens(validatedUser)
+    const userDataToken = this.getUserTokenData(
+      validatedUser.id,
+      validatedUser.personalData.email,
+      validatedUser.role.code || 0,
+    )
+    const tokens = await this.getTokens(userDataToken)
     await this.updateUserRefreshToken(validatedUser.id, tokens.refreshToken)
     return this.buildLoginResponse(validatedUser, tokens)
   }
@@ -63,11 +68,39 @@ export class AuthService {
     return await this.authRepository.removeHashedRefreshToken(id)
   }
 
+  async refreshToken(userId: string, token: string) {
+    const userRefreshToken = await this.authRepository.getRefreshToken(userId)
+
+    await this.checkHashsRefresh(token, userRefreshToken.hashedRefreshToken)
+
+    const userDataToken = this.getUserTokenData(
+      userRefreshToken.id,
+      userRefreshToken.personalData.email,
+      userRefreshToken.role.code || 0,
+    )
+    const tokens = await this.getTokens(userDataToken)
+    await this.updateUserRefreshToken(userRefreshToken.id, tokens.refreshToken)
+    return tokens
+  }
+
   private buildLoginResponse(user: UserFound, tokens: any): LoginResponse {
     return {
       user,
       tokens,
     }
+  }
+
+  private async checkHashsRefresh(
+    token,
+    refreshToken: string | null,
+  ): Promise<void> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Invalid credentials')
+    }
+
+    const isValid = await bcrypt.compare(token, refreshToken)
+
+    if (!isValid) throw new UnauthorizedException('Invalid credentials')
   }
 
   private generateTokens(
@@ -81,11 +114,11 @@ export class AuthService {
     })
   }
 
-  private async getTokens(user: UserFound) {
+  private async getTokens(user: UserTokenData) {
     const objUser: UserTokenData = {
-      sub: user.id,
-      email: user.personalData.email,
-      role: user.role.code || 0,
+      sub: user.sub,
+      email: user.email,
+      role: user.role || 0,
     }
 
     const accessToken = await this.generateTokens(objUser, '15m', 'JWT_SECRET')
@@ -99,6 +132,18 @@ export class AuthService {
       accessToken,
       refreshToken,
     }
+  }
+
+  private getUserTokenData(
+    id: string,
+    email: string,
+    role: number,
+  ): UserTokenData {
+    return {
+      sub: id,
+      email,
+      role,
+    } as UserTokenData
   }
 
   private async updateUserRefreshToken(

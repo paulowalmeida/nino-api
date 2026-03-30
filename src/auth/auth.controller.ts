@@ -6,8 +6,9 @@ import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto'
 import { JwtAuthGuard } from '@auth/guards/jwt-auth.guard'
 import { LoginResponse } from '@auth/types/login-response.type'
 import { UserCreated } from '@auth/types/user/user-created.type'
-import type { AuthRequest } from './types/auth-request.type'
-import { UserFound } from './types/user/user-found.type'
+import { UserFound } from '@auth/types/user/user-found.type'
+import { JwtRefreshGuard } from './guards/jwt-refresh.guard'
+import type { AuthRequest } from './types/user/user-auth-request.type'
 
 @Controller('auth')
 export class AuthController {
@@ -37,9 +38,12 @@ export class AuthController {
     return { message: 'Logout bem-sucedido' }
   }
 
-  // @Post('refresh-token')
-  // @UseGuards(JwtAuthGuard)
-  // async refreshToken(@Req() req: AuthRequest) {
-  //   return await this.authService.refreshToken(req.user.sub)
-  // }
+  @Post('refresh-token')
+  @UseGuards(JwtRefreshGuard)
+  async refreshToken(@Req() req) {
+    return await this.authService.refreshToken(
+      req.user.sub,
+      req.user.refreshToken,
+    )
+  }
 }
