@@ -1,8 +1,9 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 
 import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto'
 import { UserCreated } from '@auth/types/user/user-created.type'
 import { UserFoundRepository } from '@auth/types/user/user-found.repository.type'
+import { UserRefreshTokenRespository } from '@auth/types/user/user-refresh-token.repository.type'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 
@@ -84,35 +85,29 @@ export class AuthRepository {
         },
       })
     } catch (error) {
-      console.log(error)
       this.prismaErrorService.handleError(error)
     }
   }
 
-  // async findUserById(id: string): Promise<User | null> {
-  //   const userFound = await this.prisma.user.findUnique({
-  //     where: { id },
-  //     include: {
-  //       personalData: true,
-  //       role: true,
-  //     },
-  //   })
+  async getRefreshToken(id: string): Promise<UserRefreshTokenRespository> {
+    try {
+      const result = await this.prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          hashedRefreshToken: true,
+          personalData: { select: { email: true } },
+          role: { select: { code: true } },
+        },
+      })
 
-  //   return userFound ? UserSchema.parse(userFound) : null
-  // }
+      if (!result) throw new NotFoundException('User not found')
 
-  // async getRefreshTokenHash(id: string): Promise<string | null> {
-  //   const userFound = await this.prisma.user.findUnique({
-  //     where: { id },
-  //     select: { hashedRefreshToken: true },
-  //   })
-
-  //   if (!userFound) {
-  //     throw new NotFoundException('User not found')
-  //   }
-
-  //   return userFound.hashedRefreshToken
-  // }
+      return result
+    } catch (error) {
+      this.prismaErrorService.handleError(error)
+    }
+  }
 
   async removeHashedRefreshToken(id: string): Promise<void> {
     try {
