@@ -1,4 +1,8 @@
-import { HttpException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common'
+import {
+  HttpException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 
@@ -8,91 +12,141 @@ import { SignOptions } from 'jsonwebtoken'
 import { AuthRepository } from '@auth/auth.repository'
 import { LoginRequestDTO } from '@auth/dtos/login-request.dto'
 import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto'
-import { UserCreatedSchema } from '@auth/schemas/user-created.schema'
 import { LoginResponse } from '@auth/types/login-response.type'
-import { UserCreated } from '@auth/types/user/user-created.respository.type'
-import { UserTokenData } from '@auth/types/user/user-token.data.type'
-import { UserLoginResponseSchema } from './schemas/user-login-response.schema'
+import { UserCreated } from '@auth/types/user/user-created.type'
+import { UserFoundRepository } from '@auth/types/user/user-found.repository.type'
+import { UserFound } from './types/user/user-found.type'
+import { UserTokenData } from './types/user/user-token.data.type'
 
 @Injectable()
 export class AuthService {
-	constructor(
-		private readonly authRepository: AuthRepository,
-		private readonly jwtService: JwtService,
-		private readonly configService: ConfigService,
-	) { }
+  constructor(
+    private readonly authRepository: AuthRepository,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {}
 
-	async login(payload: LoginRequestDTO): Promise<LoginResponse> {
-		const userFound = await this.authRepository.findByEmail(payload.email)
+  async createUser(payload: NewUserRequestDTO): Promise<UserCreated> {
+    const cryptedPassword = await bcrypt.hash(payload.password, 10)
+    return await this.authRepository.createUser({
+      ...payload,
+      password: cryptedPassword,
+    })
+  }
 
-		if (!userFound) {
-			throw new NotFoundException('User not found')
-		}
+  async getCurrentUser(email: string): Promise<UserFound> {
+    const userFoundRespository: UserFoundRepository | null =
+      await this.authRepository.findUserByEmail(email)
 
-		if (!await bcrypt.compare(payload.password, userFound.personalData.password)) {
-			throw new UnauthorizedException('Invalid password')
-		}
+    if (!userFoundRespository) {
+      throw new UnauthorizedException('Invalid credentials')
+    }
 
-		if (!userFound.role) {
-			throw new HttpException('User role not found', 500)
-		}
+    return this.parseToUserFound(userFoundRespository)
+  }
 
-		const tokens = await this.getTokens(
-			userFound.id,
-			userFound.personalData.email,
-			userFound.role.code || 0,
-		)
+  async login(payload: LoginRequestDTO): Promise<LoginResponse> {
+    const userFound: UserFoundRepository | null =
+      await this.authRepository.findUserByEmail(payload.email)
 
-		const hashedRefreshToken = await bcrypt.hash(tokens.refreshToken, 10)
+    const validatedUser = await this.executeValidations(
+      userFound,
+      payload.password,
+    )
 
-		await this.authRepository.updateRefreshToken(
-			userFound.id,
-			hashedRefreshToken,
-		)
+    const tokens = await this.getTokens(validatedUser)
+    await this.updateUserRefreshToken(validatedUser.id, tokens.refreshToken)
+    return this.buildLoginResponse(validatedUser, tokens)
+  }
 
-		return {
-			user: UserLoginResponseSchema.parse(userFound),
-			tokens
-		}
-	}
+  async logout(id: string): Promise<void> {
+    return await this.authRepository.removeHashedRefreshToken(id)
+  }
 
-	async createUser(payload: NewUserRequestDTO): Promise<UserCreated> {
-		const cryptedPassword = await bcrypt.hash(payload.password, 10)
-		const newUser = await this.authRepository.createUser({
-			...payload,
-			password: cryptedPassword
-		})
+  private buildLoginResponse(user: UserFound, tokens: any): LoginResponse {
+    return {
+      user,
+      tokens,
+    }
+  }
 
-		return UserCreatedSchema.parse(newUser)
-	}
+  private generateTokens(
+    objUser: UserTokenData,
+    expiresIn: SignOptions['expiresIn'],
+    secret: string,
+  ) {
+    return this.jwtService.signAsync(objUser, {
+      secret: this.configService.get<string>(secret),
+      expiresIn: expiresIn,
+    })
+  }
 
-	private generateTokens(
-		objUser: UserTokenData,
-		expiresIn: SignOptions['expiresIn'],
-		secret: string,
-	) {
-		return this.jwtService.signAsync(
-			objUser,
-			{
-				secret: this.configService.get<string>(secret),
-				expiresIn: expiresIn,
-			}
-		)
-	}
+  private async getTokens(user: UserFound) {
+    const objUser: UserTokenData = {
+      sub: user.id,
+      email: user.personalData.email,
+      role: user.role.code || 0,
+    }
 
-	private async getTokens(id: string, email: string, role: number) {
-		const objUser: UserTokenData = {
-			sub: id,
-			email,
-			role,
-		}
+    const accessToken = await this.generateTokens(objUser, '15m', 'JWT_SECRET')
+    const refreshToken = await this.generateTokens(
+      objUser,
+      '7d',
+      'JWT_REFRESH_SECRET',
+    )
 
-		const accessToken = await this.generateTokens(objUser, '15m', 'JWT_SECRET')
-		const refreshToken = await this.generateTokens(objUser, '7d', 'JWT_REFRESH_SECRET')
+    return {
+      accessToken,
+      refreshToken,
+    }
+  }
 
-		return {
-			accessToken,
-			refreshToken,
-		}
-	}
+  private async updateUserRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10)
+    await this.authRepository.updateRefreshToken(userId, hashedRefreshToken)
+  }
+
+  private async executeValidations(
+    userFound: UserFoundRepository | null,
+    passwd: string,
+  ): Promise<UserFound> {
+    const userValidated = await this.validateUser(userFound)
+    await this.validatePassword(passwd, userValidated.personalData.password)
+    this.validateRole(userValidated.role.code)
+    return this.parseToUserFound(userValidated)
+  }
+
+  private parseToUserFound(user: UserFoundRepository): UserFound {
+    const { password, ...personalData } = user.personalData
+    return { ...user, personalData }
+  }
+
+  private async validatePassword(
+    password: string,
+    hashedPassword: string,
+  ): Promise<void> {
+    const isValid = await bcrypt.compare(password, hashedPassword)
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid credentials')
+    }
+  }
+
+  private validateRole(role: number): void {
+    if (!role) {
+      throw new HttpException('User role not found', 500)
+    }
+  }
+
+  private validateUser(
+    userFound: UserFoundRepository | null,
+  ): UserFoundRepository {
+    if (!userFound) {
+      throw new UnauthorizedException('Invalid credentials')
+    }
+
+    return userFound
+  }
 }
