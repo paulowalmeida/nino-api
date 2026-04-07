@@ -3,8 +3,8 @@
   "version": "0.0.1",
   "description": "",
   "author": "",
-  "private": true,
   "license": "UNLICENSED",
+  "private": true,
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -34,6 +34,7 @@
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/throttler": "^6.5.0",
     "@prisma/adapter-pg": "^7.4.1",
     "@prisma/client": "^7.4.1",
     "bcrypt": "^6.0.0",
@@ -91,6 +92,11 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@auth/(.*)$": "<rootDir>/auth/$1",
+      "^@shared/(.*)$": "<rootDir>/shared/$1",
+      "^@prisma/generated/(.*)$": "<rootDir>/../prisma/generated/$1"
+    }
   }
 }

@@ -21,16 +21,12 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
+    "strictPropertyInitialization": false,
+    "types": ["jest"],
     "paths": {
-      "@shared/*": [
-        "src/shared/*"
-      ],
-      "@auth/*": [
-        "src/auth/*"
-      ],
-      "@prisma/generated/*": [
-        "prisma/generated/*"
-      ]
+      "@shared/*": ["src/shared/*"],
+      "@auth/*": ["src/auth/*"],
+      "@prisma/generated/*": ["prisma/generated/*"]
     }
   }
 }
