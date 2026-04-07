@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 
-import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto'
+import { UserRegisterRequestDTO } from '@auth/dtos/user-register-request.dto'
 import { UserCreated } from '@auth/types/user/user-created.type'
 import { UserFoundRepository } from '@auth/types/user/user-found.repository.type'
 import { UserRefreshTokenRespository } from '@auth/types/user/user-refresh-token.repository.type'
@@ -14,7 +14,7 @@ export class AuthRepository {
     private readonly prismaErrorService: PrismaErrorService,
   ) {}
 
-  async createUser(newRegister: NewUserRequestDTO): Promise<UserCreated> {
+  async createUser(newRegister: UserRegisterRequestDTO): Promise<UserCreated> {
     try {
       const newUser = await this.prisma.user.create({
         data: {
@@ -116,6 +116,18 @@ export class AuthRepository {
         data: { hashedRefreshToken: null },
       })
     } catch (error) {
+      this.prismaErrorService.handleError(error)
+    }
+  }
+
+  async updateUserPassword(email: string, newPassword: string): Promise<void> {
+    try {
+      await this.prisma.personalData.update({
+        where: { email },
+        data: { password: newPassword },
+      })
+    } catch (error) {
+      console.log(error)
       this.prismaErrorService.handleError(error)
     }
   }

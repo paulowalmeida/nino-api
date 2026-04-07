@@ -11,16 +11,16 @@ collection:
     meta:
       id: fld_077785d02d834f52a1d49413ac2a7b7d
       created: 1772545962012
-      modified: 1773429890255
+      modified: 1775438523322
       sortKey: -1772545962012
       description: ""
     children:
-      - url: "{{ _.baseUrl }}/auth/create-user"
-        name: new-user
+      - url: "{{BASE_URL}}/auth/create-user"
+        name: create-user
         meta:
           id: req_7655c01ab37b4c86adcebaecaedeb922
           created: 1772545965527
-          modified: 1773428864577
+          modified: 1775437947647
           isPrivate: false
           description: ""
           sortKey: -1772545965527
@@ -29,10 +29,10 @@ collection:
           mimeType: application/json
           text: |-
             {
-            	"email": "paulo@ninomia.com",
-              "password": "321ahnes",
-              "firstName": "Paulo",
-              "lastName": "Ferreira",
+            	"email": "paulo.weskley3@ninomia.com",
+              "password": "senha123",
+              "firstName": "Paulo Weskley",
+              "lastName": "de Almeida Ferreira",
               "role": 1
             }
         headers:
@@ -50,12 +50,12 @@ collection:
             send: true
             store: true
           rebuildPath: true
-      - url: "{{ _.baseUrl }}/auth/login"
+      - url: "{{BASE_URL}}/auth/login"
         name: login
         meta:
           id: req_b95605a21c994869ab631f7faae1cc60
           created: 1773403915109
-          modified: 1773403933047
+          modified: 1775438522582
           isPrivate: false
           description: ""
           sortKey: -1772545963819.5
@@ -64,8 +64,8 @@ collection:
           mimeType: application/json
           text: |-
             {
-            	"email": "paulo@ninomia.com",
-              "password": "321ahnes"
+            	"email": "paulo.weskley3@ninomia.com",
+              "password": "senha1234"
             }
         headers:
           - name: Content-Type
@@ -74,6 +74,139 @@ collection:
             value: insomnia/12.3.1
             description: ""
             disabled: false
+        authentication:
+          type: none
+        scripts:
+          afterResponse: >
+            const json = await insomnia.response.json();
+
+            if (json && json.tokens) {
+            	if(json.tokens.accessToken) {
+            		insomnia.environment.set('ACCESS_TOKEN', json.tokens.accessToken);	
+            	}
+            	
+            	if(json.tokens.refreshToken) {
+            		insomnia.environment.set('REFRESH_TOKEN', json.tokens.refreshToken);	
+            	}
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{BASE_URL}}/auth/current-user"
+        name: current-user
+        meta:
+          id: req_fa9b94bd2b8f4081a9048bc3db9dea2a
+          created: 1774405928860
+          modified: 1775437963135
+          isPrivate: false
+          description: ""
+          sortKey: -1772545963769.5
+        method: GET
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          disabled: false
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{BASE_URL}}/auth/logout"
+        name: logout
+        meta:
+          id: req_fcbd4376afcc455cae5edf535d8d98c1
+          created: 1774437148741
+          modified: 1775437966999
+          isPrivate: false
+          description: ""
+          sortKey: -1772545963719.5
+        method: POST
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{BASE_URL}}/auth/refresh-token"
+        name: refresh-token
+        meta:
+          id: req_95148cd81b14419086fe5a26d14fc0bd
+          created: 1774842137452
+          modified: 1775437972416
+          isPrivate: false
+          description: ""
+          sortKey: -1772545963669.5
+        method: POST
+        headers:
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{REFRESH_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - url: "{{BASE_URL}}/auth/change-password"
+        name: change-password
+        meta:
+          id: req_11f723c166c6450bba408793bed7ed3a
+          created: 1775436388277
+          modified: 1775437930272
+          isPrivate: false
+          description: ""
+          sortKey: -1772545963569.5
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+            	"oldPassword": "senha123",
+            	"newPassword": "senha1234"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+          - name: User-Agent
+            value: insomnia/12.3.1
+            description: ""
+            disabled: false
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -94,21 +227,23 @@ cookieJar:
   meta:
     id: jar_99d30891da4bdcebc63947a8fc17f076de878684
     created: 1772544250337
-    modified: 1772544250337
+    modified: 1775438523320
 environments:
   name: Base Environment
   meta:
     id: env_99d30891da4bdcebc63947a8fc17f076de878684
     created: 1772544250329
-    modified: 1772544250329
+    modified: 1775438523321
     isPrivate: false
   subEnvironments:
     - name: nino
       meta:
         id: env_3797b70db58f43fd933f736c07e97054
         created: 1772546029598
-        modified: 1772546048752
+        modified: 1775438523321
         isPrivate: false
         sortKey: 1772546029598
       data:
-        baseUrl: http://localhost:3000
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjYWRlZTkxZC0wZTkyLTRkOTItYjg5Yi0zNDg4MTI0MzcyMGIiLCJlbWFpbCI6InBhdWxvLndlc2tsZXkzQG5pbm9taWEuY29tIiwicm9sZSI6MSwiaWF0IjoxNzc1NDM4NTIzLCJleHAiOjE3NzU0Mzk0MjN9.LRcOzlo4BnvEQwhddhnvzmdNlj4zYQytLWgqGOy56Y0
+        REFRESH_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjYWRlZTkxZC0wZTkyLTRkOTItYjg5Yi0zNDg4MTI0MzcyMGIiLCJlbWFpbCI6InBhdWxvLndlc2tsZXkzQG5pbm9taWEuY29tIiwicm9sZSI6MSwiaWF0IjoxNzc1NDM4NTIzLCJleHAiOjE3NzYwNDMzMjN9.feFBg09UtyypMhJSM4xgmsHRUKhu4azAWzPsGURvKQs

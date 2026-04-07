@@ -1,21 +1,30 @@
-import { IsEmail, IsString, MinLength, IsEnum } from 'class-validator'
+import {
+  IsEmail,
+  IsEnum,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator'
 
 import { UserRole } from '@shared/enums/user-role.enum'
 
-export class NewUserRequestDTO {
+export class UserRegisterRequestDTO {
   @IsEmail()
   email: string
 
   @IsString()
-  @MinLength(6)
+  @MinLength(8)
+  @MaxLength(16)
   password: string
 
   @IsString()
-  @MinLength(1)
+  @MinLength(2)
+  @MaxLength(100)
   firstName: string
 
   @IsString()
-  @MinLength(1)
+  @MinLength(2)
+  @MaxLength(100)
   lastName: string
 
   @IsEnum(UserRole)

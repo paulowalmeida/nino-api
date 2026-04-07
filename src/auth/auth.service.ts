@@ -1,6 +1,7 @@
 import {
   HttpException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -11,12 +12,14 @@ import { SignOptions } from 'jsonwebtoken'
 
 import { AuthRepository } from '@auth/auth.repository'
 import { LoginRequestDTO } from '@auth/dtos/login-request.dto'
-import { NewUserRequestDTO } from '@auth/dtos/user-register-request.dto'
+import { UserRegisterRequestDTO } from '@auth/dtos/user-register-request.dto'
 import { LoginResponse } from '@auth/types/login-response.type'
 import { UserCreated } from '@auth/types/user/user-created.type'
 import { UserFoundRepository } from '@auth/types/user/user-found.repository.type'
 import { UserFound } from '@auth/types/user/user-found.type'
 import { UserTokenData } from '@auth/types/user/user-token.data.type'
+import { ChangePasswordRequestDTO } from './dtos/change-password-request.dto'
+import { AuthRequest } from './types/user/user-auth-request.type'
 
 @Injectable()
 export class AuthService {
@@ -26,7 +29,24 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async createUser(payload: NewUserRequestDTO): Promise<UserCreated> {
+  async changePassword(
+    request: AuthRequest,
+    body: ChangePasswordRequestDTO,
+  ): Promise<{ message: string }> {
+    const { oldPassword, newPassword } = body
+    const { email } = request.user
+
+    const userFound = await this.getUserByEmail(email)
+
+    if (!userFound) throw new NotFoundException('User not found')
+
+    await this.validatePassword(oldPassword, userFound.personalData.password)
+    const newPasswordHash = await bcrypt.hash(newPassword, 10)
+    await this.authRepository.updateUserPassword(email, newPasswordHash)
+    return { message: 'Password changed successfully' }
+  }
+
+  async createUser(payload: UserRegisterRequestDTO): Promise<UserCreated> {
     const cryptedPassword = await bcrypt.hash(payload.password, 10)
     return await this.authRepository.createUser({
       ...payload,
@@ -34,14 +54,9 @@ export class AuthService {
     })
   }
 
-  async getCurrentUser(email: string): Promise<UserFound> {
+  async getUser(email: string): Promise<UserFound> {
     const userFoundRespository: UserFoundRepository | null =
-      await this.authRepository.findUserByEmail(email)
-
-    if (!userFoundRespository) {
-      throw new UnauthorizedException('Invalid credentials')
-    }
-
+      await this.getUserByEmail(email)
     return this.parseToUserFound(userFoundRespository)
   }
 
@@ -132,6 +147,17 @@ export class AuthService {
       accessToken,
       refreshToken,
     }
+  }
+
+  private async getUserByEmail(email: string): Promise<UserFoundRepository> {
+    const userFoundRespository: UserFoundRepository | null =
+      await this.authRepository.findUserByEmail(email)
+
+    if (!userFoundRespository) {
+      throw new UnauthorizedException('Invalid credentials')
+    }
+
+    return userFoundRespository
   }
 
   private getUserTokenData(
