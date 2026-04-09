@@ -2,48 +2,181 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator zod {
-  provider = "zod-prisma-types"
-  output   = "./generated/zod"
-}
-
 datasource db {
   provider = "postgresql"
 }
 
 model UserRole {
-  id    String @id @default(uuid())
-  code  Int @unique
-  description  String @unique
-  users User[]
+  id          String @id @default(uuid())
+  code        Int    @unique
+  description String @unique
+  users       User[]
 
   @@map("user_roles")
 }
 
-model PersonalData {
+model Plan {
+  id          String         @id @default(uuid())
+  code        Int            @unique
+  name        String         @unique
+  slug        String         @unique
+  price       Decimal
+  maxTenants  Int
+  maxProducts Int
+  maxOrders   Int
+  isActive    Boolean        @default(true)
+  subscriptions Subscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("plans")
+}
+
+model SubscriptionStatus {
+  id            String         @id @default(uuid())
+  code          Int            @unique
+  description   String         @unique
+  subscriptions Subscription[]
+
+  @@map("subscription_statuses")
+}
+
+model NotificationType {
+  id            String         @id @default(uuid())
+  code          Int            @unique
+  description   String         @unique
+  notifications Notification[]
+
+  @@map("notification_types")
+}
+
+model UserContact {
+  id        String      @id @default(uuid())
+  profileId String
+  profile   UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  phone     String?
+  mobile    String?
+  whatsapp  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_contacts")
+}
+
+model UserAddress {
+  id         String      @id @default(uuid())
+  profileId  String
+  profile    UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  cep        String?
+  street     String?
+  number     String?
+  complement String?
+  city       String?
+  state      String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("user_addresses")
+}
+
+model UserProfile {
   id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  firstName String
-  lastName  String
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  firstName String?
+  lastName  String?
   avatarUrl String?
   birthDate DateTime?
-  user      User?
+  cpf       String?
+  cnpj      String?
 
-  @@map("personal_data")
+  contacts  UserContact[]
+  addresses UserAddress[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_profiles")
+}
+
+model Tenant {
+  id       String  @id @default(uuid())
+  userId   String
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name     String
+  slug     String  @unique
+  logoUrl  String?
+  phone    String?
+  email    String?
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tenants")
+}
+
+model Subscription {
+  id       String @id @default(uuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  planId   String
+  plan     Plan               @relation(fields: [planId], references: [id])
+
+  statusId String
+  status   SubscriptionStatus @relation(fields: [statusId], references: [id])
+
+  startedAt DateTime  @default(now())
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("subscriptions")
+}
+
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  typeId String
+  type   NotificationType @relation(fields: [typeId], references: [id])
+
+  title  String
+  body   String
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
 }
 
 model User {
-  id                 String   @id @default(uuid())
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                 String        @id @default(uuid())
+  email              String        @unique
+  password           String
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
   hashedRefreshToken String?
 
   roleId             String
-  role               UserRole @relation(fields: [roleId], references: [id])
+  role               UserRole      @relation(fields: [roleId], references: [id])
 
-  personalDataId     String       @unique
-  personalData       PersonalData @relation(fields: [personalDataId], references: [id])
+  profile            UserProfile?
+  tenants            Tenant[]
+  subscription       Subscription?
+  notifications      Notification[]
 
   @@map("users")
 }
