@@ -22,7 +22,7 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "strictPropertyInitialization": false,
-    "types": ["jest"],
+    "types": ["jest", "node"],
     "paths": {
       "@shared/*": ["src/shared/*"],
       "@auth/*": ["src/auth/*"],
