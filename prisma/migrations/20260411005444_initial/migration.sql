@@ -1,10 +1,10 @@
 -- CreateTable
-CREATE TABLE "user_roles" (
+CREATE TABLE "roles" (
     "id" TEXT NOT NULL,
     "code" INTEGER NOT NULL,
     "description" TEXT NOT NULL,
 
-    CONSTRAINT "user_roles_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "roles_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -45,7 +45,7 @@ CREATE TABLE "notification_types" (
 -- CreateTable
 CREATE TABLE "user_contacts" (
     "id" TEXT NOT NULL,
-    "profileId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
     "phone" TEXT,
     "mobile" TEXT,
     "whatsapp" TEXT,
@@ -58,7 +58,7 @@ CREATE TABLE "user_contacts" (
 -- CreateTable
 CREATE TABLE "user_addresses" (
     "id" TEXT NOT NULL,
-    "profileId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
     "cep" TEXT,
     "street" TEXT,
     "number" TEXT,
@@ -72,9 +72,8 @@ CREATE TABLE "user_addresses" (
 );
 
 -- CreateTable
-CREATE TABLE "user_profiles" (
+CREATE TABLE "users" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
     "firstName" TEXT,
     "lastName" TEXT,
     "avatarUrl" TEXT,
@@ -84,13 +83,27 @@ CREATE TABLE "user_profiles" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "user_profiles_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "accounts" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "roleId" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "hashedRefreshToken" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "tenants" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "logoUrl" TEXT,
@@ -106,7 +119,7 @@ CREATE TABLE "tenants" (
 -- CreateTable
 CREATE TABLE "subscriptions" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
     "planId" TEXT NOT NULL,
     "statusId" TEXT NOT NULL,
     "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -120,7 +133,7 @@ CREATE TABLE "subscriptions" (
 -- CreateTable
 CREATE TABLE "notifications" (
     "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
     "typeId" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "body" TEXT NOT NULL,
@@ -132,24 +145,11 @@ CREATE TABLE "notifications" (
     CONSTRAINT "notifications_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "users" (
-    "id" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-    "hashedRefreshToken" TEXT,
-    "roleId" TEXT NOT NULL,
-
-    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
-);
+-- CreateIndex
+CREATE UNIQUE INDEX "roles_code_key" ON "roles"("code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "user_roles_code_key" ON "user_roles"("code");
-
--- CreateIndex
-CREATE UNIQUE INDEX "user_roles_description_key" ON "user_roles"("description");
+CREATE UNIQUE INDEX "roles_description_key" ON "roles"("description");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "plans_code_key" ON "plans"("code");
@@ -173,31 +173,34 @@ CREATE UNIQUE INDEX "notification_types_code_key" ON "notification_types"("code"
 CREATE UNIQUE INDEX "notification_types_description_key" ON "notification_types"("description");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "user_profiles_userId_key" ON "user_profiles"("userId");
+CREATE UNIQUE INDEX "accounts_userId_key" ON "accounts"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "accounts_email_key" ON "accounts"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "tenants_slug_key" ON "tenants"("slug");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "subscriptions_userId_key" ON "subscriptions"("userId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX "subscriptions_accountId_key" ON "subscriptions"("accountId");
 
 -- AddForeignKey
-ALTER TABLE "user_contacts" ADD CONSTRAINT "user_contacts_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "user_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_contacts" ADD CONSTRAINT "user_contacts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_addresses" ADD CONSTRAINT "user_addresses_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "user_profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "user_addresses" ADD CONSTRAINT "user_addresses_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "user_profiles" ADD CONSTRAINT "user_profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "tenants" ADD CONSTRAINT "tenants_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "tenants" ADD CONSTRAINT "tenants_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_planId_fkey" FOREIGN KEY ("planId") REFERENCES "plans"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -206,10 +209,7 @@ ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_planId_fkey" FOREIGN K
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_statusId_fkey" FOREIGN KEY ("statusId") REFERENCES "subscription_statuses"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "accounts"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_typeId_fkey" FOREIGN KEY ("typeId") REFERENCES "notification_types"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "users" ADD CONSTRAINT "users_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "user_roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

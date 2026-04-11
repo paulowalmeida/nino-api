@@ -45,7 +45,7 @@ async function seed(items: any[], tableName: string) {
 
 async function main() {
   try {
-    await seed(roles, 'userRole')
+    await seed(roles, 'role')
     await seed(plans, 'plan')
     await seed(subscriptionStatuses, 'subscriptionStatus')
     await seed(notificationTypes, 'notificationType')

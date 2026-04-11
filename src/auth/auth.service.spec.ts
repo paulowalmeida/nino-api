@@ -1,280 +1,317 @@
-import {
-  HttpException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { JwtService } from '@nestjs/jwt'
+import { HttpException, UnauthorizedException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import * as bcrypt from 'bcrypt'
 
+import { AuthService } from '@auth/services/auth.service'
 import { AuthRepository } from '@auth/auth.repository'
-import { AuthService } from '@auth/auth.service'
+import { PasswordService } from '@auth/services/password.service'
+import { TokenService } from '@auth/services/token.service'
 import { ChangePasswordRequestDTO } from '@auth/dtos/change-password-request.dto'
 import { LoginRequestDTO } from '@auth/dtos/login-request.dto'
-import { UserRegisterRequestDTO } from '@auth/dtos/user-register-request.dto'
-import { AuthRequest } from '@auth/types/user/user-auth-request.type'
-import { UserCreated } from '@auth/types/user/user-created.type'
-import { UserFoundRepository } from '@auth/types/user/user-found.repository.type'
-import { UserTokenData } from '@auth/types/user/user-token.data.type'
+import { NewAccountRequestDTO } from '@auth/dtos/new-account-request.dto'
+import type { AuthRequest } from '@auth/types/account/account-auth-request.type'
+import { Account } from '@auth/types/account/account.type'
+import { AccountTokenData } from '@auth/types/account/account-token.data.type'
+import { AccountRepository } from '@auth/types/account/account-repository.type'
+import { LoginResponse } from '@auth/types/login-response.type'
+import { Tokens } from '@auth/types/tokens.type'
 
-jest.mock('bcrypt')
+// ─── Mock dependencies ───────────────────────
+const mockAuthRepository = {
+  findAccountByEmail: jest.fn<Promise<AccountRepository | null>>(),
+  createAccount: jest.fn<Promise<Account>>(),
+  getRefreshToken: jest.fn(),
+  updateRefreshToken: jest.fn<Promise<void>>(),
+  removeHashedRefreshToken: jest.fn<Promise<void>>(),
+  updateAccountPassword: jest.fn<Promise<void>>(),
+}
+
+const mockPasswordService = {
+  hash: jest.fn<Promise<string>>(),
+  compare: jest.fn<Promise<boolean>>(),
+  validate: jest.fn<Promise<void>>(),
+}
+
+const mockTokenService = {
+  getTokens: jest.fn<Promise<Tokens>>(),
+}
+
+// ─── Fixtures ────────────────────────────────
+const mockAccountRepository: AccountRepository = {
+  id: 'acc-001',
+  email: 'john@example.com',
+  password: '$2b$10$hashedPassword',
+  hashedRefreshToken: null,
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+  role: { code: 3, description: 'MERCHANT' },
+}
+
+const mockAccount: Account = {
+  id: 'acc-001',
+  email: 'john@example.com',
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+  role: { code: 3, description: 'MERCHANT' },
+}
+
+const mockAccountRefreshData = {
+  id: 'acc-001',
+  email: 'john@example.com',
+  hashedRefreshToken: '$2b$10$hashedRefresh',
+  role: { code: 3 },
+}
+
+const mockTokens: Tokens = {
+  accessToken: 'access-token',
+  refreshToken: 'refresh-token',
+}
+
+const loginPayload: LoginRequestDTO = {
+  email: 'john@example.com',
+  password: 'password123',
+}
+
+const newAccountPayload: NewAccountRequestDTO = {
+  email: 'john@example.com',
+  password: 'password123',
+  role: 3,
+}
+
+const changePasswordPayload: ChangePasswordRequestDTO = {
+  oldPassword: 'password123',
+  newPassword: 'newpassword1',
+}
+
+const mockAuthRequest: AuthRequest = {
+  account: {
+    sub: 'acc-001',
+    email: 'john@example.com',
+    role: 3,
+  },
+} as unknown as AuthRequest
 
 describe('AuthService', () => {
   let service: AuthService
-  let authRepository: jest.Mocked<AuthRepository>
-  let jwtService: jest.Mocked<JwtService>
-  let configService: jest.Mocked<ConfigService>
-
-  const mockAuthRepository = {
-    updateUserPassword: jest.fn(),
-    createUser: jest.fn(),
-    findUserByEmail: jest.fn(),
-    removeHashedRefreshToken: jest.fn(),
-    getRefreshToken: jest.fn(),
-    updateRefreshToken: jest.fn(),
-  }
-
-  const mockJwtService = {
-    signAsync: jest.fn(),
-  }
-
-  const mockConfigService = {
-    get: jest.fn(),
-  }
 
   beforeEach(async () => {
-    jest.clearAllMocks()
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: AuthRepository, useValue: mockAuthRepository },
-        { provide: JwtService, useValue: mockJwtService },
-        { provide: ConfigService, useValue: mockConfigService },
+        { provide: PasswordService, useValue: mockPasswordService },
+        { provide: TokenService, useValue: mockTokenService },
       ],
     }).compile()
 
     service = module.get<AuthService>(AuthService)
-    authRepository = module.get(AuthRepository)
-    jwtService = module.get(JwtService)
-    configService = module.get(ConfigService)
+    jest.clearAllMocks()
+    mockPasswordService.hash.mockResolvedValue('hashed-value')
+    mockPasswordService.validate.mockResolvedValue(undefined)
+    mockTokenService.getTokens.mockResolvedValue(mockTokens)
   })
 
-  describe('AuthService Unit Tests', () => {
-    it('should change password successfully', async () => {
-      // Arrange
-      const request = {
-        user: { email: 'test@example.com' },
-      } as AuthRequest
-      const body: ChangePasswordRequestDTO = {
-        oldPassword: 'oldPassword',
-        newPassword: 'newPassword',
-      }
-      const userFound = {
-        personalData: { email: 'test@example.com', password: 'hashedOldPassword' },
-        role: { code: 1 },
-      } as UserFoundRepository
-      mockAuthRepository.findUserByEmail.mockResolvedValue(userFound)
-      ;(bcrypt.compare as jest.Mock).mockResolvedValue(true)
-      ;(bcrypt.hash as jest.Mock).mockResolvedValue('hashedNewPassword')
+  it('should change password successfully and return success message', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(
+      mockAccountRepository,
+    )
 
-      // Act
-      const result = await service.changePassword(request, body)
+    const result = await service.changePassword(
+      mockAuthRequest,
+      changePasswordPayload,
+    )
 
-      // Assert
-      expect(authRepository.findUserByEmail).toHaveBeenCalledWith(request.user.email)
-      expect(bcrypt.compare).toHaveBeenCalledWith(body.oldPassword, userFound.personalData.password)
-      expect(bcrypt.hash).toHaveBeenCalledWith(body.newPassword, 10)
-      expect(authRepository.updateUserPassword).toHaveBeenCalledWith(request.user.email, 'hashedNewPassword')
-      expect(result).toEqual({ message: 'Password changed successfully' })
+    expect(result).toEqual({ message: 'Password changed successfully' })
+    expect(mockAuthRepository.findAccountByEmail).toHaveBeenCalledWith(
+      'john@example.com',
+    )
+    expect(mockPasswordService.validate).toHaveBeenCalledWith(
+      'password123',
+      '$2b$10$hashedPassword',
+    )
+    expect(mockPasswordService.hash).toHaveBeenCalledWith('newpassword1')
+    expect(mockAuthRepository.updateAccountPassword).toHaveBeenCalledWith(
+      'john@example.com',
+      'hashed-value',
+    )
+  })
+
+  it('should throw UnauthorizedException when account is not found for change password', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(null)
+
+    await expect(
+      service.changePassword(mockAuthRequest, changePasswordPayload),
+    ).rejects.toThrow(UnauthorizedException)
+  })
+
+  it('should throw UnauthorizedException when old password is incorrect', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(
+      mockAccountRepository,
+    )
+    mockPasswordService.validate.mockRejectedValue(
+      new UnauthorizedException('Invalid credentials'),
+    )
+
+    await expect(
+      service.changePassword(mockAuthRequest, changePasswordPayload),
+    ).rejects.toThrow(UnauthorizedException)
+  })
+
+  it('should create account with hashed password', async () => {
+    mockAuthRepository.createAccount.mockResolvedValue(mockAccount)
+
+    const result = await service.createAccount(newAccountPayload)
+
+    expect(mockPasswordService.hash).toHaveBeenCalledWith('password123')
+    expect(mockAuthRepository.createAccount).toHaveBeenCalledWith({
+      ...newAccountPayload,
+      password: 'hashed-value',
+    })
+    expect(result).toEqual(mockAccount)
+  })
+
+  it('should return account without sensitive fields', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(
+      mockAccountRepository,
+    )
+
+    const result = await service.getAccount('john@example.com')
+
+    expect(result).toEqual({
+      id: 'acc-001',
+      email: 'john@example.com',
+      createdAt: mockAccountRepository.createdAt,
+      updatedAt: mockAccountRepository.updatedAt,
+      role: mockAccountRepository.role,
+    })
+  })
+
+  it('should throw UnauthorizedException when account is not found for getAccount', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(null)
+
+    await expect(service.getAccount('unknown@email.com')).rejects.toThrow(
+      UnauthorizedException,
+    )
+  })
+
+  it('should return login response with account and tokens', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(
+      mockAccountRepository,
+    )
+
+    const result: LoginResponse = await service.login(loginPayload)
+
+    expect(mockPasswordService.validate).toHaveBeenCalledWith(
+      'password123',
+      '$2b$10$hashedPassword',
+    )
+    expect(mockTokenService.getTokens).toHaveBeenCalledWith({
+      sub: 'acc-001',
+      email: 'john@example.com',
+      role: 3,
+    })
+    expect(mockPasswordService.hash).toHaveBeenCalledWith('refresh-token')
+    expect(mockAuthRepository.updateRefreshToken).toHaveBeenCalledWith(
+      'acc-001',
+      'hashed-value',
+    )
+    expect(result.account).toEqual(mockAccount)
+    expect(result.tokens).toEqual(mockTokens)
+  })
+
+  it('should throw UnauthorizedException when account is not found for login', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(null)
+
+    await expect(service.login(loginPayload)).rejects.toThrow(
+      UnauthorizedException,
+    )
+  })
+
+  it('should throw UnauthorizedException when password is incorrect for login', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(
+      mockAccountRepository,
+    )
+    mockPasswordService.validate.mockRejectedValue(
+      new UnauthorizedException('Invalid credentials'),
+    )
+
+    await expect(service.login(loginPayload)).rejects.toThrow(
+      UnauthorizedException,
+    )
+  })
+
+  it('should throw HttpException when account role is not found', async () => {
+    const accountNoRole: AccountRepository = {
+      ...mockAccountRepository,
+      role: { code: 0, description: 'UNSPECIFIED' },
+    }
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(accountNoRole)
+
+    await expect(service.login(loginPayload)).rejects.toThrow(HttpException)
+  })
+
+  it('should remove hashed refresh token from account on logout', async () => {
+    mockAuthRepository.removeHashedRefreshToken.mockResolvedValue(undefined)
+
+    await service.logout('acc-001')
+
+    expect(mockAuthRepository.removeHashedRefreshToken).toHaveBeenCalledWith(
+      'acc-001',
+    )
+  })
+
+  it('should issue new tokens and update refresh token', async () => {
+    mockAuthRepository.getRefreshToken.mockResolvedValue(mockAccountRefreshData)
+
+    const result: Tokens = await service.refreshToken(
+      'acc-001',
+      'some-plain-token',
+    )
+
+    expect(mockAuthRepository.getRefreshToken).toHaveBeenCalledWith('acc-001')
+    expect(mockPasswordService.validate).toHaveBeenCalledWith(
+      'some-plain-token',
+      '$2b$10$hashedRefresh',
+    )
+    expect(mockTokenService.getTokens).toHaveBeenCalledWith({
+      sub: 'acc-001',
+      email: 'john@example.com',
+      role: 3,
+    })
+    expect(mockPasswordService.hash).toHaveBeenCalledWith('refresh-token')
+    expect(mockAuthRepository.updateRefreshToken).toHaveBeenCalledWith(
+      'acc-001',
+      'hashed-value',
+    )
+    expect(result).toEqual(mockTokens)
+  })
+
+  it('should throw UnauthorizedException when refresh token is undefined', async () => {
+    mockAuthRepository.getRefreshToken.mockResolvedValue(mockAccountRefreshData)
+
+    await expect(
+      service.refreshToken('acc-001', undefined),
+    ).rejects.toThrow(UnauthorizedException)
+  })
+
+  it('should throw UnauthorizedException when hashed refresh token is null', async () => {
+    mockAuthRepository.getRefreshToken.mockResolvedValue({
+      ...mockAccountRefreshData,
+      hashedRefreshToken: null,
     })
 
-    it('should throw NotFoundException when user is not found during changePassword', async () => {
-      // Arrange
-      const request = { user: { email: 'test@example.com' } } as AuthRequest
-      const body = { oldPassword: 'old', newPassword: 'new' } as ChangePasswordRequestDTO
-      mockAuthRepository.findUserByEmail.mockResolvedValue(null)
+    await expect(
+      service.refreshToken('acc-001', 'some-token'),
+    ).rejects.toThrow(UnauthorizedException)
+  })
 
-      // Act & Assert
-      await expect(service.changePassword(request, body)).rejects.toThrow(UnauthorizedException)
-    })
+  it('should throw UnauthorizedException when refresh token does not match hash', async () => {
+    mockAuthRepository.getRefreshToken.mockResolvedValue(mockAccountRefreshData)
+    mockPasswordService.validate.mockRejectedValue(
+      new UnauthorizedException('Invalid credentials'),
+    )
 
-    it('should create user successfully', async () => {
-      // Arrange
-      const payload: UserRegisterRequestDTO = {
-        email: 'test@example.com',
-        password: 'password',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 1,
-      }
-      const userCreated = { id: '1', ...payload } as unknown as UserCreated
-      ;(bcrypt.hash as jest.Mock).mockResolvedValue('hashedPassword')
-      mockAuthRepository.createUser.mockResolvedValue(userCreated)
-
-      // Act
-      const result = await service.createUser(payload)
-
-      // Assert
-      expect(bcrypt.hash).toHaveBeenCalledWith(payload.password, 10)
-      expect(authRepository.createUser).toHaveBeenCalledWith({
-        ...payload,
-        password: 'hashedPassword',
-      })
-      expect(result).toEqual(userCreated)
-    })
-
-    it('should get user by email successfully', async () => {
-      // Arrange
-      const email = 'test@example.com'
-      const userFoundRepository = {
-        id: '1',
-        personalData: { email, password: 'hashedPassword', firstName: 'John', lastName: 'Doe' },
-        role: { code: 1, name: 'USER' },
-      } as UserFoundRepository
-      mockAuthRepository.findUserByEmail.mockResolvedValue(userFoundRepository)
-
-      // Act
-      const result = await service.getUser(email)
-
-      // Assert
-      expect(authRepository.findUserByEmail).toHaveBeenCalledWith(email)
-      expect(result.personalData).not.toHaveProperty('password')
-      expect(result.id).toBe(userFoundRepository.id)
-    })
-
-    it('should login successfully', async () => {
-      // Arrange
-      const payload: LoginRequestDTO = { email: 'test@example.com', password: 'password' }
-      const userFound = {
-        id: '1',
-        personalData: { email: 'test@example.com', password: 'hashedPassword' },
-        role: { code: 1 },
-      } as UserFoundRepository
-      mockAuthRepository.findUserByEmail.mockResolvedValue(userFound)
-      ;(bcrypt.compare as jest.Mock).mockResolvedValue(true)
-      ;(bcrypt.hash as jest.Mock).mockResolvedValue('hashedRefreshToken')
-      mockJwtService.signAsync.mockResolvedValueOnce('accessToken').mockResolvedValueOnce('refreshToken')
-      mockConfigService.get.mockReturnValue('secret')
-
-      // Act
-      const result = await service.login(payload)
-
-      // Assert
-      expect(authRepository.findUserByEmail).toHaveBeenCalledWith(payload.email)
-      expect(bcrypt.compare).toHaveBeenCalledWith(payload.password, userFound.personalData.password)
-      expect(jwtService.signAsync).toHaveBeenCalledTimes(2)
-      expect(authRepository.updateRefreshToken).toHaveBeenCalledWith(userFound.id, 'hashedRefreshToken')
-      expect(result).toEqual({
-        user: expect.anything(),
-        tokens: { accessToken: 'accessToken', refreshToken: 'refreshToken' },
-      })
-    })
-
-    it('should throw UnauthorizedException when login fails due to invalid password', async () => {
-      // Arrange
-      const payload: LoginRequestDTO = { email: 'test@example.com', password: 'wrongPassword' }
-      const userFound = {
-        personalData: { password: 'hashedPassword' },
-        role: { code: 1 },
-      } as UserFoundRepository
-      mockAuthRepository.findUserByEmail.mockResolvedValue(userFound)
-      ;(bcrypt.compare as jest.Mock).mockResolvedValue(false)
-
-      // Act & Assert
-      await expect(service.login(payload)).rejects.toThrow(UnauthorizedException)
-    })
-
-    it('should throw UnauthorizedException when login fails because user not found', async () => {
-      // Arrange
-      const payload: LoginRequestDTO = { email: 'notfound@example.com', password: 'password' }
-      mockAuthRepository.findUserByEmail.mockResolvedValue(null)
-
-      // Act & Assert
-      await expect(service.login(payload)).rejects.toThrow(UnauthorizedException)
-    })
-
-    it('should throw HttpException when user has no role during login', async () => {
-      // Arrange
-      const payload: LoginRequestDTO = { email: 'test@example.com', password: 'password' }
-      const userFound = {
-        id: '1',
-        personalData: { email: 'test@example.com', password: 'hashedPassword' },
-        role: { code: 0 },
-      } as UserFoundRepository
-      mockAuthRepository.findUserByEmail.mockResolvedValue(userFound)
-      ;(bcrypt.compare as jest.Mock).mockResolvedValue(true)
-
-      // Act & Assert
-      await expect(service.login(payload)).rejects.toThrow(HttpException)
-      await expect(service.login(payload)).rejects.toThrow('User role not found')
-    })
-
-    it('should logout successfully', async () => {
-      // Arrange
-      const userId = '1'
-      mockAuthRepository.removeHashedRefreshToken.mockResolvedValue(undefined)
-
-      // Act
-      await service.logout(userId)
-
-      // Assert
-      expect(authRepository.removeHashedRefreshToken).toHaveBeenCalledWith(userId)
-    })
-
-    it('should refresh token successfully', async () => {
-      // Arrange
-      const userId = '1'
-      const token = 'oldRefreshToken'
-      const userRefreshToken = {
-        id: userId,
-        hashedRefreshToken: 'hashedOldRefreshToken',
-        personalData: { email: 'test@example.com' },
-        role: { code: 1 },
-      }
-      mockAuthRepository.getRefreshToken.mockResolvedValue(userRefreshToken)
-      ;(bcrypt.compare as jest.Mock).mockResolvedValue(true)
-      ;(bcrypt.hash as jest.Mock).mockResolvedValue('hashedNewRefreshToken')
-      mockJwtService.signAsync.mockResolvedValueOnce('newAccessToken').mockResolvedValueOnce('newRefreshToken')
-      mockConfigService.get.mockReturnValue('secret')
-
-      // Act
-      const result = await service.refreshToken(userId, token)
-
-      // Assert
-      expect(authRepository.getRefreshToken).toHaveBeenCalledWith(userId)
-      expect(bcrypt.compare).toHaveBeenCalledWith(token, userRefreshToken.hashedRefreshToken)
-      expect(authRepository.updateRefreshToken).toHaveBeenCalledWith(userId, 'hashedNewRefreshToken')
-      expect(result).toEqual({
-        accessToken: 'newAccessToken',
-        refreshToken: 'newRefreshToken',
-      })
-    })
-
-    it('should throw UnauthorizedException during refreshToken if hashedRefreshToken is null', async () => {
-      // Arrange
-      const userId = '1'
-      const token = 'token'
-      mockAuthRepository.getRefreshToken.mockResolvedValue({
-        hashedRefreshToken: null,
-      })
-
-      // Act & Assert
-      await expect(service.refreshToken(userId, token)).rejects.toThrow(UnauthorizedException)
-    })
-
-    it('should throw UnauthorizedException during refreshToken if compare fails', async () => {
-      // Arrange
-      const userId = '1'
-      const token = 'invalidToken'
-      mockAuthRepository.getRefreshToken.mockResolvedValue({
-        hashedRefreshToken: 'hashedToken',
-      })
-      ;(bcrypt.compare as jest.Mock).mockResolvedValue(false)
-
-      // Act & Assert
-      await expect(service.refreshToken(userId, token)).rejects.toThrow(UnauthorizedException)
-    })
+    await expect(
+      service.refreshToken('acc-001', 'wrong-token'),
+    ).rejects.toThrow(UnauthorizedException)
   })
 })

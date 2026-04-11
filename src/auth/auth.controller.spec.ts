@@ -1,154 +1,181 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { AuthController } from './auth.controller'
-import { AuthService } from '@auth/auth.service'
-import { UserRegisterRequestDTO } from '@auth/dtos/user-register-request.dto'
+import { ThrottlerGuard } from '@nestjs/throttler'
+
+import { AuthController } from '@auth/auth.controller'
+import { ChangePasswordRequestDTO } from '@auth/dtos/change-password-request.dto'
 import { LoginRequestDTO } from '@auth/dtos/login-request.dto'
-import { ChangePasswordRequestDTO } from './dtos/change-password-request.dto'
-import type { AuthRequest } from './types/user/user-auth-request.type'
-import { UserCreated } from '@auth/types/user/user-created.type'
+import { NewAccountRequestDTO } from '@auth/dtos/new-account-request.dto'
+import { AuthService } from '@auth/services/auth.service'
+import { JwtRefreshGuard } from '@auth/jwt-refresh.guard'
+import type { AuthRequest } from '@auth/types/account/account-auth-request.type'
+import { Account } from '@auth/types/account/account.type'
+import { AccountTokenData } from '@auth/types/account/account-token.data.type'
 import { LoginResponse } from '@auth/types/login-response.type'
-import { UserFound } from '@auth/types/user/user-found.type'
 import { Tokens } from '@auth/types/tokens.type'
+import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
+
+const mockAuthService = {
+  createAccount: jest.fn<Promise<Account>>(),
+  getAccount: jest.fn<Promise<Account>>(),
+  login: jest.fn<Promise<LoginResponse>>(),
+  logout: jest.fn<Promise<void>>(),
+  refreshToken: jest.fn<Promise<Tokens>>(),
+  changePassword: jest.fn<Promise<{ message: string }>>(),
+}
+
+const tokenData: AccountTokenData = {
+  sub: 'acc-001',
+  email: 'john@example.com',
+  role: 3,
+}
+
+const mockAccount: Account = {
+  id: 'acc-001',
+  email: 'john@example.com',
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+  role: { code: 3, description: 'MERCHANT' },
+}
+
+const mockLoginResponse: LoginResponse = {
+  account: mockAccount,
+  tokens: {
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+  },
+}
+
+const mockTokens: Tokens = {
+  accessToken: 'new-access-token',
+  refreshToken: 'new-refresh-token',
+}
+
+const newAccountBody: NewAccountRequestDTO = {
+  email: 'john@example.com',
+  password: 'password123',
+  role: 3,
+}
+
+const loginBody: LoginRequestDTO = {
+  email: 'john@example.com',
+  password: 'password123',
+}
+
+const changePasswordBody: ChangePasswordRequestDTO = {
+  oldPassword: 'password123',
+  newPassword: 'newpassword1',
+}
+
+const mockAuthRequest: AuthRequest = {
+  account: tokenData,
+} as unknown as AuthRequest
 
 describe('AuthController', () => {
   let controller: AuthController
-  let authService: jest.Mocked<AuthService>
-
-  const mockAuthService = {
-    createUser: jest.fn(),
-    getUser: jest.fn(),
-    login: jest.fn(),
-    logout: jest.fn(),
-    refreshToken: jest.fn(),
-    changePassword: jest.fn(),
-  }
 
   beforeEach(async () => {
-    jest.clearAllMocks()
-
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [
-        {
-          provide: AuthService,
-          useValue: mockAuthService,
-        },
-      ],
-    }).compile()
+      providers: [{ provide: AuthService, useValue: mockAuthService }],
+    })
+      .overrideGuard(JwtRefreshGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile()
 
     controller = module.get<AuthController>(AuthController)
-    authService = module.get(AuthService)
+    jest.clearAllMocks()
   })
 
-  describe('AuthController Unit Tests', () => {
-    it('should create user successfully', async () => {
-      // Arrange
-      const payload: UserRegisterRequestDTO = {
-        email: 'test@example.com',
-        password: 'password',
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 1,
-      }
-      const expectedResult = { id: '1', ...payload } as unknown as UserCreated
-      mockAuthService.createUser.mockResolvedValue(expectedResult)
+  it('should delegate to authService.createAccount and return created account', async () => {
+    mockAuthService.createAccount.mockResolvedValue(mockAccount)
 
-      // Act
-      const result = await controller.createUser(payload)
+    const result = await controller.createAccount(newAccountBody)
 
-      // Assert
-      expect(authService.createUser).toHaveBeenCalledWith(payload)
-      expect(result).toEqual(expectedResult)
+    expect(result).toEqual(mockAccount)
+    expect(mockAuthService.createAccount).toHaveBeenCalledWith(newAccountBody)
+  })
+
+  it('should delegate to authService.getAccount and return current account', async () => {
+    mockAuthService.getAccount.mockResolvedValue(mockAccount)
+
+    const result = await controller.getCurrentAccount(mockAuthRequest)
+
+    expect(result).toEqual(mockAccount)
+    expect(mockAuthService.getAccount).toHaveBeenCalledWith('john@example.com')
+  })
+
+  it('should delegate to authService.login and return login response', async () => {
+    mockAuthService.login.mockResolvedValue(mockLoginResponse)
+
+    const result = await controller.login(loginBody)
+
+    expect(result).toEqual(mockLoginResponse)
+    expect(mockAuthService.login).toHaveBeenCalledWith(loginBody)
+  })
+
+  it('should delegate to authService.logout and return success message', async () => {
+    mockAuthService.logout.mockResolvedValue(undefined)
+
+    const result = await controller.logout(mockAuthRequest)
+
+    expect(result).toEqual({ message: 'Logout bem-sucedido' })
+    expect(mockAuthService.logout).toHaveBeenCalledWith('acc-001')
+  })
+
+  it('should delegate to authService.refreshToken with account id and hashed refresh token', async () => {
+    const requestWithHash: AuthRequest = {
+      ...mockAuthRequest,
+      account: {
+        ...tokenData,
+        hashedRefreshToken: 'some-plain-token',
+      },
+    } as unknown as AuthRequest
+
+    mockAuthService.refreshToken.mockResolvedValue(mockTokens)
+
+    const result = await controller.refreshToken(requestWithHash)
+
+    expect(result).toEqual(mockTokens)
+    expect(mockAuthService.refreshToken).toHaveBeenCalledWith(
+      'acc-001',
+      'some-plain-token',
+    )
+  })
+
+  it('should delegate to authService.changePassword and return success message', async () => {
+    mockAuthService.changePassword.mockResolvedValue({
+      message: 'Password changed successfully',
     })
 
-    it('should get current user successfully', async () => {
-      // Arrange
-      const req: AuthRequest = {
-        user: { sub: 'user-id', email: 'test@example.com', role: 1 },
-      } as AuthRequest
-      const expectedResult = { id: 'user-id', personalData: { email: 'test@example.com' } } as UserFound
-      mockAuthService.getUser.mockResolvedValue(expectedResult)
+    const result = await controller.changePassword(
+      mockAuthRequest,
+      changePasswordBody,
+    )
 
-      // Act
-      const result = await controller.getCurrentUser(req)
+    expect(result).toEqual({ message: 'Password changed successfully' })
+    expect(mockAuthService.changePassword).toHaveBeenCalledWith(
+      mockAuthRequest,
+      changePasswordBody,
+    )
+  })
 
-      // Assert
-      expect(authService.getUser).toHaveBeenCalledWith(req.user.email)
-      expect(result).toEqual(expectedResult)
-    })
+  it('should propagate error from authService.createAccount', async () => {
+    mockAuthService.createAccount.mockRejectedValue(
+      new Error('Account creation failed'),
+    )
 
-    it('should login successfully', async () => {
-      // Arrange
-      const payload: LoginRequestDTO = { email: 'test@example.com', password: 'password' }
-      const expectedResult: LoginResponse = {
-        user: { id: '1' } as UserFound,
-        tokens: { accessToken: 'at', refreshToken: 'rt' },
-      }
-      mockAuthService.login.mockResolvedValue(expectedResult)
+    await expect(controller.createAccount(newAccountBody)).rejects.toThrow(
+      'Account creation failed',
+    )
+  })
 
-      // Act
-      const result = await controller.login(payload)
+  it('should propagate error from authService.login', async () => {
+    mockAuthService.login.mockRejectedValue(new Error('Login failed'))
 
-      // Assert
-      expect(authService.login).toHaveBeenCalledWith(payload)
-      expect(result).toEqual(expectedResult)
-    })
-
-    it('should delegate logout to authService with user sub', async () => {
-      // Arrange
-      const req: AuthRequest = {
-        user: { sub: 'user-id', email: 'test@example.com', role: 1 },
-      } as AuthRequest
-      mockAuthService.logout.mockResolvedValue(undefined)
-
-      // Act
-      const result = await controller.logout(req)
-
-      // Assert
-      expect(authService.logout).toHaveBeenCalledWith('user-id')
-      expect(result).toEqual({ message: 'Logout bem-sucedido' })
-    })
-
-    it('should delegate refreshToken to authService with user sub and token', async () => {
-      // Arrange
-      const req = {
-        user: { sub: 'user-id', refreshToken: 'refresh-token' },
-      } as unknown as AuthRequest
-      const expectedResult: Tokens = {
-        accessToken: 'new-token',
-        refreshToken: 'new-refresh',
-      }
-      mockAuthService.refreshToken.mockResolvedValue(expectedResult)
-
-      // Act
-      const result = await controller.refreshToken(req)
-
-      // Assert
-      expect(authService.refreshToken).toHaveBeenCalledWith(
-        'user-id',
-        'refresh-token',
-      )
-      expect(result).toEqual(expectedResult)
-    })
-
-    it('should delegate changePassword to authService with request and body', async () => {
-      // Arrange
-      const req: AuthRequest = {
-        user: { sub: 'user-id', email: 'test@example.com', role: 1 },
-      } as AuthRequest
-      const body: ChangePasswordRequestDTO = {
-        oldPassword: 'old',
-        newPassword: 'new',
-      }
-      const expectedResult = { message: 'Password changed successfully' }
-      mockAuthService.changePassword.mockResolvedValue(expectedResult)
-
-      // Act
-      const result = await controller.changePassword(req, body)
-
-      // Assert
-      expect(authService.changePassword).toHaveBeenCalledWith(req, body)
-      expect(result).toEqual(expectedResult)
-    })
+    await expect(controller.login(loginBody)).rejects.toThrow('Login failed')
   })
 })
