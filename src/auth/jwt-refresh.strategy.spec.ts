@@ -7,7 +7,7 @@ import { Request } from 'express'
 import { JwtRefreshStrategy } from '@auth/jwt-refresh.strategy'
 
 const mockConfigService = {
-  get: jest.fn<string | undefined>(),
+  get: jest.fn<string | undefined, [string]>(),
 }
 
 describe('JwtRefreshStrategy', () => {
