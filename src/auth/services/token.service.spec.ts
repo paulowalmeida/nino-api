@@ -7,11 +7,11 @@ import { AccountTokenData } from '@auth/types/account/account-token.data.type'
 import { Tokens } from '@auth/types/tokens.type'
 
 const mockJwtService = {
-  signAsync: jest.fn<Promise<string>>(),
+  signAsync: jest.fn<Promise<string>, [object, object]>(),
 }
 
 const mockConfigService = {
-  get: jest.fn<string | undefined>(),
+  get: jest.fn<string | undefined, [string]>(),
 }
 
 const mockAccountTokenData: AccountTokenData = {
@@ -52,14 +52,22 @@ describe('TokenService', () => {
     expect(mockConfigService.get).toHaveBeenCalledWith('JWT_SECRET')
     expect(mockConfigService.get).toHaveBeenCalledWith('JWT_REFRESH_SECRET')
     expect(mockJwtService.signAsync).toHaveBeenCalledTimes(2)
-    expect(mockJwtService.signAsync).toHaveBeenNthCalledWith(1, mockAccountTokenData, {
-      secret: 'mock-jwt-secret',
-      expiresIn: '15m',
-    })
-    expect(mockJwtService.signAsync).toHaveBeenNthCalledWith(2, mockAccountTokenData, {
-      secret: 'mock-jwt-secret',
-      expiresIn: '7d',
-    })
+    expect(mockJwtService.signAsync).toHaveBeenNthCalledWith(
+      1,
+      mockAccountTokenData,
+      {
+        secret: 'mock-jwt-secret',
+        expiresIn: '15m',
+      },
+    )
+    expect(mockJwtService.signAsync).toHaveBeenNthCalledWith(
+      2,
+      mockAccountTokenData,
+      {
+        secret: 'mock-jwt-secret',
+        expiresIn: '7d',
+      },
+    )
   })
 
   it('should use role 0 when account role is undefined', async () => {

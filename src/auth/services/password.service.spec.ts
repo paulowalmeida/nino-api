@@ -3,8 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { PasswordService } from '@auth/services/password.service'
 
-const mockHash = jest.fn<Promise<string>>()
-const mockCompare = jest.fn<Promise<boolean>>()
+const mockHash = jest.fn<Promise<string>, [string, number]>()
+const mockCompare = jest.fn<Promise<boolean>, [string, string]>()
 
 jest.mock('bcrypt', () => ({
   get hash() {
@@ -56,9 +56,9 @@ describe('PasswordService', () => {
   it('should throw UnauthorizedException when password does not match hash', async () => {
     mockCompare.mockResolvedValue(false)
 
-    await expect(
-      service.validate('wrong', 'hashed-value'),
-    ).rejects.toThrow(UnauthorizedException)
+    await expect(service.validate('wrong', 'hashed-value')).rejects.toThrow(
+      UnauthorizedException,
+    )
   })
 
   it('should not throw when password matches hash', async () => {

@@ -17,22 +17,22 @@ import { Tokens } from '@auth/types/tokens.type'
 
 // ─── Mock dependencies ───────────────────────
 const mockAuthRepository = {
-  findAccountByEmail: jest.fn<Promise<AccountRepository | null>>(),
-  createAccount: jest.fn<Promise<Account>>(),
-  getRefreshToken: jest.fn(),
-  updateRefreshToken: jest.fn<Promise<void>>(),
-  removeHashedRefreshToken: jest.fn<Promise<void>>(),
-  updateAccountPassword: jest.fn<Promise<void>>(),
+  findAccountByEmail: jest.fn<Promise<AccountRepository | null>, [string]>(), // Espera um string
+  createAccount: jest.fn<Promise<Account>, [NewAccountRequestDTO]>(), // Espera um DTO
+  getRefreshToken: jest.fn<Promise<AccountRepository | null>, [string]>(), // Espera um string
+  updateRefreshToken: jest.fn<Promise<void>, [string, string]>(), // Espera dois strings
+  removeHashedRefreshToken: jest.fn<Promise<void>, [string]>(), // Espera um string
+  updateAccountPassword: jest.fn<Promise<void>, [string, string]>(), // Espera dois strings
 }
 
 const mockPasswordService = {
-  hash: jest.fn<Promise<string>>(),
-  compare: jest.fn<Promise<boolean>>(),
-  validate: jest.fn<Promise<void>>(),
+  hash: jest.fn<Promise<string>, [string]>(), // Espera um string
+  compare: jest.fn<Promise<boolean>, [string, string]>(), // Espera dois strings
+  validate: jest.fn<Promise<void>, [string, string]>(), // Espera dois strings
 }
 
 const mockTokenService = {
-  getTokens: jest.fn<Promise<Tokens>>(),
+  getTokens: jest.fn<Promise<Tokens>, [AccountTokenData]>(), // Espera um tipo específico
 }
 
 // ─── Fixtures ────────────────────────────────
@@ -44,6 +44,7 @@ const mockAccountRepository: AccountRepository = {
   createdAt: new Date('2024-01-01'),
   updatedAt: new Date('2024-01-01'),
   role: { code: 3, description: 'MERCHANT' },
+  userId: '1',
 }
 
 const mockAccount: Account = {
@@ -56,9 +57,13 @@ const mockAccount: Account = {
 
 const mockAccountRefreshData = {
   id: 'acc-001',
+  userId: '1',
   email: 'john@example.com',
+  password: '$2b$10$hashedPassword',
   hashedRefreshToken: '$2b$10$hashedRefresh',
-  role: { code: 3 },
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+  role: { code: 3, description: 'MERCHANT' },
 }
 
 const mockTokens: Tokens = {
@@ -288,9 +293,9 @@ describe('AuthService', () => {
   it('should throw UnauthorizedException when refresh token is undefined', async () => {
     mockAuthRepository.getRefreshToken.mockResolvedValue(mockAccountRefreshData)
 
-    await expect(
-      service.refreshToken('acc-001', undefined),
-    ).rejects.toThrow(UnauthorizedException)
+    await expect(service.refreshToken('acc-001', undefined)).rejects.toThrow(
+      UnauthorizedException,
+    )
   })
 
   it('should throw UnauthorizedException when hashed refresh token is null', async () => {
@@ -299,9 +304,9 @@ describe('AuthService', () => {
       hashedRefreshToken: null,
     })
 
-    await expect(
-      service.refreshToken('acc-001', 'some-token'),
-    ).rejects.toThrow(UnauthorizedException)
+    await expect(service.refreshToken('acc-001', 'some-token')).rejects.toThrow(
+      UnauthorizedException,
+    )
   })
 
   it('should throw UnauthorizedException when refresh token does not match hash', async () => {

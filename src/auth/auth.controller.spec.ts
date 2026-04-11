@@ -15,12 +15,15 @@ import { Tokens } from '@auth/types/tokens.type'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 
 const mockAuthService = {
-  createAccount: jest.fn<Promise<Account>>(),
-  getAccount: jest.fn<Promise<Account>>(),
-  login: jest.fn<Promise<LoginResponse>>(),
-  logout: jest.fn<Promise<void>>(),
-  refreshToken: jest.fn<Promise<Tokens>>(),
-  changePassword: jest.fn<Promise<{ message: string }>>(),
+  createAccount: jest.fn<Promise<Account>, [NewAccountRequestDTO]>(),
+  getAccount: jest.fn<Promise<Account>, [string]>(),
+  login: jest.fn<Promise<LoginResponse>, [LoginRequestDTO]>(),
+  logout: jest.fn<Promise<void>, [string]>(),
+  refreshToken: jest.fn<Promise<Tokens>, [string, string]>(),
+  changePassword: jest.fn<
+    Promise<{ message: string }>,
+    [AuthRequest, ChangePasswordRequestDTO]
+  >(),
 }
 
 const tokenData: AccountTokenData = {
