@@ -2,17 +2,17 @@ import { Prisma } from '@prisma/client'
 import { NotificationType } from '@shared/enums/notification-type.enum'
 import { Plan } from '@shared/enums/plan.enum'
 import { SubscriptionStatus } from '@shared/enums/subscription-status.enum'
-import { UserRole } from '@shared/enums/user-role.enum'
+import { Role } from '@shared/enums/role.enum'
 
-export const roles: Prisma.UserRoleCreateInput[] = [
-  { code: UserRole.UNRECOGNIZED, description: 'UNRECOGNIZED' },
-  { code: UserRole.UNSPECIFIED, description: 'USER_ROLE_UNSPECIFIED' },
-  { code: UserRole.ADMIN, description: 'ADMIN' },
-  { code: UserRole.SUPPORT, description: 'SUPPORT' },
-  { code: UserRole.MERCHANT, description: 'MERCHANT' },
-  { code: UserRole.CUSTOMER, description: 'CUSTOMER' },
-  { code: UserRole.COURIER, description: 'COURIER' },
-  { code: UserRole.GUEST, description: 'GUEST' },
+export const roles: Prisma.RoleCreateInput[] = [
+  { code: Role.UNRECOGNIZED, description: 'UNRECOGNIZED' },
+  { code: Role.UNSPECIFIED, description: 'USER_ROLE_UNSPECIFIED' },
+  { code: Role.ADMIN, description: 'ADMIN' },
+  { code: Role.SUPPORT, description: 'SUPPORT' },
+  { code: Role.MERCHANT, description: 'MERCHANT' },
+  { code: Role.CUSTOMER, description: 'CUSTOMER' },
+  { code: Role.COURIER, description: 'COURIER' },
+  { code: Role.GUEST, description: 'GUEST' },
 ]
 
 export const plans: Prisma.PlanCreateInput[] = [

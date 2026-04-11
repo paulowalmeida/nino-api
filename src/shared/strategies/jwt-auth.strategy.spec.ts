@@ -1,75 +1,101 @@
-import { Test, TestingModule } from '@nestjs/testing'
+import { UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
+import { Test, TestingModule } from '@nestjs/testing'
+import { Request } from 'express'
+
 import { AuthRepository } from '@auth/auth.repository'
-import { JwtAuthStrategy } from './jwt-auth.strategy'
-import { UserTokenData } from '@auth/types/user/user-token.data.type'
+import { AuthRequest } from '@auth/types/account/account-auth-request.type'
+import { AccountRepository } from '@auth/types/account/account-repository.type'
+import { AccountTokenData } from '@auth/types/account/account-token.data.type'
+import { JwtAuthStrategy } from '@shared/strategies/jwt-auth.strategy'
+
+const mockAccountRepository: AccountRepository = {
+  id: 'acc-001',
+  email: 'john@example.com',
+  password: '$2b$10$hashedPassword',
+  hashedRefreshToken: null,
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01'),
+  role: { code: 3, description: 'MERCHANT' },
+}
+
+const mockAuthRepository = {
+  findAccountByEmail: jest.fn<Promise<AccountRepository | null>>(),
+}
+
+const mockConfigService = {
+  get: jest.fn<string | undefined>(),
+}
 
 describe('JwtAuthStrategy', () => {
   let strategy: JwtAuthStrategy
-  let configService: jest.Mocked<ConfigService>
-  let authRepository: jest.Mocked<AuthRepository>
-
-  const mockConfig = {
-    get: jest.fn().mockReturnValue('jwt-secret'),
-  }
-
-  const mockAuthRepository = {
-    findUserByEmail: jest.fn(),
-  }
 
   beforeEach(async () => {
     jest.clearAllMocks()
-    mockConfig.get.mockReturnValue('jwt-secret')
+    mockConfigService.get.mockReturnValue('jwt-secret')
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         JwtAuthStrategy,
-        { provide: ConfigService, useValue: mockConfig },
+        { provide: ConfigService, useValue: mockConfigService },
         { provide: AuthRepository, useValue: mockAuthRepository },
       ],
     }).compile()
 
     strategy = module.get<JwtAuthStrategy>(JwtAuthStrategy)
-    configService = module.get(ConfigService)
-    authRepository = module.get(AuthRepository)
   })
 
-  describe('JwtAuthStrategy Unit Tests', () => {
-    it('should throw error if JWT_SECRET is not defined', () => {
-      mockConfig.get.mockReturnValue(null)
-      expect(
-        () => new JwtAuthStrategy(configService as any, authRepository as any),
-      ).toThrow("JWT_SECRET don't be defined in the environment variables.")
-    })
+  it('should throw Error when JWT_SECRET is not defined', () => {
+    mockConfigService.get.mockReturnValue(undefined)
 
-    it('should validate and return payload when user exists', async () => {
-      const payload: UserTokenData = {
-        sub: 'user-id',
-        email: 'test@example.com',
-        role: 1,
-      }
-      mockAuthRepository.findUserByEmail.mockResolvedValue({
-        id: payload.sub,
-        email: payload.email,
-      } as any)
+    expect(
+      () =>
+        new JwtAuthStrategy(
+          mockConfigService as unknown as ConfigService,
+          mockAuthRepository as unknown as AuthRepository,
+        ),
+    ).toThrow("JWT_SECRET don't be defined in the environment variables.")
+  })
 
-      const result = await strategy.validate(payload)
+  it('should validate and return payload when account exists', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(
+      mockAccountRepository,
+    )
 
-      expect(authRepository.findUserByEmail).toHaveBeenCalledWith(payload.email)
-      expect(result).toEqual(payload)
-    })
+    const mockRequest: AuthRequest = {
+      headers: {},
+    } as unknown as AuthRequest
 
-    it('should throw UnauthorizedException when user does not exist', async () => {
-      const payload: UserTokenData = {
-        sub: 'user-id',
-        email: 'deleted@example.com',
-        role: 1,
-      }
-      mockAuthRepository.findUserByEmail.mockResolvedValue(null)
+    const payload: AccountTokenData = {
+      sub: 'acc-001',
+      email: 'john@example.com',
+      role: 3,
+    }
 
-      await expect(strategy.validate(payload)).rejects.toThrow(
-        'Token inválido ou usuário não existe mais.',
-      )
-    })
+    const result = await strategy.validate(mockRequest, payload)
+
+    expect(mockAuthRepository.findAccountByEmail).toHaveBeenCalledWith(
+      'john@example.com',
+    )
+    expect(result).toEqual(payload)
+    expect(mockRequest['account']).toEqual(payload)
+  })
+
+  it('should throw UnauthorizedException when account does not exist', async () => {
+    mockAuthRepository.findAccountByEmail.mockResolvedValue(null)
+
+    const mockRequest: AuthRequest = {
+      headers: {},
+    } as unknown as AuthRequest
+
+    const payload: AccountTokenData = {
+      sub: 'acc-001',
+      email: 'deleted@example.com',
+      role: 3,
+    }
+
+    await expect(
+      strategy.validate(mockRequest, payload),
+    ).rejects.toThrow(UnauthorizedException)
   })
 })

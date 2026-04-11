@@ -1,8 +1,9 @@
 import { AuthRepository } from '@auth/auth.repository'
-import { UserTokenData } from '@auth/types/user/user-token.data.type'
+import { AccountTokenData } from '@auth/types/account/account-token.data.type'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
+import { Request } from 'express'
 
 import { ExtractJwt, Strategy } from 'passport-jwt'
 
@@ -23,18 +24,22 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: jwtRequest,
       ignoreExpiration: false,
+      passReqToCallback: true, // <--
     })
   }
 
-  async validate(payloadDecoded: UserTokenData): Promise<UserTokenData> {
-    const user = await this.authRepository.findUserByEmail(payloadDecoded.email)
+  async validate(req: Request, payloadDecoded: AccountTokenData): Promise<AccountTokenData> {
+    const account = await this.authRepository.findAccountByEmail(
+      payloadDecoded.email,
+    )
 
-    if (!user) {
+    if (!account) {
       throw new UnauthorizedException(
         'Token inválido ou usuário não existe mais.',
       )
     }
 
+    req['account'] = payloadDecoded
     return payloadDecoded
   }
 }

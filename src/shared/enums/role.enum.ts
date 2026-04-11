@@ -1,4 +1,4 @@
-export enum UserRole {
+export enum Role {
   UNSPECIFIED = 0,
   /** ADMIN - Dono da Plataforma (Você) */
   ADMIN = 1,

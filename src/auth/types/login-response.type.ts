@@ -1,7 +1,7 @@
 import { Tokens } from '@auth/types/tokens.type'
-import { UserFound } from './user/user-found.type'
+import { Account } from '@auth/types/account/account.type'
 
 export type LoginResponse = {
-  user: UserFound
+  account: Account
   tokens: Tokens
 }

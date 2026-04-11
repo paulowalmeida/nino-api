@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 
-import { UserRegisterRequestDTO } from '@auth/dtos/user-register-request.dto'
-import { UserCreated } from '@auth/types/user/user-created.type'
-import { UserFoundRepository } from '@auth/types/user/user-found.repository.type'
-import { UserRefreshTokenRespository } from '@auth/types/user/user-refresh-token.repository.type'
+import { NewAccountRequestDTO } from '@auth/dtos/new-account-request.dto'
+import { AccountRefreshToken } from '@auth/types/account/account-refresh-token.type'
+import { AccountRepository } from '@auth/types/account/account-repository.type'
+import { Account } from '@auth/types/account/account.type'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 
@@ -14,33 +14,20 @@ export class AuthRepository {
     private readonly prismaErrorService: PrismaErrorService,
   ) {}
 
-  async createUser(newRegister: UserRegisterRequestDTO): Promise<UserCreated> {
+  async createAccount(newAccount: NewAccountRequestDTO): Promise<Account> {
     try {
-      const newUser = await this.prisma.user.create({
+      const accountCreated = await this.prisma.account.create({
         data: {
           hashedRefreshToken: null,
+          email: newAccount.email,
+          password: newAccount.password,
           role: {
             connect: {
-              code: newRegister.role as unknown as number,
-            },
-          },
-          personalData: {
-            create: {
-              email: newRegister.email,
-              password: newRegister.password,
-              firstName: newRegister.firstName,
-              lastName: newRegister.lastName,
+              code: newAccount.role as unknown as number,
             },
           },
         },
         include: {
-          personalData: {
-            select: {
-              email: true,
-              firstName: true,
-              lastName: true,
-            },
-          },
           role: {
             omit: {
               id: true,
@@ -49,34 +36,25 @@ export class AuthRepository {
         },
         omit: {
           hashedRefreshToken: true,
-          personalDataId: true,
           roleId: true,
+          password: true,
+          userId: true,
         },
       })
-
-      return newUser
+      return accountCreated
     } catch (error) {
-      this.prismaErrorService.handleError(error, 'User already exists')
+      this.prismaErrorService.handleError(error)
     }
   }
 
-  async findUserByEmail(email: string): Promise<UserFoundRepository | null> {
+  async findAccountByEmail(email: string): Promise<AccountRepository | null> {
     try {
-      return await this.prisma.user.findFirst({
-        where: {
-          personalData: { email },
-        },
+      return await this.prisma.account.findFirst({
+        where: { email },
         omit: {
-          hashedRefreshToken: true,
-          personalDataId: true,
           roleId: true,
         },
         include: {
-          personalData: {
-            omit: {
-              id: true,
-            },
-          },
           role: {
             omit: {
               id: true,
@@ -89,19 +67,19 @@ export class AuthRepository {
     }
   }
 
-  async getRefreshToken(id: string): Promise<UserRefreshTokenRespository> {
+  async getRefreshToken(id: string): Promise<AccountRefreshToken> {
     try {
-      const result = await this.prisma.user.findUnique({
+      const result = await this.prisma.account.findUnique({
         where: { id },
         select: {
           id: true,
+          email: true,
           hashedRefreshToken: true,
-          personalData: { select: { email: true } },
           role: { select: { code: true } },
         },
       })
 
-      if (!result) throw new NotFoundException('User not found')
+      if (!result) throw new NotFoundException('Account not found')
 
       return result
     } catch (error) {
@@ -111,7 +89,7 @@ export class AuthRepository {
 
   async removeHashedRefreshToken(id: string): Promise<void> {
     try {
-      await this.prisma.user.update({
+      await this.prisma.account.update({
         where: { id },
         data: { hashedRefreshToken: null },
       })
@@ -120,25 +98,27 @@ export class AuthRepository {
     }
   }
 
-  async updateUserPassword(email: string, newPassword: string): Promise<void> {
+  async updateAccountPassword(
+    email: string,
+    newPassword: string,
+  ): Promise<void> {
     try {
-      await this.prisma.personalData.update({
+      await this.prisma.account.update({
         where: { email },
         data: { password: newPassword },
       })
     } catch (error) {
-      console.log(error)
       this.prismaErrorService.handleError(error)
     }
   }
 
   async updateRefreshToken(
-    userId: string,
+    accountId: string,
     hashedRefreshToken: string,
   ): Promise<void> {
     try {
-      await this.prisma.user.update({
-        where: { id: userId },
+      await this.prisma.account.update({
+        where: { id: accountId },
         data: { hashedRefreshToken },
       })
     } catch (error) {
