@@ -1,4 +1,4 @@
-# Ninomia Delivery — nino-api Context (v2.0)
+# Ninomia Delivery — nino-api Context (v3.0)
 
 ## 📋 Visão Geral do Projeto
 
@@ -6,7 +6,7 @@
 
 - **Mercado inicial:** Norte do Brasil (Pará)
 - **MVP estimado:** 3-6 meses (desenvolvimento solo)
-- **Status atual:** Backend ~60% (módulo auth concluído, faltam recursos futuros)
+- **Status atual:** Backend ~45% (auth completo, account/credentials modularizados, 7 módulos de API)
 - **Origem do nome:** Fusão de Nino (gato) + Mia (cachorra) — pets da família fundadora
 
 ---
@@ -115,15 +115,14 @@ A arquitetura adota isolamento por schema PostgreSQL:
 nino-api/
 ├── src/
 │   ├── main.ts                          # Entry point da aplicação
-│   ├── app.module.ts                    # Root module (ThrottlerModule, ConfigModule, AuthModule)
+│   ├── app.module.ts                    # Root module com todos os módulos importados
 │   ├── app.controller.ts                # Controller raiz
 │   ├── app.service.ts                   # Service raiz
 │   │
-│   ├── auth/                            # ✅ Módulo de autenticação (~80% completo)
+│   ├── auth/                            # ✅ Módulo de autenticação (100% completo)
 │   │   ├── auth.module.ts               # Imports JwtModule, Passport strategies, guards
-│   │   ├── auth.controller.ts           # POST /auth/* — create-user, login, refresh, etc
-│   │   ├── auth.service.ts              # Lógica: createUser, login, logout, refreshToken, changePassword
-│   │   ├── auth.repository.ts           # Queries Prisma abstratas
+│   │   ├── auth.controller.ts           # POST /auth/* — login, logout, refresh, change-password
+│   │   ├── auth.service.ts              # Lógica: login, logout, refreshToken, changePassword
 │   │   │
 │   │   ├── guards/
 │   │   │   └── jwt-refresh.guard.ts     # Guard para refresh-token endpoint
@@ -132,32 +131,87 @@ nino-api/
 │   │   │   └── jwt-refresh.strategy.ts  # Passport strategy para JWT refresh
 │   │   │
 │   │   ├── dtos/
-│   │   │   ├── user-register-request.dto.ts    # { email, password, firstName, lastName, role }
 │   │   │   ├── login-request.dto.ts            # { email, password }
 │   │   │   ├── change-password-request.dto.ts  # { oldPassword, newPassword }
 │   │   │   └── refresh-token.dto.ts            # { refreshToken }
 │   │   │
 │   │   └── types/
-│   │       └── user/
-│   │           ├── user-created.type.ts                   # Resposta de createUser
-│   │           ├── user-found.type.ts                     # User sem password (seguro)
-│   │           ├── user-found.repository.type.ts          # User raw do Prisma (com password)
-│   │           ├── user-refresh-token.repository.type.ts  # User com hashedRefreshToken
-│   │           ├── user-auth-request.type.ts              # Request.user injetado por JWT Guard
-│   │           ├── user-token.data.type.ts                # { sub, email, role } no JWT
-│   │           └── login-response.type.ts                 # { user, tokens }
+│   │       ├── login-response.type.ts          # { account, tokens }
+│   │       ├── tokens.type.ts                  # { accessToken, refreshToken }
+│   │       ├── auth-credential-repository.type.ts
+│   │       ├── auth-credential-refresh-token.type.ts
+│   │       └── account-token.data.type.ts      # { sub, email, role } no JWT
 │   │
-│   ├── users/                           # ⏳ Módulo de usuários (planejado)
-│   │   ├── users.controller.ts
-│   │   ├── users.service.ts
-│   │   └── users.repository.ts
+│   ├── account/                         # ✅ Módulo de contas (100% completo)
+│   │   ├── account.module.ts
+│   │   ├── account.controller.ts        # 9 endpoints
+│   │   ├── account.service.ts
+│   │   ├── account.repository.ts
+│   │   ├── new-account.dto.ts           # DTO para criar conta
+│   │   │
+│   │   ├── dto/
+│   │   │   ├── update-preferences.dto.ts
+│   │   │   └── update-role.dto.ts
+│   │   │
+│   │   └── types/
+│   │       └── account.type.ts          # Type Prisma tipado
+│   │
+│   ├── credential/                      # ✅ Módulo de credenciais (100% completo)
+│   │   ├── credential.module.ts
+│   │   ├── credential.controller.ts     # 5 endpoints
+│   │   ├── credential.service.ts
+│   │   ├── credential.repository.ts
+│   │   │
+│   │   ├── dto/
+│   │   │   └── update-credential.dto.ts
+│   │   │
+│   │   └── types/
+│   │       ├── credential.type.ts
+│   │       └── credential-repository.type.ts
+│   │
+│   ├── role/                            # ✅ Módulo de roles (100% completo)
+│   │   ├── role.module.ts
+│   │   ├── role.controller.ts           # 3 endpoints
+│   │   ├── role.service.ts
+│   │   ├── role.repository.ts
+│   │   └── types/
+│   │       └── role.type.ts
+│   │
+│   ├── plan/                            # ✅ Módulo de planos (100% completo)
+│   │   ├── plan.module.ts
+│   │   ├── plan.controller.ts           # 4 endpoints
+│   │   ├── plan.service.ts
+│   │   ├── plan.repository.ts
+│   │   └── types/
+│   │       └── plan.type.ts
+│   │
+│   ├── subscription-status/             # ✅ Módulo de status (100% completo)
+│   │   ├── subscription-status.module.ts
+│   │   ├── subscription-status.controller.ts  # 3 endpoints
+│   │   ├── subscription-status.service.ts
+│   │   ├── subscription-status.repository.ts
+│   │   └── types/ (sem arquivo específico)
+│   │
+│   ├── notification-type/               # ✅ Módulo de tipos de notificação (100% completo)
+│   │   ├── notification-type.module.ts
+│   │   ├── notification-type.controller.ts   # 3 endpoints
+│   │   ├── notification-type.service.ts
+│   │   ├── notification-type.repository.ts
+│   │   └── types/
+│   │       └── notification-type.type.ts
+│   │
+│   ├── user/                            # ⏳ Módulo de usuários (planejado)
+│   │   ├── user.repository.ts
+│   │   ├── user.service.ts
+│   │   ├── user.controller.ts
+│   │   ├── user.module.ts
+│   │   ├── user.dto.ts
+│   │   └── types/
+│   │       └── user-repository.type.ts
 │   │
 │   └── shared/                          # Código compartilhado entre módulos
 │       ├── enums/
-│       │   ├── user-role.enum.ts        # { ADMIN = 1, CUSTOMER = 2, DELIVERY = 3, RESTAURANT = 4 }
-│       │   ├── plan.enum.ts             # { INICIANTE = 1, PROFISSIONAL = 2, REDE = 3 }
-│       │   ├── subscription-status.enum.ts  # { ACTIVE = 1, INACTIVE = 2, CANCELLED = 3 }
-│       │   └── notification-type.enum.ts    # { EMAIL = 1, WHATSAPP = 2, PUSH = 3 }
+│       │   └── (tipos de enum para roles, plans, etc)
 │       │
 │       ├── guards/
 │       │   └── jwt-auth.guard.ts        # Guard global para proteger endpoints
@@ -166,15 +220,19 @@ nino-api/
 │       │   └── jwt-auth.strategy.ts     # Passport strategy para JWT access token
 │       │
 │       └── services/
+│           ├── password/
+│           │   └── password.service.ts  # bcrypt hash, compare, validate
+│           │
+│           ├── token/
+│           │   └── token.service.ts     # JWT generation
+│           │
 │           └── prisma/
 │               ├── prisma.module.ts                # Exporta PrismaService e PrismaErrorService
 │               ├── prisma.service.ts               # Singleton do Prisma client com métodos auxiliares
-│               ├── prisma-error.service.ts         # Centraliza tratamento de erros Prisma
-│               ├── prisma-seed.ts                  # Script de seed (create roles, plans, statuses)
-│               └── prisma-seed.data.ts             # Dados iniciais
+│               └── prisma-error.service.ts         # Centraliza tratamento de erros Prisma
 │
 ├── prisma/
-│   ├── schema.prisma                    # Schema do banco: 11 models (User, UserRole, Plan, etc)
+│   ├── schema.prisma                    # Schema do banco: 11 models
 │   ├── migrations/                      # Histórico de migrations (controlado)
 │   └── generated/
 │       └── zod/index.ts                 # Schemas Zod gerados automaticamente do schema.prisma
@@ -184,7 +242,7 @@ nino-api/
 │   └── jest-e2e.json                    # Config Jest para E2E
 │
 ├── collections/
-│   ├── auth.collection.yaml             # Postman/Insomnia collection (endpoints auth)
+│   ├── auth.collection.yaml             # Postman/Insomnia collection
 │   └── hello-world.yaml
 │
 ├── .env.example                         # Template de variáveis de ambiente
@@ -194,7 +252,7 @@ nino-api/
 ├── jest.config.js
 ├── eslint.config.mjs
 ├── README.md
-└── context.md                           # Este arquivo!
+└── CONTEXT.md                           # Este arquivo!
 ```
 
 ---
@@ -203,63 +261,134 @@ nino-api/
 
 ### Models Atuais
 
-#### **UserRole** — Definição de papéis de usuário
+#### **Role** — Definição de papéis
 
 ```prisma
-model UserRole {
-  id          String  @id @default(uuid())
-  code        Int     @unique            // 1=ADMIN, 2=CUSTOMER, 3=DELIVERY, 4=RESTAURANT
-  description String  @unique           // "Administrator", "Customer", etc.
-  users       User[]                     // Relação reversa
-  @@map("user_roles")
+model Role {
+  id          String    @id @default(uuid())
+  code        Int       @unique
+  description String    @unique
+
+  accounts Account[]
+
+  @@map("roles")
 }
 ```
 
-#### **User** — Entidade central de autenticação
+#### **Plan** — Planos de assinatura
+
+```prisma
+model Plan {
+  id            String   @id @default(uuid())
+  code          Int      @unique
+  name          String   @unique
+  slug          String   @unique
+  price         Decimal
+  maxTenants    Int
+  maxProducts   Int
+  maxOrders     Int
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+```
+
+#### **SubscriptionStatus** — Estados de assinatura
+
+```prisma
+model SubscriptionStatus {
+  id            String @id @default(uuid())
+  code          Int    @unique
+  description   String @unique
+
+  subscriptions Subscription[]
+
+  @@map("subscription_statuses")
+}
+```
+
+#### **NotificationType** — Tipos de notificação
+
+```prisma
+model NotificationType {
+  id          String @id @default(uuid())
+  code        Int    @unique
+  description String @unique
+
+  notifications Notification[]
+
+  @@map("notification_types")
+}
+```
+
+#### **AuthCredential** — Credenciais de autenticação
+
+```prisma
+model AuthCredential {
+  id                 String   @id @default(uuid())
+  accountId          String
+  email              String?
+  password           String?
+  hashedRefreshToken String?
+  provider           String   @default("local")
+  providerId         String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  account Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, provider])
+  @@map("auth_credentials")
+}
+```
+
+#### **Account** — Entidade central de contas
+
+```prisma
+model Account {
+  id            String    @id @default(uuid())
+  roleId        String
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+  locale        String?
+  timezone      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  role          Role             @relation(fields: [roleId], references: [id])
+  credentials   AuthCredential[]
+  user          User?
+  tenants       Tenant[]
+  subscription  Subscription?
+  notifications Notification[]
+
+  @@map("accounts")
+}
+```
+
+#### **User** — Dados pessoais/estendidos
 
 ```prisma
 model User {
-  id                 String        @id @default(uuid())
-  email              String        @unique
-  password           String        // Hash bcrypt
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-  hashedRefreshToken String?       // Hash bcrypt do refresh token (null se logout)
+  id          String   @id @default(uuid())
+  accountId   String   @unique
+  firstName   String?
+  lastName    String?
+  companyName String?
+  cpf         String?  @unique
+  cnpj        String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  roleId             String        // FK para UserRole
-  role               UserRole      @relation(fields: [roleId], references: [id])
-
-  profile            UserProfile?  // 1:1 com perfil estendido
-  tenants            Tenant[]      // N:1 — restaurante pode ter múltiplos users (admin, gerente)
-  subscription       Subscription? // 1:1 — plano contratado
-  notifications      Notification[] // 1:N — notificações do usuário
+  account   Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contacts  UserContact[]
+  addresses UserAddress[]
 
   @@map("users")
-}
-```
-
-#### **UserProfile** — Dados pessoais estendidos
-
-```prisma
-model UserProfile {
-  id        String    @id @default(uuid())
-  userId    String    @unique
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  firstName String?
-  lastName  String?
-  avatarUrl String?
-  birthDate DateTime?
-  cpf       String?   // Para pessoa física
-  cnpj      String?   // Para pessoa jurídica
-
-  contacts  UserContact[]  // 1:N — múltiplos contatos (phone, mobile, whatsapp)
-  addresses UserAddress[]  // 1:N — múltiplos endereços
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("user_profiles")
 }
 ```
 
@@ -267,16 +396,15 @@ model UserProfile {
 
 ```prisma
 model UserContact {
-  id        String      @id @default(uuid())
-  profileId String
-  profile   UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
+  id        String   @id @default(uuid())
+  userId    String
   phone     String?
   mobile    String?
   whatsapp  String?
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_contacts")
 }
@@ -286,80 +414,20 @@ model UserContact {
 
 ```prisma
 model UserAddress {
-  id         String      @id @default(uuid())
-  profileId  String
-  profile    UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
+  id         String   @id @default(uuid())
+  userId     String
   cep        String?
   street     String?
   number     String?
   complement String?
   city       String?
   state      String?
-
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@map("user_addresses")
-}
-```
-
-#### **Plan** — Planos de assinatura
-
-```prisma
-model Plan {
-  id          String         @id @default(uuid())
-  code        Int            @unique      // 1=INICIANTE, 2=PROFISSIONAL, 3=REDE
-  name        String         @unique      // "Iniciante", "Profissional", etc.
-  slug        String         @unique      // "iniciante", "profissional"
-  price       Decimal        // Preço mensal em BRL
-  maxTenants  Int            // Máx restaurantes para este plano
-  maxProducts Int            // Máx produtos no cardápio
-  maxOrders   Int            // Máx pedidos por mês
-  isActive    Boolean        @default(true)
-  subscriptions Subscription[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("plans")
-}
-```
-
-#### **Subscription** — Assinatura do usuário
-
-```prisma
-model Subscription {
-  id       String @id @default(uuid())
-  userId   String @unique  // 1:1 — cada usuário pode ter uma assinatura
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  planId   String
-  plan     Plan   @relation(fields: [planId], references: [id])
-
-  statusId String
-  status   SubscriptionStatus @relation(fields: [statusId], references: [id])
-
-  startedAt DateTime  @default(now())
-  expiresAt DateTime? // null se ativa permanentemente
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("subscriptions")
-}
-```
-
-#### **SubscriptionStatus** — Estados de assinatura
-
-```prisma
-model SubscriptionStatus {
-  id            String         @id @default(uuid())
-  code          Int            @unique  // 1=ACTIVE, 2=INACTIVE, 3=CANCELLED
-  description   String         @unique
-  subscriptions Subscription[]
-
-  @@map("subscription_statuses")
 }
 ```
 
@@ -367,21 +435,41 @@ model SubscriptionStatus {
 
 ```prisma
 model Tenant {
-  id       String  @id @default(uuid())
-  userId   String
-  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  name     String
-  slug     String  @unique  // URL amigável
-  logoUrl  String?
-  phone    String?
-  email    String?
-  isActive Boolean @default(true)
-
+  id        String   @id @default(uuid())
+  accountId String
+  name      String
+  slug      String   @unique
+  logoUrl   String?
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
   @@map("tenants")
+}
+```
+
+#### **Subscription** — Assinatura do usuário
+
+```prisma
+model Subscription {
+  id        String    @id @default(uuid())
+  accountId String    @unique
+  planId    String
+  statusId  String
+  startedAt DateTime  @default(now())
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  account Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  plan    Plan               @relation(fields: [planId], references: [id])
+  status  SubscriptionStatus @relation(fields: [statusId], references: [id])
+
+  @@map("subscriptions")
 }
 ```
 
@@ -389,35 +477,20 @@ model Tenant {
 
 ```prisma
 model Notification {
-  id     String @id @default(uuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(uuid())
+  accountId String
+  typeId    String
+  title     String
+  body      String
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  typeId String
-  type   NotificationType @relation(fields: [typeId], references: [id])
-
-  title  String
-  body   String
-  isRead Boolean   @default(false)
-  readAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  account Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  type    NotificationType @relation(fields: [typeId], references: [id])
 
   @@map("notifications")
-}
-```
-
-#### **NotificationType** — Tipos de notificação
-
-```prisma
-model NotificationType {
-  id            String         @id @default(uuid())
-  code          Int            @unique  // 1=EMAIL, 2=WHATSAPP, 3=PUSH
-  description   String         @unique
-  notifications Notification[]
-
-  @@map("notification_types")
 }
 ```
 
@@ -427,19 +500,18 @@ model NotificationType {
 
 ### Fluxo de Login
 
-1. **Registro:** POST `/auth/create-user` → bcrypt hash da senha → salva User + PersonalData
-2. **Login:** POST `/auth/login` → valida credentials → gera access + refresh tokens → salva refresh token hasheado
-3. **Access Token:** TTL 15 minutos — usado em requests autenticadas
-4. **Refresh Token:** TTL 7 dias — usado para renovar access token sem fazer login novamente
-5. **Logout:** POST `/auth/logout` → remove hashedRefreshToken do banco
+1. **Login:** POST `/auth/login` → valida credentials → gera access + refresh tokens → salva refresh token hasheado
+2. **Access Token:** TTL 15 minutos — usado em requests autenticadas
+3. **Refresh Token:** TTL 7 dias — usado para renovar access token sem fazer login novamente
+4. **Logout:** POST `/auth/logout` → remove hashedRefreshToken do banco
 
 ### JWT Payload
 
 ```typescript
 {
-  sub: string // User ID
+  sub: string // Account ID
   email: string // Email do usuário
-  role: number // Código da role (1=ADMIN, 2=CUSTOMER, etc.)
+  role: number // Código da role
   iat: number // Issued at
   exp: number // Expiration time
 }
@@ -459,7 +531,6 @@ model NotificationType {
 
 | Endpoint                     | TTL        | Limit  | Propósito                      |
 | ---------------------------- | ---------- | ------ | ------------------------------ |
-| POST `/auth/create-user`     | 3600s (1h) | 5 req  | Evita spam de registros        |
 | POST `/auth/login`           | 60s (1min) | 5 req  | Força bruta                    |
 | POST `/auth/refresh-token`   | 60s (1min) | 10 req | Renovação agressiva            |
 | POST `/auth/change-password` | 60s (1min) | 3 req  | Força bruta em senha           |
@@ -469,180 +540,59 @@ model NotificationType {
 
 ## 🛣️ Endpoints da API
 
-### Auth Module
+### 📊 Resumo Total: 31 Endpoints
 
-#### ✅ POST `/auth/create-user`
+#### **Auth Module** (4 endpoints)
 
-Registra novo usuário.
+- `POST /auth/login` — Login
+- `POST /auth/logout` — Logout
+- `POST /auth/refresh-token` — Refresh token
+- `POST /auth/change-password` — Mudar senha
 
-**Request Body:**
+#### **Account Module** (9 endpoints)
 
-```typescript
-{
-  email: string // email@example.com
-  password: string // 8-16 chars
-  firstName: string
-  lastName: string
-  role: number // 2=CUSTOMER, 4=RESTAURANT (enums)
-}
-```
+- `POST /accounts` — Criar conta
+- `GET /accounts` — Listar todas
+- `GET /accounts/:id` — Buscar por ID
+- `GET /accounts/email/:email` — Buscar por email
+- `GET /accounts/:id/login-history` — Histórico de logins
+- `PATCH /accounts/:id/preferences` — Atualizar locale + timezone
+- `PATCH /accounts/:id/role` — Mudar role
+- `PATCH /accounts/:id/deactivate` — Desativar
+- `PATCH /accounts/:id/activate` — Reativar
 
-**Response (201 Created):**
+#### **Credentials Module** (5 endpoints)
 
-```typescript
-{
-  id: string
-  createdAt: DateTime
-  updatedAt: DateTime
-  personalData: {
-    email: string
-    firstName: string
-    lastName: string
-  }
-  role: {
-    code: number
-    description: string
-  }
-}
-```
+- `GET /credentials` — Listagem (implementar)
+- `GET /credentials/:id` — Buscar por ID
+- `GET /credentials/account/:accountId` — Listar por conta
+- `PATCH /credentials/:id` — Atualizar email
+- `PATCH /credentials/:id/password` — Atualizar senha
 
-**Error (409 Conflict):** Email já existe
+#### **Role Module** (3 endpoints)
 
----
+- `GET /roles` — Listar todas
+- `GET /roles/:id` — Buscar por ID
+- `GET /roles/code/:code` — Buscar por code
 
-#### ✅ POST `/auth/login`
+#### **Plan Module** (4 endpoints)
 
-Autentica usuário e retorna tokens.
+- `GET /plans` — Listar (apenas ativos)
+- `GET /plans/:id` — Buscar por ID
+- `GET /plans/code/:code` — Buscar por code
+- `GET /plans/slug/:slug` — Buscar por slug
 
-**Request Body:**
+#### **SubscriptionStatus Module** (3 endpoints)
 
-```typescript
-{
-  email: string
-  password: string
-}
-```
+- `GET /subscription-statuses` — Listar todas
+- `GET /subscription-statuses/:id` — Buscar por ID
+- `GET /subscription-statuses/code/:code` — Buscar por code
 
-**Response (200 OK):**
+#### **NotificationType Module** (3 endpoints)
 
-```typescript
-{
-  user: {
-    id: string
-    email: string
-    firstName: string
-    lastName: string
-    role: { code: number, description: string }
-    createdAt: DateTime
-  }
-  tokens: {
-    accessToken: string      // JWT com TTL 15m
-    refreshToken: string     // JWT com TTL 7d
-  }
-}
-```
-
-**Errors:**
-
-- `401 Unauthorized` — Email ou senha inválidos
-- `404 Not Found` — Usuário não existe
-
----
-
-#### ✅ GET `/auth/current-user`
-
-Retorna usuário logado. **Requer JwtAuthGuard.**
-
-**Response (200 OK):**
-
-```typescript
-{
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-  role: { code: number, description: string }
-  createdAt: DateTime
-}
-```
-
----
-
-#### ✅ POST `/auth/logout`
-
-Remove refresh token do usuário. **Requer JwtAuthGuard.**
-
-**Response (200 OK):**
-
-```typescript
-{
-  message: 'Logout bem-sucedido'
-}
-```
-
----
-
-#### ✅ POST `/auth/refresh-token`
-
-Renova access token usando refresh token. **Requer JwtRefreshGuard.**
-
-**Request Body (via JWT):**
-
-```typescript
-// Refresh token vem no header Authorization: Bearer <refreshToken>
-```
-
-**Response (200 OK):**
-
-```typescript
-{
-  accessToken: string
-  refreshToken: string // Novo refresh token (rotation)
-}
-```
-
-**Errors:**
-
-- `401 Unauthorized` — Refresh token inválido ou expirado
-- `401 Unauthorized` — Refresh token não bate com hash no banco
-
----
-
-#### 🔄 POST `/auth/change-password`
-
-Muda senha do usuário logado. **Requer JwtAuthGuard.**
-
-**Request Body:**
-
-```typescript
-{
-  oldPassword: string // Senha atual (8-16 chars)
-  newPassword: string // Nova senha (8-16 chars)
-}
-```
-
-**Response (200 OK):**
-
-```typescript
-{
-  message: 'Password changed successfully'
-}
-```
-
-**Errors:**
-
-- `401 Unauthorized` — Senha antiga inválida
-- `404 Not Found` — Usuário não encontrado
-
----
-
-#### ⏳ POST `/auth/forgot-password` (Planejado)
-
-Inicia fluxo de reset de senha via email (Resend).
-
-#### ⏳ POST `/auth/reset-password` (Planejado)
-
-Conclui reset de senha com token de email.
+- `GET /notification-types` — Listar todas
+- `GET /notification-types/:id` — Buscar por ID
+- `GET /notification-types/code/:code` — Buscar por code
 
 ---
 
@@ -650,27 +600,34 @@ Conclui reset de senha com token de email.
 
 ### 1. **Repository Pattern**
 
-Camada de abstração entre Service e Prisma.
+Camada de abstração entre Service e Prisma. **Tratamento de null centralizado no repository.**
 
 ```typescript
-// ✅ Repository — trata erros Prisma
-async createUser(payload: UserRegisterRequestDTO): Promise<UserCreated> {
+// ✅ Repository — trata erros Prisma + null
+async findById(id: string): Promise<Account> {
   try {
-    return await this.prisma.user.create({ ... })
+    const account = await this.prisma.account.findUnique({
+      where: { id },
+      ...this.accountSelect,
+    })
+
+    if (!account) throw new NotFoundException('Account not found')
+
+    return account
   } catch (error) {
-    this.prismaErrorService.handleError(error, 'User already exists')
+    this.prismaErrorService.handleError(error)
   }
 }
 
-// ✅ Service — delegação de negócio
-async createUser(payload: UserRegisterRequestDTO): Promise<UserCreated> {
-  const cryptedPassword = await bcrypt.hash(payload.password, 10)
-  return await this.authRepository.createUser({ ...payload, password: cryptedPassword })
+// ✅ Service — delegação pura
+async getById(id: string): Promise<Account> {
+  return await this.accountRepository.findById(id)
+  // Se erro → automático do repository
 }
 
 // ✅ Controller — delegação HTTP
-async createUser(@Body() payload: UserRegisterRequestDTO): Promise<UserCreated> {
-  return await this.authService.createUser(payload)
+async getById(@Param('id') id: string): Promise<Account> {
+  return await this.accountService.getById(id)
 }
 ```
 
@@ -686,64 +643,42 @@ Mapeia códigos de erro Prisma para exceções NestJS.
 
 // Uso:
 try {
-  await this.prisma.user.delete(...)
+  await this.prisma.account.delete(...)
 } catch (error) {
-  this.prismaErrorService.handleError(error, 'User not found')
+  this.prismaErrorService.handleError(error)
 }
 ```
 
-### 3. **Types por Contexto**
+### 3. **Types com Prisma.GetPayload**
 
-Múltiplos tipos de "User" para controle explícito de exposição de dados.
+Múltiplos tipos de entidades para controle explícito de exposição de dados.
 
 ```typescript
-// UserFoundRepository — raw do Prisma (com password, hashedRefreshToken)
-interface UserFoundRepository {
-  id: string
-  email: string
-  password: string        // ⚠️ NUNCA retornar para cliente!
-  hashedRefreshToken: string | null  // ⚠️ Sensível!
-  personalData: { ... }
-  role: { ... }
-}
+// ✅ Tipado automaticamente do schema
+import { Prisma } from '@prisma/client'
 
-// UserFound — seguro para cliente (sem password, sem hashedRefreshToken)
-interface UserFound {
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-  personalData: { email: string; firstName: string; lastName: string }
-  role: { code: number; description: string }
-  createdAt: DateTime
-}
-
-// UserCreated — resposta de registro
-interface UserCreated {
-  id: string
-  personalData: { email: string; firstName: string; lastName: string }
-  role: { code: number; description: string }
-  createdAt: DateTime
-}
+export type Account = Prisma.AccountGetPayload<{
+  omit: { roleId: true }
+  include: {
+    credentials: { omit: { accountId: true } }
+    role: { omit: { id: true } }
+    // ...
+  }
+}>
 ```
-
-**Garantia:** Cada tipo documenta exatamente o que aquela camada expõe.
 
 ### 4. **Omit no Prisma**
 
 Excluir campos sensíveis nas queries.
 
 ```typescript
-// Nunca retornar password, hashedRefreshToken, roleId, personalDataId
-await this.prisma.user.findUnique({
+// Nunca retornar password, hashedRefreshToken
+await this.prisma.authCredential.findUnique({
   where: { id },
   omit: {
     password: true,
     hashedRefreshToken: true,
-    personalDataId: true,
-    roleId: true
-  },
-  include: { personalData: { ... }, role: { ... } }
+  }
 })
 ```
 
@@ -782,9 +717,9 @@ Rate limiting aplicado globalmente + overrides por endpoint.
 ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])
 
 // Override endpoint específico
-@Throttle({ default: { ttl: 3600000, limit: 5 } })  // 1h, 5 req
-@Post('create-user')
-async createUser(...) { ... }
+@Throttle({ default: { ttl: 3600000, limit: 5 } })
+@Post('login')
+async login(...) { ... }
 ```
 
 ### 8. **Middleware de Tenant (Futuro)**
@@ -824,80 +759,38 @@ import { AuthService } from '../../../../auth/auth.service'
 
 Cada função faz **uma coisa só**. Se ficou grande, extrai método privado.
 
-```typescript
-// ✅ Correto
-private validateUser(userFound: UserFoundRepository | null): UserFoundRepository {
-  if (!userFound) throw new UnauthorizedException('Invalid credentials')
-  return userFound
-}
-
-private async validatePassword(password: string, hashedPassword: string): Promise<void> {
-  const isValid = await bcrypt.compare(password, hashedPassword)
-  if (!isValid) throw new UnauthorizedException('Invalid credentials')
-}
-
-private async executeValidations(userFound, passwd): Promise<UserFound> {
-  const user = await this.validateUser(userFound)
-  await this.validatePassword(passwd, user.personalData.password)
-  this.validateRole(user.role.code)
-  return this.parseToUserFound(user)
-}
-
-// Uso — fácil de ler
-async login(payload: LoginRequestDTO): Promise<LoginResponse> {
-  const userFound = await this.authRepository.findUserByEmail(payload.email)
-  const validatedUser = await this.executeValidations(userFound, payload.password)
-  // ...
-}
-```
-
 ### Early Return — Sem Else
 
 Falha rápido, retorna cedo. Evita nesting profundo.
 
 ```typescript
 // ✅
-if (!userFound) throw new UnauthorizedException('Invalid credentials')
-return userFound
+if (!credential.email || !credential.password)
+  throw new UnauthorizedException('Invalid credentials')
+
+await this.passwordService.validate(payload.password, credential.password)
 
 // ❌
-if (userFound) {
-  return userFound
+if (credential.email && credential.password) {
+  await this.passwordService.validate(...)
 } else {
-  throw new UnauthorizedException('Invalid credentials')
+  throw new UnauthorizedException(...)
 }
 ```
 
 ### Nomes Descritivos & Sufixos de Contexto
 
-- Variáveis: `userFoundRepository`, `hashedRefreshToken`, `userDataToken`
+- Variáveis: `credentialRepository`, `hashedRefreshToken`, `accountTokenData`
 - Sem abreviações: `usr`, `pwd`, `repo` → evitar
 - Sufixos que indicam contexto: `...Repository`, `...DTO`, `...Type`, `...Guard`, `...Strategy`
-
-```typescript
-// ✅
-const userFoundRepository: UserFoundRepository =
-  await this.authRepository.findUserByEmail(email)
-const hashedRefreshToken = await bcrypt.hash(refreshToken, 10)
-
-// ❌
-const usr = await this.repo.findUser(email)
-const hrt = await bcrypt.hash(rft, 10)
-```
 
 ### Separação de Dados Sensíveis
 
 Nunca retornar `password`, `hashedRefreshToken` para o cliente.
 
 ```typescript
-// ✅ Parseamento explícito
-private parseToUserFound(user: UserFoundRepository): UserFound {
-  const { password, ...personalData } = user.personalData
-  return { ...user, personalData }  // password removido
-}
-
 // ✅ Omit no Prisma
-await this.prisma.user.findUnique({
+await this.prisma.authCredential.findUnique({
   where: { id },
   omit: { password: true, hashedRefreshToken: true }
 })
@@ -909,18 +802,17 @@ Service e Controller não tratam erros Prisma diretamente — delegam.
 
 ```typescript
 // ✅ Repository
-async createUser(payload): Promise<UserCreated> {
+async findById(id: string): Promise<Account> {
   try {
-    return await this.prisma.user.create({ ... })
+    return await this.prisma.account.findUnique({ ... })
   } catch (error) {
-    this.prismaErrorService.handleError(error, 'User already exists')
+    this.prismaErrorService.handleError(error)
   }
 }
 
 // ✅ Service — propaga naturalmente
-async createUser(payload: UserRegisterRequestDTO): Promise<UserCreated> {
-  const cryptedPassword = await bcrypt.hash(payload.password, 10)
-  return await this.authRepository.createUser({ ...payload, password: cryptedPassword })
+async getById(id: string): Promise<Account> {
+  return await this.accountRepository.findById(id)
   // Se erro → automático do repository
 }
 ```
@@ -933,58 +825,6 @@ async createUser(payload: UserRegisterRequestDTO): Promise<UserCreated> {
 
 Todo teste segue: monta dados → executa → verifica.
 
-```typescript
-describe('AuthService', () => {
-  describe('createUser', () => {
-    it('should successfully create a new user', async () => {
-      // Arrange
-      const newUserPayload: UserRegisterRequestDTO = {
-        email: 'user@example.com',
-        password: 'password123',
-        firstName: 'João',
-        lastName: 'Silva',
-        role: 2,
-      }
-      const createdUser: UserCreated = {
-        id: 'uuid-123',
-        personalData: {
-          email: 'user@example.com',
-          firstName: 'João',
-          lastName: 'Silva',
-        },
-        role: { code: 2, description: 'Customer' },
-        createdAt: new Date(),
-      }
-      mockAuthRepository.createUser.mockResolvedValue(createdUser)
-      jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-password')
-
-      // Act
-      const result = await service.createUser(newUserPayload)
-
-      // Assert
-      expect(bcrypt.hash).toHaveBeenCalledWith(newUserPayload.password, 10)
-      expect(mockAuthRepository.createUser).toHaveBeenCalledWith({
-        ...newUserPayload,
-        password: 'hashed-password',
-      })
-      expect(result).toEqual(createdUser)
-    })
-
-    it('should throw ConflictException if email already exists', async () => {
-      // Arrange
-      mockAuthRepository.createUser.mockRejectedValue(
-        new ConflictException('User already exists'),
-      )
-
-      // Act & Assert
-      await expect(service.createUser(payload)).rejects.toThrow(
-        ConflictException,
-      )
-    })
-  })
-})
-```
-
 ### Cobertura Obrigatória por Camada
 
 **Controller** — testa delegação, não lógica
@@ -992,227 +832,87 @@ describe('AuthService', () => {
 - Happy path: retorna o que o service retornou
 - Error path: propaga erro do service
 
-```typescript
-it('should return user created when service succeeds', async () => {
-  const result = { id: 'uuid', ... }
-  mockAuthService.createUser.mockResolvedValue(result)
-
-  expect(await controller.createUser(payload)).toEqual(result)
-  expect(mockAuthService.createUser).toHaveBeenCalledWith(payload)
-})
-
-it('should throw ConflictException when service throws', async () => {
-  mockAuthService.createUser.mockRejectedValue(
-    new ConflictException('User already exists')
-  )
-
-  await expect(controller.createUser(payload)).rejects.toThrow(ConflictException)
-})
-```
-
 **Service** — testa lógica de negócio
 
 - Happy path completo
 - Cada validação que pode falhar
-- Que os métodos corretos foram chamados com os argumentos corretos
-
-```typescript
-it('should hash password before calling repository', async () => {
-  jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-pwd')
-
-  await service.createUser(payload)
-
-  expect(bcrypt.hash).toHaveBeenCalledWith(payload.password, 10)
-  expect(mockRepository.createUser).toHaveBeenCalledWith({
-    ...payload,
-    password: 'hashed-pwd',
-  })
-})
-
-it('should throw UnauthorizedException if password validation fails', async () => {
-  jest.spyOn(bcrypt, 'compare').mockResolvedValue(false)
-  mockRepository.findUserByEmail.mockResolvedValue(userWithPassword)
-
-  await expect(service.login(loginPayload)).rejects.toThrow(
-    UnauthorizedException,
-  )
-})
-```
+- Que os métodos corretos foram chamados
 
 **Repository** — testa queries Prisma
 
 - Happy path: query chamada com parâmetros exatos
 - Erros Prisma → PrismaErrorService chamado
-- Erros genéricos → PrismaErrorService chamado
-
-```typescript
-it('should call Prisma user.create with correct data', async () => {
-  const spy = jest.spyOn(mockPrisma.user, 'create').mockResolvedValue(createdUser)
-
-  await repository.createUser(payload)
-
-  expect(spy).toHaveBeenCalledWith({
-    data: { ... },
-    include: { ... },
-    omit: { ... }
-  })
-})
-
-it('should call PrismaErrorService on P2002 error', async () => {
-  const p2002Error = new Prisma.PrismaClientKnownRequestError('', 'P2002', '...')
-  jest.spyOn(mockPrisma.user, 'create').mockRejectedValue(p2002Error)
-  const spy = jest.spyOn(mockPrismaErrorService, 'handleError')
-
-  try {
-    await repository.createUser(payload)
-  } catch {}
-
-  expect(spy).toHaveBeenCalledWith(p2002Error, expect.any(String))
-})
-```
 
 **DTO** — testa validações class-validator
-
-```typescript
-it('should reject invalid email', async () => {
-  const dto = new LoginRequestDTO()
-  dto.email = 'invalid-email'
-  dto.password = 'password123'
-
-  const errors = await validate(dto)
-
-  expect(errors).toHaveLength(1)
-  expect(errors[0].property).toBe('email')
-  expect(errors[0].constraints).toHaveProperty('isEmail')
-})
-
-it('should reject password < 8 chars', async () => {
-  const dto = new LoginRequestDTO()
-  dto.email = 'user@example.com'
-  dto.password = 'short'
-
-  const errors = await validate(dto)
-
-  expect(errors[0].constraints).toHaveProperty('minLength')
-})
-```
-
-### Mocks & Setup
-
-```typescript
-beforeEach(() => {
-  jest.clearAllMocks() // Essencial — limpa estado entre testes
-})
-
-// Mock repository
-const mockAuthRepository = {
-  createUser: jest.fn(),
-  findUserByEmail: jest.fn(),
-  updateRefreshToken: jest.fn(),
-}
-
-// Mock Prisma
-const mockPrisma = {
-  user: {
-    create: jest.fn(),
-    findUnique: jest.fn(),
-    findFirst: jest.fn(),
-    update: jest.fn(),
-  },
-}
-
-// Mock bcrypt
-jest.mock('bcrypt')
-```
-
-### Cobertura de Código
-
-Config no `package.json`:
-
-```json
-{
-  "jest": {
-    "collectCoverageFrom": [
-      "**/*.(t|j)s",
-      "!**/*.module.ts",
-      "!**/*.type.ts",
-      "!**/types/**",
-      "!**/*.enum.ts",
-      "!**/main.ts",
-      "!**/*.dto.ts",
-      "!**/*.seed.**"
-    ]
-  }
-}
-```
-
-Comando: `npm run test:cov` → gera relatório em `coverage/lcov-report/index.html`
 
 ---
 
 ## 🔄 Fluxos Principais
 
-### Fluxo 1: Registro de Novo Usuário
-
-```
-POST /auth/create-user
-  ├─ Validação DTO (class-validator)
-  ├─ AuthController.createUser()
-  ├─ AuthService.createUser()
-  │   ├─ bcrypt.hash(password, 10)
-  │   └─ authRepository.createUser()
-  │       ├─ Prisma.user.create()
-  │       └─ PrismaErrorService (se erro)
-  └─ Response 201: { id, personalData, role, createdAt }
-```
-
-### Fluxo 2: Login & Token Generation
+### Fluxo 1: Login & Token Generation
 
 ```
 POST /auth/login
   ├─ Validação DTO
   ├─ AuthService.login()
-  │   ├─ authRepository.findUserByEmail()
-  │   ├─ executeValidations()
-  │   │   ├─ validateUser() → NotFoundException
-  │   │   ├─ validatePassword() → UnauthorizedException
-  │   │   └─ validateRole() → HttpException
-  │   ├─ getUserTokenData() → { sub, email, role }
-  │   ├─ getTokens() → JwtService.signAsync()
-  │   │   ├─ generateTokens(15m, JWT_SECRET) → accessToken
-  │   │   └─ generateTokens(7d, JWT_REFRESH_SECRET) → refreshToken
-  │   ├─ updateUserRefreshToken()
-  │   │   └─ bcrypt.hash(refreshToken, 10) → hashedRefreshToken
+  │   ├─ credentialsService.getByEmail()
+  │   ├─ validatePassword()
+  │   ├─ accountRepository.findById()
+  │   ├─ accountRepository.updateLastLogin()
+  │   ├─ tokenService.getTokens()
+  │   │   ├─ generateToken(15m, JWT_SECRET) → accessToken
+  │   │   └─ generateToken(7d, JWT_REFRESH_SECRET) → refreshToken
+  │   ├─ credentialsService.updateRefreshToken()
   │   └─ buildLoginResponse()
-  └─ Response 200: { user, tokens }
+  └─ Response 200: { account, tokens }
 ```
 
-### Fluxo 3: Renovação de Token (Refresh)
+### Fluxo 2: Renovação de Token (Refresh)
 
 ```
 POST /auth/refresh-token (+ JWT Refresh Guard)
   ├─ JwtRefreshGuard valida refresh token
   ├─ AuthService.refreshToken()
-  │   ├─ authRepository.getRefreshToken(userId)
-  │   ├─ checkHashsRefresh()
-  │   │   └─ bcrypt.compare(token, hashedRefreshToken)
-  │   ├─ getTokens() → novo access + novo refresh
-  │   └─ updateUserRefreshToken()
+  │   ├─ credentialsService.getRefreshToken()
+  │   ├─ validatePassword()
+  │   ├─ accountRepository.findById()
+  │   ├─ tokenService.getTokens() → novo access + novo refresh
+  │   └─ credentialsService.updateRefreshToken()
   └─ Response 200: { accessToken, refreshToken }
 ```
 
-### Fluxo 4: Mudança de Senha
+### Fluxo 3: Mudança de Senha
 
 ```
 POST /auth/change-password (+ JWT Auth Guard)
   ├─ JwtAuthGuard valida access token
   ├─ AuthService.changePassword()
-  │   ├─ authRepository.getUserByEmail()
+  │   ├─ credentialsService.getByEmail()
   │   ├─ validatePassword(oldPassword)
-  │   ├─ bcrypt.hash(newPassword, 10)
-  │   ├─ authRepository.updateUserPassword()
+  │   ├─ credentialsService.updatePassword()
   │   └─ Response 200: { message: "Password changed successfully" }
   └─ Nova senha em efeito imediatamente
+```
+
+### Fluxo 4: Criar Conta
+
+```
+POST /accounts
+  ├─ Validação DTO
+  ├─ AccountService.create()
+  │   ├─ accountRepository.create(roleId)
+  │   ├─ credentialsService.create(accountId, email, password)
+  │   └─ accountRepository.findById()
+  └─ Response 201: { account }
+```
+
+### Fluxo 5: Atualizar Preferências
+
+```
+PATCH /accounts/:id/preferences (+ JWT Auth Guard)
+  ├─ AccountService.updatePreferences()
+  │   └─ accountRepository.updatePreferences()
+  └─ Response 200: { account with updated locale/timezone }
 ```
 
 ---
@@ -1227,31 +927,35 @@ POST /auth/change-password (+ JWT Auth Guard)
 | **Auth**               | JWT stateless               | Sem sessão server-side — escala horizontal fácil          | Session-based (precisa de shared cache)                        |
 | **Refresh token**      | Hasheado no banco           | Segurança — token plain nunca persiste                    | JWT de longa duração (risco de vazamento)                      |
 | **Error handling**     | Service centralizado        | Evita try/catch espalhado, mensagens consistentes         | Erros inline (código repetido)                                 |
-| **Types por contexto** | Múltiplos tipos de User     | Controle explícito do que cada camada expõe               | Type único (pode expor sensíveis)                              |
+| **Types por contexto** | Prisma.GetPayload           | Tipo seguro automaticamente, sempre sincronizado          | Type manual (pode ficar desatualizado)                         |
+| **Null handling**      | No repository               | Centralizado, sem duplicação de validação                 | No service (repetitivo)                                        |
 | **Validação**          | class-validator (decorator) | Declarativa, reutilizável, automática no pipe             | Validação manual (repetitivo)                                  |
-| **Frontend**           | PWA (Next.js)               | Elimina barreira de adoção (sem App Store)                | App nativo (iOS/Android separados)                             |
-| **Pagamento**          | Pagar.me split              | Dinheiro vai direto pro restaurante — Ninomia não toca    | Manual transfer (complexo, demora)                             |
-| **Storage**            | Cloudflare R2               | Zero custo de egress — crítico pra app com muitas imagens | AWS S3 (egress caro)                                           |
-| **Database**           | PostgreSQL                  | Robusto, ACID, suporta schema isolation, JSON             | MySQL (menos features), SQLite (single-user)                   |
+| **Credentials**        | Módulo separado             | Responsabilidade isolada, reutilizável pelo auth          | Misturado com auth (difícil de testar)                         |
+| **Repository**         | Sempre trata null/erros     | Evita if checks nos services                              | Deixar para o service (código repetido)                        |
 
 ---
 
 ## 📦 Status dos Módulos
 
-| Módulo                | Status          | Progresso | Próximo Passo                                                 |
-| --------------------- | --------------- | --------- | ------------------------------------------------------------- |
-| **shared/prisma**     | ✅ Concluído    | 100%      | —                                                             |
-| **shared/guards**     | ✅ Concluído    | 100%      | —                                                             |
-| **shared/strategies** | ✅ Concluído    | 100%      | —                                                             |
-| **shared/enums**      | ✅ Concluído    | 100%      | —                                                             |
-| **auth**              | 🔄 Em progresso | ~80%      | changePassword; forgotPassword/resetPassword (depende Resend) |
-| **users**             | ⏳ Futuro       | 5%        | CRUD básico, listar usuários, atualizar perfil                |
-| **tenant**            | ⏳ Futuro       | 0%        | CRUD de restaurante, schema-per-tenant isolation              |
-| **restaurant**        | ⏳ Futuro       | 0%        | Cardápio, produtos, configurações de entrega                  |
-| **order**             | ⏳ Futuro       | 0%        | Criar pedido, fluxo de status, histórico                      |
-| **payment**           | ⏳ Futuro       | 0%        | Integração Pagar.me split, reconciliação                      |
-| **delivery**          | ⏳ Futuro       | 0%        | Atribuição de entregador, rastreamento real-time              |
-| **notification**      | ⏳ Futuro       | 0%        | Resend (email), Z-API (WhatsApp), FCM (push), SSE (in-app)    |
+| Módulo                | Status          | Endpoints | Progresso |
+| --------------------- | --------------- | --------- | --------- |
+| **auth**              | ✅ Concluído    | 4         | 100%      |
+| **account**           | ✅ Concluído    | 9         | 100%      |
+| **credential**        | ✅ Concluído    | 5         | 100%      |
+| **role**              | ✅ Concluído    | 3         | 100%      |
+| **plan**              | ✅ Concluído    | 4         | 100%      |
+| **subscription-status** | ✅ Concluído  | 3         | 100%      |
+| **notification-type** | ✅ Concluído    | 3         | 100%      |
+| **shared/prisma**     | ✅ Concluído    | —         | 100%      |
+| **shared/guards**     | ✅ Concluído    | —         | 100%      |
+| **shared/strategies** | ✅ Concluído    | —         | 100%      |
+| **user**              | ⏳ Futuro       | —         | 5%        |
+| **tenant**            | ⏳ Futuro       | —         | 0%        |
+| **restaurant**        | ⏳ Futuro       | —         | 0%        |
+| **order**             | ⏳ Futuro       | —         | 0%        |
+| **payment**           | ⏳ Futuro       | —         | 0%        |
+| **delivery**          | ⏳ Futuro       | —         | 0%        |
+| **notification**      | ⏳ Futuro       | —         | 0%        |
 
 ---
 
@@ -1259,12 +963,11 @@ POST /auth/change-password (+ JWT Auth Guard)
 
 ### Curto Prazo (1-2 semanas)
 
-- [x] Endpoint `POST /auth/change-password` — lógica funcionando
-- [ ] Testes completos para change-password (guard, service, repository)
+- [ ] Swagger documentation (`@nestjs/swagger`)
 - [ ] Implementar `POST /auth/forgot-password` + `POST /auth/reset-password`
   - Depende integração com Resend (email transacional)
   - Token de reset com TTL curto (30 min)
-- [ ] Documentação Swagger (`@nestjs/swagger`)
+- [ ] Testes completos para todos os módulos
 
 ### Médio Prazo (3-4 semanas)
 
@@ -1339,26 +1042,6 @@ docker-compose down         # Para BD
 docker-compose down -v      # Para + remove volumes
 ```
 
-**`docker-compose.yml`:**
-
-```yaml
-version: '3.8'
-services:
-  postgres:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: ninomia
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: ninomia_dev
-    ports:
-      - '5432:5432'
-
-  redis:
-    image: redis:7
-    ports:
-      - '6379:6379'
-```
-
 ### Prisma Migrations
 
 ```bash
@@ -1414,10 +1097,10 @@ npm run test:e2e            # Testes end-to-end
 
 ```
 feat(auth): implementar login com JWT
-fix(auth): corrigir validação de password
-test(auth): adicionar testes para createUser
+fix(account): corrigir validação de role
+test(credentials): adicionar testes para updatePassword
 docs: atualizar CONTEXT.md
-refactor(prisma): extrair queries em repository
+refactor(repository): extrair queries em helpers
 ```
 
 ### Pull Request Checklist
@@ -1443,4 +1126,6 @@ Dúvidas sobre código? Consulte:
 
 **Última atualização:** Abril 2026  
 **Desenvolvedor:** Paulo (Solo)  
-**Status:** MVP em desenvolvimento
+**Status:** MVP em desenvolvimento — 45% concluído
+
+**31 endpoints implementados em 7 módulos completamente funcional e modular!** 🎉

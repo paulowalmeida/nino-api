@@ -1,26 +1,32 @@
 import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 
+import { AccountModule } from '@account/account.module'
 import { AuthController } from '@auth/auth.controller'
-import { AuthRepository } from '@auth/auth.repository'
+
+import { AuthService } from '@auth/auth.service'
 import { JwtRefreshStrategy } from '@auth/jwt-refresh.strategy'
-import { AuthService } from '@auth/services/auth.service'
+import { CredentialsModule } from '@credential/credential.module'
+import { PasswordService } from '@shared/services/password/password.service'
 import { PrismaModule } from '@shared/services/prisma/prisma.module'
+import { TokenService } from '@shared/services/token/token.service'
 import { JwtAuthStrategy } from '@shared/strategies/jwt-auth.strategy'
-import { PasswordService } from './services/password.service'
-import { TokenService } from './services/token.service'
 
 @Module({
-  imports: [PrismaModule, JwtModule.register({})],
+  imports: [
+    PrismaModule,
+    JwtModule.register({}),
+    AccountModule,
+    CredentialsModule,
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,
-    AuthRepository,
     JwtAuthStrategy,
     JwtRefreshStrategy,
     PasswordService,
     TokenService,
   ],
-  exports: [JwtAuthStrategy, JwtRefreshStrategy],
+  exports: [JwtAuthStrategy, JwtRefreshStrategy, PasswordService],
 })
 export class AuthModule {}
