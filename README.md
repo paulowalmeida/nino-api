@@ -12,7 +12,7 @@
 [![JWT](https://img.shields.io/badge/JWT-Auth-orange.svg)](https://jwt.io)
 [![License](https://img.shields.io/badge/License-Proprietary-red.svg)](#)
 
-**[🌐 Website](https://ninomia.com) • [📖 Documentation](./CONTEXT.md) • [🐛 Issues](#) • [💬 Discord](#)**
+**[🌐 Website](https://ninomia.com) • [📖 Documentation](./CONTEXT.md) • [🐛 Issues](#) •**
 
 </div>
 
@@ -356,7 +356,7 @@ PORT=3001 npm run start:dev
 
 **Proprietary.** Código fechado — não distribuir sem permissão.
 
-Desenvolvido por **Paulo** — Solo developer.
+Desenvolvido por **Paulo Weskley** — Solo developer.
 
 ---
 
