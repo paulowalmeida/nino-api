@@ -1,6 +1,6 @@
 type: collection.insomnia.rest/5.0
 schema_version: "5.1"
-name: Role Module (3 endpoints)
+name: Role Module (2 endpoints)
 meta:
   id: wrk_role_module
   created: 1776000000000
@@ -39,7 +39,7 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/roles/role-uuid-here"
+      - url: "{{BASE_URL}}/roles/1"
         name: get-by-id
         meta:
           id: req_role_get_id
@@ -48,30 +48,6 @@ collection:
           isPrivate: false
           description: ""
           sortKey: -2
-        method: GET
-        headers: []
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/roles/code/1"
-        name: get-by-code
-        meta:
-          id: req_role_get_code
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: ""
-          sortKey: -3
         method: GET
         headers: []
         authentication:

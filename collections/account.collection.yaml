@@ -31,7 +31,7 @@ collection:
             {
               "email": "newaccount@example.com",
               "password": "password123",
-              "roleId": "role-uuid-here"
+              "roleId": 1
             }
         headers:
           - name: Content-Type
@@ -188,7 +188,7 @@ collection:
           mimeType: application/json
           text: |-
             {
-              "roleId": "new-role-uuid"
+              "roleId": 3
             }
         headers:
           - name: Content-Type
