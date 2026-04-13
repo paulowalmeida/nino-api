@@ -5,14 +5,14 @@ import { PassportStrategy } from '@nestjs/passport'
 import { Request } from 'express'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 
-import { AccountRepository } from '@account/account.repository'
-import { AccountTokenData } from '@account/types/account-token.data.type'
+import { UserRepository } from '@user/user.repository'
+import { UserTokenData } from '@user/types/user-token.data.type'
 
 @Injectable()
 export class JwtAuthStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly configService: ConfigService,
-    private readonly accountRepository: AccountRepository,
+    private readonly userRepository: UserRepository,
   ) {
     const jwtRequest = configService.get<string>('JWT_SECRET')
     if (!jwtRequest) {
@@ -31,19 +31,19 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
 
   async validate(
     req: Request,
-    payloadDecoded: AccountTokenData,
-  ): Promise<AccountTokenData> {
-    const account = await this.accountRepository.findByEmail(
+    payloadDecoded: UserTokenData,
+  ): Promise<UserTokenData> {
+    const user = await this.userRepository.findByEmail(
       payloadDecoded.email,
     )
 
-    if (!account) {
+    if (!user) {
       throw new UnauthorizedException(
         'Token inválido ou usuário não existe mais.',
       )
     }
 
-    req['account'] = payloadDecoded
+    req['user'] = payloadDecoded
     return payloadDecoded
   }
 }

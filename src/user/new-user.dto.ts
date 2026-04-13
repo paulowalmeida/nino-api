@@ -10,7 +10,7 @@ import {
 } from 'class-validator'
 
 
-export class NewAccountDTO {
+export class NewUserDTO {
   @IsEmail()
   email: string
 

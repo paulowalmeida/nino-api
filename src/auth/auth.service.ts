@@ -4,8 +4,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common'
 
-import { AccountRepository } from '@account/account.repository'
-import { AccountTokenData } from '@account/types/account-token.data.type'
+import { UserRepository } from '@user/user.repository'
+import { UserTokenData } from '@user/types/user-token.data.type'
 import { ChangePasswordRequestDTO } from '@auth/dtos/change-password-request.dto'
 import { LoginRequestDTO } from '@auth/dtos/login-request.dto'
 import { LoginResponse } from '@auth/types/login-response.type'
@@ -13,12 +13,12 @@ import { Tokens } from '@auth/types/tokens.type'
 import { CredentialsService } from '@credential/credential.service'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'
-import { AuthRequest } from '@shared/types/account-auth-request.type'
+import { AuthRequest } from '@shared/types/auth-request.type'
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly accountRepository: AccountRepository,
+    private readonly userRepository: UserRepository,
     private readonly credentialsService: CredentialsService,
     private readonly tokenService: TokenService,
     private readonly passwordService: PasswordService,
@@ -29,7 +29,7 @@ export class AuthService {
     body: ChangePasswordRequestDTO,
   ): Promise<{ message: string }> {
     const { oldPassword, newPassword } = body
-    const { email } = request.account
+    const { email } = request.user
 
     const credential = await this.credentialsService.getByEmail(email)
 
@@ -51,60 +51,60 @@ export class AuthService {
 
     await this.passwordService.validate(payload.password, credential.password)
 
-    const account = await this.accountRepository.findById(credential.accountId)
-    this.validateRole(account.role.id)
-    await this.accountRepository.updateLastLogin(account.id)
+    const user = await this.userRepository.findById(credential.userId)
+    this.validateRole(user.role.id)
+    await this.userRepository.updateLastLogin(user.id)
 
-    const tokenData: AccountTokenData = {
-      sub: account.id,
+    const tokenData: UserTokenData = {
+      sub: user.id,
       email: credential.email,
-      role: account.role.id || 0,
+      role: user.role.id || 0,
     }
 
     const tokens = await this.tokenService.getTokens(tokenData)
-    await this.updateRefreshToken(account.id, tokens.refreshToken)
+    await this.updateRefreshToken(user.id, tokens.refreshToken)
 
-    return { account, tokens }
+    return { user, tokens }
   }
 
-  async logout(accountId: string): Promise<void> {
-    return this.credentialsService.removeRefreshToken(accountId)
+  async logout(userId: string): Promise<void> {
+    return this.credentialsService.removeRefreshToken(userId)
   }
 
   async refreshToken(
-    accountId: string,
+    userId: string,
     token: string | undefined,
   ): Promise<Tokens> {
-    const credential = await this.credentialsService.getRefreshToken(accountId)
+    const credential = await this.credentialsService.getRefreshToken(userId)
 
     if (!token || !credential.hashedRefreshToken || !credential.email)
       throw new UnauthorizedException('Invalid credentials')
 
     await this.passwordService.validate(token, credential.hashedRefreshToken)
 
-    const account = await this.accountRepository.findById(accountId)
+    const user = await this.userRepository.findById(userId)
 
-    const tokenData: AccountTokenData = {
-      sub: account.id,
+    const tokenData: UserTokenData = {
+      sub: user.id,
       email: credential.email,
-      role: account.role.id || 0,
+      role: user.role.id || 0,
     }
 
     const tokens = await this.tokenService.getTokens(tokenData)
-    await this.updateRefreshToken(account.id, tokens.refreshToken)
+    await this.updateRefreshToken(user.id, tokens.refreshToken)
 
     return tokens
   }
 
   private async updateRefreshToken(
-    accountId: string,
+    userId: string,
     refreshToken: string,
   ): Promise<void> {
     const hashed = await this.passwordService.hash(refreshToken)
-    await this.credentialsService.updateRefreshToken(accountId, hashed)
+    await this.credentialsService.updateRefreshToken(userId, hashed)
   }
 
   private validateRole(role: number): void {
-    if (!role) throw new HttpException('Account role not found', 500)
+    if (!role) throw new HttpException('User role not found', 500)
   }
 }

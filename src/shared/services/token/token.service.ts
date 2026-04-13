@@ -4,8 +4,8 @@ import { JwtService } from '@nestjs/jwt'
 
 import { SignOptions } from 'jsonwebtoken'
 
-import { AccountTokenData } from '@account/types/account-token.data.type'
 import { Tokens } from '@auth/types/tokens.type'
+import { UserTokenData } from '@user/types/user-token.data.type'
 
 @Injectable()
 export class TokenService {
@@ -14,11 +14,11 @@ export class TokenService {
     private readonly configService: ConfigService,
   ) {}
 
-  async getTokens(account: AccountTokenData): Promise<Tokens> {
-    const payload: AccountTokenData = {
-      sub: account.sub,
-      email: account.email,
-      role: account.role || 0,
+  async getTokens(user: UserTokenData): Promise<Tokens> {
+    const payload: UserTokenData = {
+      sub: user.sub,
+      email: user.email,
+      role: user.role || 0,
     }
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -30,7 +30,7 @@ export class TokenService {
   }
 
   private generateToken(
-    payload: AccountTokenData,
+    payload: UserTokenData,
     expiresIn: SignOptions['expiresIn'],
     secretKey: string,
   ): Promise<string> {

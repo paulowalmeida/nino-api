@@ -1,16 +1,16 @@
 import { Module } from '@nestjs/common'
-import { JwtModule } from '@nestjs/jwt'
 
-import { AuthModule } from '@auth/auth.module'
-import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
+import { CredentialsModule } from '@credential/credential.module'
+import { PasswordService } from '@shared/services/password/password.service'
 import { PrismaModule } from '@shared/services/prisma/prisma.module'
-import { UsersController } from './user.controller'
-import { UserRepository } from './user.repository'
-import { UserService } from './user.service'
+import { UserController } from '@user/user.controller'
+import { UserRepository } from '@user/user.repository'
+import { UserService } from '@user/user.service'
 
 @Module({
-  imports: [PrismaModule, JwtModule.register({}), AuthModule],
-  controllers: [UsersController],
-  providers: [UserService, UserRepository, JwtAuthGuard],
+  imports: [PrismaModule, CredentialsModule],
+  controllers: [UserController],
+  providers: [UserService, UserRepository, PasswordService],
+  exports: [UserRepository],
 })
 export class UserModule {}

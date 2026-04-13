@@ -6,7 +6,7 @@
 
 - **Mercado inicial:** Norte do Brasil (Pará)
 - **MVP estimado:** 3-6 meses (desenvolvimento solo)
-- **Status atual:** Backend ~45% (auth completo, account/credentials modularizados, 7 módulos de API)
+- **Status atual:** Backend ~45% (auth completo, user/credentials modularizados, 7 módulos de API)
 - **Origem do nome:** Fusão de Nino (gato) + Mia (cachorra) — pets da família fundadora
 
 ---
@@ -136,25 +136,25 @@ nino-api/
 │   │   │   └── refresh-token.dto.ts            # { refreshToken }
 │   │   │
 │   │   └── types/
-│   │       ├── login-response.type.ts          # { account, tokens }
+│   │       ├── login-response.type.ts          # { user, tokens }
 │   │       ├── tokens.type.ts                  # { accessToken, refreshToken }
 │   │       ├── auth-credential-repository.type.ts
 │   │       ├── auth-credential-refresh-token.type.ts
-│   │       └── account-token.data.type.ts      # { sub, email, role } no JWT
+│   │       └── user-token.data.type.ts      # { sub, email, role } no JWT
 │   │
-│   ├── account/                         # ✅ Módulo de contas (100% completo)
-│   │   ├── account.module.ts
-│   │   ├── account.controller.ts        # 9 endpoints
-│   │   ├── account.service.ts
-│   │   ├── account.repository.ts
-│   │   ├── new-account.dto.ts           # DTO para criar conta
+│   ├── user/                         # ✅ Módulo de contas (100% completo)
+│   │   ├── user.module.ts
+│   │   ├── user.controller.ts        # 9 endpoints
+│   │   ├── user.service.ts
+│   │   ├── user.repository.ts
+│   │   ├── new-user.dto.ts           # DTO para criar conta
 │   │   │
 │   │   ├── dto/
 │   │   │   ├── update-preferences.dto.ts
 │   │   │   └── update-role.dto.ts
 │   │   │
 │   │   └── types/
-│   │       └── account.type.ts          # Type Prisma tipado
+│   │       └── user.type.ts          # Type Prisma tipado
 │   │
 │   ├── credential/                      # ✅ Módulo de credenciais (100% completo)
 │   │   ├── credential.module.ts
@@ -200,14 +200,14 @@ nino-api/
 │   │   └── types/
 │   │       └── notification-type.type.ts
 │   │
-│   ├── user/                            # ⏳ Módulo de usuários (planejado)
-│   │   ├── user.repository.ts
-│   │   ├── user.service.ts
-│   │   ├── user.controller.ts
-│   │   ├── user.module.ts
-│   │   ├── user.dto.ts
+│   ├── profile/                            # ⏳ Módulo de usuários (planejado)
+│   │   ├── profile.repository.ts
+│   │   ├── profile.service.ts
+│   │   ├── profile.controller.ts
+│   │   ├── profile.module.ts
+│   │   ├── profile.dto.ts
 │   │   └── types/
-│   │       └── user-repository.type.ts
+│   │       └── profile-repository.type.ts
 │   │
 │   └── shared/                          # Código compartilhado entre módulos
 │       ├── enums/
@@ -269,7 +269,7 @@ model Role {
   code        Int       @unique
   description String    @unique
 
-  accounts Account[]
+  users User[]
 
   @@map("roles")
 }
@@ -330,7 +330,7 @@ model NotificationType {
 ```prisma
 model AuthCredential {
   id                 String   @id @default(uuid())
-  accountId          String
+  userId          String
   email              String?
   password           String?
   hashedRefreshToken String?
@@ -339,17 +339,17 @@ model AuthCredential {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  account Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([accountId, provider])
+  @@unique([userId, provider])
   @@map("auth_credentials")
 }
 ```
 
-#### **Account** — Entidade central de contas
+#### **User** — Entidade central de contas
 
 ```prisma
-model Account {
+model User {
   id            String    @id @default(uuid())
   roleId        String
   isActive      Boolean   @default(true)
@@ -361,21 +361,21 @@ model Account {
 
   role          Role             @relation(fields: [roleId], references: [id])
   credentials   AuthCredential[]
-  user          User?
+  profile          Profile?
   tenants       Tenant[]
   subscription  Subscription?
   notifications Notification[]
 
-  @@map("accounts")
+  @@map("users")
 }
 ```
 
-#### **User** — Dados pessoais/estendidos
+#### **Profile** — Dados pessoais/estendidos
 
 ```prisma
-model User {
+model Profile {
   id          String   @id @default(uuid())
-  accountId   String   @unique
+  userId   String   @unique
   firstName   String?
   lastName    String?
   companyName String?
@@ -384,38 +384,38 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  account   Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  contacts  UserContact[]
-  addresses UserAddress[]
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contacts  ProfileContact[]
+  addresses ProfileAddress[]
 
-  @@map("users")
+  @@map("profiles")
 }
 ```
 
-#### **UserContact** — Contatos do usuário
+#### **ProfileContact** — Contatos do usuário
 
 ```prisma
-model UserContact {
+model ProfileContact {
   id        String   @id @default(uuid())
-  userId    String
+  profileId    String
   phone     String?
   mobile    String?
   whatsapp  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  @@map("user_contacts")
+  @@map("profile_contacts")
 }
 ```
 
-#### **UserAddress** — Endereços do usuário
+#### **ProfileAddress** — Endereços do usuário
 
 ```prisma
-model UserAddress {
+model ProfileAddress {
   id         String   @id @default(uuid())
-  userId     String
+  profileId     String
   cep        String?
   street     String?
   number     String?
@@ -425,9 +425,9 @@ model UserAddress {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
-  @@map("user_addresses")
+  @@map("profile_addresses")
 }
 ```
 
@@ -436,7 +436,7 @@ model UserAddress {
 ```prisma
 model Tenant {
   id        String   @id @default(uuid())
-  accountId String
+  userId String
   name      String
   slug      String   @unique
   logoUrl   String?
@@ -446,7 +446,7 @@ model Tenant {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("tenants")
 }
@@ -457,7 +457,7 @@ model Tenant {
 ```prisma
 model Subscription {
   id        String    @id @default(uuid())
-  accountId String    @unique
+  userId String    @unique
   planId    String
   statusId  String
   startedAt DateTime  @default(now())
@@ -465,7 +465,7 @@ model Subscription {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  account Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan    Plan               @relation(fields: [planId], references: [id])
   status  SubscriptionStatus @relation(fields: [statusId], references: [id])
 
@@ -478,7 +478,7 @@ model Subscription {
 ```prisma
 model Notification {
   id        String    @id @default(uuid())
-  accountId String
+  userId String
   typeId    String
   title     String
   body      String
@@ -487,7 +487,7 @@ model Notification {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  account Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   type    NotificationType @relation(fields: [typeId], references: [id])
 
   @@map("notifications")
@@ -509,7 +509,7 @@ model Notification {
 
 ```typescript
 {
-  sub: string // Account ID
+  sub: string // User ID
   email: string // Email do usuário
   role: number // Código da role
   iat: number // Issued at
@@ -549,23 +549,23 @@ model Notification {
 - `POST /auth/refresh-token` — Refresh token
 - `POST /auth/change-password` — Mudar senha
 
-#### **Account Module** (9 endpoints)
+#### **User Module** (9 endpoints)
 
-- `POST /accounts` — Criar conta
-- `GET /accounts` — Listar todas
-- `GET /accounts/:id` — Buscar por ID
-- `GET /accounts/email/:email` — Buscar por email
-- `GET /accounts/:id/login-history` — Histórico de logins
-- `PATCH /accounts/:id/preferences` — Atualizar locale + timezone
-- `PATCH /accounts/:id/role` — Mudar role
-- `PATCH /accounts/:id/deactivate` — Desativar
-- `PATCH /accounts/:id/activate` — Reativar
+- `POST /users` — Criar conta
+- `GET /users` — Listar todas
+- `GET /users/:id` — Buscar por ID
+- `GET /users/email/:email` — Buscar por email
+- `GET /users/:id/login-history` — Histórico de logins
+- `PATCH /users/:id/preferences` — Atualizar locale + timezone
+- `PATCH /users/:id/role` — Mudar role
+- `PATCH /users/:id/deactivate` — Desativar
+- `PATCH /users/:id/activate` — Reativar
 
 #### **Credentials Module** (5 endpoints)
 
 - `GET /credentials` — Listagem (implementar)
 - `GET /credentials/:id` — Buscar por ID
-- `GET /credentials/account/:accountId` — Listar por conta
+- `GET /credentials/user/:userId` — Listar por conta
 - `PATCH /credentials/:id` — Atualizar email
 - `PATCH /credentials/:id/password` — Atualizar senha
 
@@ -604,30 +604,30 @@ Camada de abstração entre Service e Prisma. **Tratamento de null centralizado 
 
 ```typescript
 // ✅ Repository — trata erros Prisma + null
-async findById(id: string): Promise<Account> {
+async findById(id: string): Promise<User> {
   try {
-    const account = await this.prisma.account.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id },
-      ...this.accountSelect,
+      ...this.userSelect,
     })
 
-    if (!account) throw new NotFoundException('Account not found')
+    if (!user) throw new NotFoundException('User not found')
 
-    return account
+    return user
   } catch (error) {
     this.prismaErrorService.handleError(error)
   }
 }
 
 // ✅ Service — delegação pura
-async getById(id: string): Promise<Account> {
-  return await this.accountRepository.findById(id)
+async getById(id: string): Promise<User> {
+  return await this.userRepository.findById(id)
   // Se erro → automático do repository
 }
 
 // ✅ Controller — delegação HTTP
-async getById(@Param('id') id: string): Promise<Account> {
-  return await this.accountService.getById(id)
+async getById(@Param('id') id: string): Promise<User> {
+  return await this.userService.getById(id)
 }
 ```
 
@@ -643,7 +643,7 @@ Mapeia códigos de erro Prisma para exceções NestJS.
 
 // Uso:
 try {
-  await this.prisma.account.delete(...)
+  await this.prisma.user.delete(...)
 } catch (error) {
   this.prismaErrorService.handleError(error)
 }
@@ -657,10 +657,10 @@ Múltiplos tipos de entidades para controle explícito de exposição de dados.
 // ✅ Tipado automaticamente do schema
 import { Prisma } from '@prisma/client'
 
-export type Account = Prisma.AccountGetPayload<{
+export type User = Prisma.UserGetPayload<{
   omit: { roleId: true }
   include: {
-    credentials: { omit: { accountId: true } }
+    credentials: { omit: { userId: true } }
     role: { omit: { id: true } }
     // ...
   }
@@ -730,7 +730,7 @@ A cada requisição, identifica o restaurante (via JWT) e conecta ao schema corr
 // Após implementação schema-per-tenant:
 export class TenantMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    const tenantId = req.user.tenantId // Extraído do JWT
+    const tenantId = req.profile.tenantId // Extraído do JWT
     // Conecta Prisma ao schema "tenant_<tenantId>"
     this.prisma.$queryRaw`SET search_path TO tenant_${tenantId}`
     next()
@@ -780,7 +780,7 @@ if (credential.email && credential.password) {
 
 ### Nomes Descritivos & Sufixos de Contexto
 
-- Variáveis: `credentialRepository`, `hashedRefreshToken`, `accountTokenData`
+- Variáveis: `credentialRepository`, `hashedRefreshToken`, `userTokenData`
 - Sem abreviações: `usr`, `pwd`, `repo` → evitar
 - Sufixos que indicam contexto: `...Repository`, `...DTO`, `...Type`, `...Guard`, `...Strategy`
 
@@ -802,17 +802,17 @@ Service e Controller não tratam erros Prisma diretamente — delegam.
 
 ```typescript
 // ✅ Repository
-async findById(id: string): Promise<Account> {
+async findById(id: string): Promise<User> {
   try {
-    return await this.prisma.account.findUnique({ ... })
+    return await this.prisma.user.findUnique({ ... })
   } catch (error) {
     this.prismaErrorService.handleError(error)
   }
 }
 
 // ✅ Service — propaga naturalmente
-async getById(id: string): Promise<Account> {
-  return await this.accountRepository.findById(id)
+async getById(id: string): Promise<User> {
+  return await this.userRepository.findById(id)
   // Se erro → automático do repository
 }
 ```
@@ -857,14 +857,14 @@ POST /auth/login
   ├─ AuthService.login()
   │   ├─ credentialsService.getByEmail()
   │   ├─ validatePassword()
-  │   ├─ accountRepository.findById()
-  │   ├─ accountRepository.updateLastLogin()
+  │   ├─ userRepository.findById()
+  │   ├─ userRepository.updateLastLogin()
   │   ├─ tokenService.getTokens()
   │   │   ├─ generateToken(15m, JWT_SECRET) → accessToken
   │   │   └─ generateToken(7d, JWT_REFRESH_SECRET) → refreshToken
   │   ├─ credentialsService.updateRefreshToken()
   │   └─ buildLoginResponse()
-  └─ Response 200: { account, tokens }
+  └─ Response 200: { user, tokens }
 ```
 
 ### Fluxo 2: Renovação de Token (Refresh)
@@ -875,7 +875,7 @@ POST /auth/refresh-token (+ JWT Refresh Guard)
   ├─ AuthService.refreshToken()
   │   ├─ credentialsService.getRefreshToken()
   │   ├─ validatePassword()
-  │   ├─ accountRepository.findById()
+  │   ├─ userRepository.findById()
   │   ├─ tokenService.getTokens() → novo access + novo refresh
   │   └─ credentialsService.updateRefreshToken()
   └─ Response 200: { accessToken, refreshToken }
@@ -897,22 +897,22 @@ POST /auth/change-password (+ JWT Auth Guard)
 ### Fluxo 4: Criar Conta
 
 ```
-POST /accounts
+POST /users
   ├─ Validação DTO
-  ├─ AccountService.create()
-  │   ├─ accountRepository.create(roleId)
-  │   ├─ credentialsService.create(accountId, email, password)
-  │   └─ accountRepository.findById()
-  └─ Response 201: { account }
+  ├─ UserService.create()
+  │   ├─ userRepository.create(roleId)
+  │   ├─ credentialsService.create(userId, email, password)
+  │   └─ userRepository.findById()
+  └─ Response 201: { user }
 ```
 
 ### Fluxo 5: Atualizar Preferências
 
 ```
-PATCH /accounts/:id/preferences (+ JWT Auth Guard)
-  ├─ AccountService.updatePreferences()
-  │   └─ accountRepository.updatePreferences()
-  └─ Response 200: { account with updated locale/timezone }
+PATCH /users/:id/preferences (+ JWT Auth Guard)
+  ├─ UserService.updatePreferences()
+  │   └─ userRepository.updatePreferences()
+  └─ Response 200: { user with updated locale/timezone }
 ```
 
 ---
@@ -940,7 +940,7 @@ PATCH /accounts/:id/preferences (+ JWT Auth Guard)
 | Módulo                | Status          | Endpoints | Progresso |
 | --------------------- | --------------- | --------- | --------- |
 | **auth**              | ✅ Concluído    | 4         | 100%      |
-| **account**           | ✅ Concluído    | 9         | 100%      |
+| **user**           | ✅ Concluído    | 9         | 100%      |
 | **credential**        | ✅ Concluído    | 5         | 100%      |
 | **role**              | ✅ Concluído    | 3         | 100%      |
 | **plan**              | ✅ Concluído    | 4         | 100%      |
@@ -949,7 +949,7 @@ PATCH /accounts/:id/preferences (+ JWT Auth Guard)
 | **shared/prisma**     | ✅ Concluído    | —         | 100%      |
 | **shared/guards**     | ✅ Concluído    | —         | 100%      |
 | **shared/strategies** | ✅ Concluído    | —         | 100%      |
-| **user**              | ⏳ Futuro       | —         | 5%        |
+| **profile**              | ⏳ Futuro       | —         | 5%        |
 | **tenant**            | ⏳ Futuro       | —         | 0%        |
 | **restaurant**        | ⏳ Futuro       | —         | 0%        |
 | **order**             | ⏳ Futuro       | —         | 0%        |
@@ -996,7 +996,7 @@ PATCH /accounts/:id/preferences (+ JWT Auth Guard)
 
 ```env
 # Banco de Dados
-DATABASE_URL=postgresql://user:password@localhost:5432/ninomia_dev
+DATABASE_URL=postgresql://profile:password@localhost:5432/ninomia_dev
 
 # JWT Secrets
 JWT_SECRET=seu-secret-super-seguro-access-token
@@ -1022,7 +1022,7 @@ PAGARME_API_KEY=xxxxx
 FIREBASE_CREDENTIALS_JSON={ ... }
 
 # Cloudflare R2 (storage)
-R2_ACCOUNT_ID=xxxxx
+R2_USER_ID=xxxxx
 R2_ACCESS_KEY_ID=xxxxx
 R2_SECRET_ACCESS_KEY=xxxxx
 R2_BUCKET_NAME=ninomia-files
@@ -1097,7 +1097,7 @@ npm run test:e2e            # Testes end-to-end
 
 ```
 feat(auth): implementar login com JWT
-fix(account): corrigir validação de role
+fix(user): corrigir validação de role
 test(credentials): adicionar testes para updatePassword
 docs: atualizar CONTEXT.md
 refactor(repository): extrair queries em helpers
