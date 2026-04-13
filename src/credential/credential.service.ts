@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 
+import { CredentialRepository } from '@credential/types/credential-repository.type'
 import { Credential } from '@credential/types/credential.type'
 import { PasswordService } from '@shared/services/password/password.service'
 import { CredentialsRepository } from './credential.repository'
-import { CredentialRepository } from './types/credential-repository.type'
 
 @Injectable()
 export class CredentialsService {

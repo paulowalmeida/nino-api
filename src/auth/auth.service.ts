@@ -6,7 +6,6 @@ import {
 
 import { AccountRepository } from '@account/account.repository'
 import { AccountTokenData } from '@account/types/account-token.data.type'
-
 import { ChangePasswordRequestDTO } from '@auth/dtos/change-password-request.dto'
 import { LoginRequestDTO } from '@auth/dtos/login-request.dto'
 import { LoginResponse } from '@auth/types/login-response.type'
@@ -53,13 +52,13 @@ export class AuthService {
     await this.passwordService.validate(payload.password, credential.password)
 
     const account = await this.accountRepository.findById(credential.accountId)
-    this.validateRole(account.role.code)
+    this.validateRole(account.role.id)
     await this.accountRepository.updateLastLogin(account.id)
 
     const tokenData: AccountTokenData = {
       sub: account.id,
       email: credential.email,
-      role: account.role.code || 0,
+      role: account.role.id || 0,
     }
 
     const tokens = await this.tokenService.getTokens(tokenData)
@@ -88,7 +87,7 @@ export class AuthService {
     const tokenData: AccountTokenData = {
       sub: account.id,
       email: credential.email,
-      role: account.role.code || 0,
+      role: account.role.id || 0,
     }
 
     const tokens = await this.tokenService.getTokens(tokenData)

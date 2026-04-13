@@ -18,14 +18,14 @@ export class AccountRepository {
         omit: { accountId: true, hashedRefreshToken: true, password: true },
       },
       notifications: { omit: { accountId: true } },
-      role: { omit: { id: true } },
+      role: true,
       subscription: { omit: { accountId: true } },
       tenants: { omit: { accountId: true } },
       user: { omit: { accountId: true } },
     },
   }
 
-  async create(roleId: string): Promise<Account> {
+  async create(roleId: number): Promise<Account> {
     try {
       const account = await this.prisma.account.create({
         data: { roleId },
@@ -138,7 +138,7 @@ export class AccountRepository {
     }
   }
 
-  async updateRole(id: string, roleId: string): Promise<Account> {
+  async updateRole(id: string, roleId: number): Promise<Account> {
     try {
       const account = await this.prisma.account.update({
         where: { id },

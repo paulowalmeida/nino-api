@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 
 import { AuthCredentialRefreshToken } from '@auth/types/auth-credential-refresh-token.type'
-import { AuthCredentialRepository } from '@auth/types/auth-credential-repository.type'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 

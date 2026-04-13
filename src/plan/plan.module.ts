@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 
-import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PlanService } from './plan.service'
-import { PlanRepository } from './plan.repository'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { PlanController } from './plan.controller'
+import { PlanRepository } from './plan.repository'
+import { PlanService } from './plan.service'
 
 @Module({
   controllers: [PlanController],

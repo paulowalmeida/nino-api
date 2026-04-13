@@ -18,7 +18,7 @@ export class NotificationTypeController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async getById(@Param('id') id: string): Promise<NotificationType> {
+  async getById(@Param('id') id: number): Promise<NotificationType> {
     return await this.notificationTypeService.getById(id)
   }
 

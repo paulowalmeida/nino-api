@@ -5,7 +5,7 @@ export type Account = Prisma.AccountGetPayload<{
   include: {
     credentials: { omit: { accountId: true } }
     notifications: { omit: { accountId: true } }
-    role: { omit: { id: true } }
+    role:  true,
     subscription: { omit: { accountId: true } }
     tenants: { omit: { accountId: true } }
     user: { omit: { accountId: true } }

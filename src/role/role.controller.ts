@@ -1,8 +1,8 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common'
 
-import { RoleService } from './role.service'
-import { Role } from './types/role.type'
+import { Role } from '@role/types/role.type'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
+import { RoleService } from './role.service'
 
 @Controller('roles')
 export class RoleController {
@@ -16,13 +16,7 @@ export class RoleController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async getById(@Param('id') id: string): Promise<Role> {
+  async getById(@Param('id') id: number): Promise<Role> {
     return await this.roleService.getById(id)
-  }
-
-  @Get('code/:code')
-  @UseGuards(JwtAuthGuard)
-  async getByCode(@Param('code') code: string): Promise<Role> {
-    return await this.roleService.getByCode(Number(code))
   }
 }

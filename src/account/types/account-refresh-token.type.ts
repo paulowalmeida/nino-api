@@ -5,6 +5,6 @@ export type AccountRefreshToken = Prisma.AccountGetPayload<{
     id: true
     email: true
     hashedRefreshToken: true
-    role: { select: { code: true } }
+    role: { select: { id: true } }
   }
 }>

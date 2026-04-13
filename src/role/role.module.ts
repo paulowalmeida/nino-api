@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 
-import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { RoleService } from './role.service'
-import { RoleRepository } from './role.repository'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { RoleController } from './role.controller'
+import { RoleRepository } from './role.repository'
+import { RoleService } from './role.service'
 
 @Module({
   controllers: [RoleController],

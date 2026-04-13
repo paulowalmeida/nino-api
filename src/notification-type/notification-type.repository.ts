@@ -19,7 +19,7 @@ export class NotificationTypeRepository {
     }
   }
 
-  async findById(id: string): Promise<NotificationType> {
+  async findById(id: number): Promise<NotificationType> {
     try {
       const type = await this.prisma.notificationType.findUnique({
         where: { id },
@@ -33,10 +33,10 @@ export class NotificationTypeRepository {
     }
   }
 
-  async findByCode(code: number): Promise<NotificationType> {
+  async findByCode(id: number): Promise<NotificationType> {
     try {
       const type = await this.prisma.notificationType.findUnique({
-        where: { code },
+        where: { id },
       })
 
       if (!type) throw new NotFoundException('Notification Type not found')

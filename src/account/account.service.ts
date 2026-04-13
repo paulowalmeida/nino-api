@@ -39,7 +39,7 @@ export class AccountService {
     return await this.accountRepository.updatePreferences(id, locale, timezone)
   }
 
-  async updateRole(id: string, roleId: string): Promise<Account> {
+  async updateRole(id: string, roleId: number): Promise<Account> {
     return await this.accountRepository.updateRole(id, roleId)
   }
 

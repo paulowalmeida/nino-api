@@ -7,8 +7,7 @@ datasource db {
 }
 
 model Role {
-  id          String    @id @default(uuid())
-  code        Int       @unique
+  id          Int       @id @unique
   description String    @unique
 
   accounts Account[]
@@ -17,8 +16,7 @@ model Role {
 }
 
 model Plan {
-  id          String   @id @default(uuid())
-  code        Int      @unique
+  id          Int      @id @unique
   name        String   @unique
   slug        String   @unique
   price       Decimal
@@ -35,8 +33,7 @@ model Plan {
 }
 
 model SubscriptionStatus {
-  id          String @id @default(uuid())
-  code        Int    @unique
+  id          Int    @id @unique
   description String @unique
 
   subscriptions Subscription[]
@@ -45,8 +42,7 @@ model SubscriptionStatus {
 }
 
 model NotificationType {
-  id          String @id @default(uuid())
-  code        Int    @unique
+  id          Int    @id @unique
   description String @unique
 
   notifications Notification[]
@@ -73,7 +69,7 @@ model AuthCredential {
 
 model Account {
   id            String    @id @default(uuid())
-  roleId        String
+  roleId        Int
   isActive      Boolean   @default(true)
   lastLoginAt   DateTime?
   locale        String?
@@ -160,8 +156,8 @@ model Tenant {
 model Subscription {
   id        String    @id @default(uuid())
   accountId String    @unique
-  planId    String
-  statusId  String
+  planId    Int
+  statusId  Int
   startedAt DateTime  @default(now())
   expiresAt DateTime?
   createdAt DateTime  @default(now())
@@ -177,7 +173,7 @@ model Subscription {
 model Notification {
   id        String    @id @default(uuid())
   accountId String
-  typeId    String
+  typeId    Int
   title     String
   body      String
   isRead    Boolean   @default(false)
