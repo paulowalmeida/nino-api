@@ -1,17 +1,18 @@
-import { AuthRepository } from '@auth/auth.repository'
-import { AccountTokenData } from 'src/account/types/account-token.data.type'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
-import { Request } from 'express'
 
+import { Request } from 'express'
 import { ExtractJwt, Strategy } from 'passport-jwt'
+
+import { AccountRepository } from '@account/account.repository'
+import { AccountTokenData } from '@account/types/account-token.data.type'
 
 @Injectable()
 export class JwtAuthStrategy extends PassportStrategy(Strategy) {
   constructor(
     private readonly configService: ConfigService,
-    private readonly authRepository: AuthRepository,
+    private readonly accountRepository: AccountRepository,
   ) {
     const jwtRequest = configService.get<string>('JWT_SECRET')
     if (!jwtRequest) {
@@ -32,7 +33,7 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
     req: Request,
     payloadDecoded: AccountTokenData,
   ): Promise<AccountTokenData> {
-    const account = await this.authRepository.findAccountByEmail(
+    const account = await this.accountRepository.findByEmail(
       payloadDecoded.email,
     )
 
@@ -41,7 +42,7 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
         'Token inválido ou usuário não existe mais.',
       )
     }
-    
+
     req['account'] = payloadDecoded
     return payloadDecoded
   }

@@ -31,7 +31,7 @@ async function seed(items: any[], tableName: string) {
     for (const item of items) {
       const data = Object.fromEntries(keys.map((k) => [k, item[k]]))
       await prisma[tableName].upsert({
-        where: { code: item.code },
+        where: { id: item.id },
         update: data,
         create: data,
       })

@@ -1,0 +1,282 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Account Module (9 endpoints)
+meta:
+  id: wrk_account_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Account management — CRUD + preferences, role, activate/deactivate"
+collection:
+  - name: account
+    meta:
+      id: fld_account_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Account management endpoints"
+    children:
+      - url: "{{BASE_URL}}/accounts"
+        name: create
+        meta:
+          id: req_account_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Create new account"
+          sortKey: -1
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "email": "newaccount@example.com",
+              "password": "password123",
+              "roleId": "role-uuid-here"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/accounts"
+        name: list
+        meta:
+          id: req_account_list
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "List all accounts"
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/accounts/account-uuid-here"
+        name: get-by-id
+        meta:
+          id: req_account_get_id
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Get account details by ID"
+          sortKey: -3
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/accounts/email/user@example.com"
+        name: get-account-by-email
+        meta:
+          id: req_account_get_email
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Get account by email address"
+          sortKey: -4
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/accounts/account-uuid-here/login-history"
+        name: get-login-history
+        meta:
+          id: req_account_login_hist
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Get account login history"
+          sortKey: -5
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/accounts/account-uuid-here/preferences"
+        name: update-preferences
+        meta:
+          id: req_account_prefs
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Update locale and timezone"
+          sortKey: -6
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "locale": "pt-BR",
+              "timezone": "America/Sao_Paulo"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/accounts/account-uuid-here/role"
+        name: update-role
+        meta:
+          id: req_account_role
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Change account role"
+          sortKey: -7
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "roleId": "new-role-uuid"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/accounts/account-uuid-here/deactivate"
+        name: deactivate-account
+        meta:
+          id: req_account_deact
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Deactivate account"
+          sortKey: -8
+        method: PATCH
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/accounts/account-uuid-here/activate"
+        name: activate-account
+        meta:
+          id: req_account_act
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Reactivate account"
+          sortKey: -9
+        method: PATCH
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_account
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_account
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_account_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        REFRESH_TOKEN: ""

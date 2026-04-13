@@ -1,58 +1,52 @@
 type: collection.insomnia.rest/5.0
 schema_version: "5.1"
-name: Scratch Pad
+name: Auth Module (4 endpoints)
 meta:
-  id: wrk_scratchpad
+  id: wrk_auth_module
   created: 1772544141333
-  modified: 1772544141333
-  description: ""
+  modified: 1776000000000
+  description: "Authentication — login, logout, refresh token, change password"
 collection:
   - name: auth
     meta:
-      id: fld_077785d02d834f52a1d49413ac2a7b7d
+      id: fld_auth_module
       created: 1772545962012
-      modified: 1775870917153
+      modified: 1776000000000
       sortKey: -1772545962012
-      description: ""
+      description: "Authentication endpoints"
     children:
       - url: "{{BASE_URL}}/auth/login"
         name: login
         meta:
-          id: req_b95605a21c994869ab631f7faae1cc60
+          id: req_auth_login
           created: 1773403915109
-          modified: 1775869449877
+          modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -1772545963819.5
+          description: "Authenticate and get tokens"
+          sortKey: -1
         method: POST
         body:
           mimeType: application/json
           text: |-
             {
-            	"email": "paulo.weskley3@ninomia.com",
-              "password": "senha123"
+              "email": "user@example.com",
+              "password": "password123"
             }
         headers:
           - name: Content-Type
             value: application/json
-          - name: User-Agent
-            value: insomnia/12.3.1
-            description: ""
-            disabled: false
         authentication:
           type: none
         scripts:
           afterResponse: >
             const json = await insomnia.response.json();
-
             if (json && json.tokens) {
-            	if(json.tokens.accessToken) {
-            		insomnia.environment.set('ACCESS_TOKEN', json.tokens.accessToken);	
-            	}
-            	
-            	if(json.tokens.refreshToken) {
-            		insomnia.environment.set('REFRESH_TOKEN', json.tokens.refreshToken);	
-            	}
+              if(json.tokens.accessToken) {
+                insomnia.environment.set('ACCESS_TOKEN', json.tokens.accessToken);
+              }
+              if(json.tokens.refreshToken) {
+                insomnia.environment.set('REFRESH_TOKEN', json.tokens.refreshToken);
+              }
             }
         settings:
           renderRequestBody: true
@@ -62,21 +56,18 @@ collection:
             send: true
             store: true
           rebuildPath: true
+
       - url: "{{BASE_URL}}/auth/logout"
         name: logout
         meta:
-          id: req_fcbd4376afcc455cae5edf535d8d98c1
+          id: req_auth_logout
           created: 1774437148741
-          modified: 1775437966999
+          modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -1772545963719.5
+          description: "Logout and invalidate refresh token"
+          sortKey: -2
         method: POST
-        headers:
-          - name: User-Agent
-            value: insomnia/12.3.1
-            description: ""
-            disabled: false
+        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
@@ -89,21 +80,18 @@ collection:
             send: true
             store: true
           rebuildPath: true
+
       - url: "{{BASE_URL}}/auth/refresh-token"
         name: refresh-token
         meta:
-          id: req_95148cd81b14419086fe5a26d14fc0bd
+          id: req_auth_refresh
           created: 1774842137452
-          modified: 1775437972416
+          modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -1772545963669.5
+          description: "Renew access token using refresh token"
+          sortKey: -3
         method: POST
-        headers:
-          - name: User-Agent
-            value: insomnia/12.3.1
-            description: ""
-            disabled: false
+        headers: []
         authentication:
           type: bearer
           token: "{{REFRESH_TOKEN}}"
@@ -116,30 +104,27 @@ collection:
             send: true
             store: true
           rebuildPath: true
+
       - url: "{{BASE_URL}}/auth/change-password"
         name: change-password
         meta:
-          id: req_11f723c166c6450bba408793bed7ed3a
+          id: req_auth_change_pwd
           created: 1775436388277
-          modified: 1775437930272
+          modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -1772545963569.5
+          description: "Change account password"
+          sortKey: -4
         method: POST
         body:
           mimeType: application/json
           text: |-
             {
-            	"oldPassword": "senha123",
-            	"newPassword": "senha1234"
+              "oldPassword": "password123",
+              "newPassword": "newpassword456"
             }
         headers:
           - name: Content-Type
             value: application/json
-          - name: User-Agent
-            value: insomnia/12.3.1
-            description: ""
-            disabled: false
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
@@ -152,82 +137,6 @@ collection:
             send: true
             store: true
           rebuildPath: true
-      - name: account
-        meta:
-          id: fld_ba9748376d714b048a65e6c4e16784e5
-          created: 1775911721569
-          modified: 1775911721569
-          sortKey: -1775911721569
-          description: ""
-        children:
-          - url: "{{BASE_URL}}/auth/create-account"
-            name: create-account
-            meta:
-              id: req_7655c01ab37b4c86adcebaecaedeb922
-              created: 1772545965527
-              modified: 1775911739789
-              isPrivate: false
-              description: ""
-              sortKey: -1775911731175
-            method: POST
-            body:
-              mimeType: application/json
-              text: |-
-                {
-                	"email": "paulo.weskley3@ninomia.com",
-                  "password": "senha123",
-                  "role": 1
-                }
-            headers:
-              - name: Content-Type
-                value: application/json
-              - name: User-Agent
-                value: insomnia/12.3.1
-                description: ""
-                disabled: false
-            settings:
-              renderRequestBody: true
-              encodeUrl: true
-              followRedirects: global
-              cookies:
-                send: true
-                store: true
-              rebuildPath: true
-          - url: "{{BASE_URL}}/auth/current-account"
-            name: current-account
-            meta:
-              id: req_fa9b94bd2b8f4081a9048bc3db9dea2a
-              created: 1774405928860
-              modified: 1775911737579
-              isPrivate: false
-              description: ""
-              sortKey: -1775911731075
-            method: GET
-            headers:
-              - name: User-Agent
-                value: insomnia/12.3.1
-                description: ""
-                disabled: false
-            authentication:
-              type: bearer
-              disabled: false
-              token: "{{ACCESS_TOKEN}}"
-              prefix: Bearer
-            settings:
-              renderRequestBody: true
-              encodeUrl: true
-              followRedirects: global
-              cookies:
-                send: true
-                store: true
-              rebuildPath: true
-  - name: hello-world
-    meta:
-      id: fld_e110e6b4d7574cb6aa323baa5cd8f2a4
-      created: 1773430005160
-      modified: 1773430005160
-      sortKey: -1773430005160
-      description: ""
 cookieJar:
   name: Default Jar
   meta:

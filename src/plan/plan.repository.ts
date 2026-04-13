@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { Plan } from '@plan/types/plan.type'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { Plan } from './types/plan.type'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 
 @Injectable()
 export class PlanRepository {
@@ -29,24 +29,10 @@ export class PlanRepository {
     }
   }
 
-  async findById(id: string): Promise<Plan> {
+  async findById(id: number): Promise<Plan> {
     try {
       const plan = await this.prisma.plan.findUnique({
         where: { id },
-      })
-
-      if (!plan) throw new NotFoundException('Plan not found')
-
-      return plan
-    } catch (error) {
-      this.prismaErrorService.handleError(error)
-    }
-  }
-
-  async findByCode(code: number): Promise<Plan> {
-    try {
-      const plan = await this.prisma.plan.findUnique({
-        where: { code },
       })
 
       if (!plan) throw new NotFoundException('Plan not found')

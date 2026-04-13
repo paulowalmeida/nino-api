@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 
-import { NotificationTypeRepository } from './notification-type.repository'
 import { NotificationType } from '@notification-type/types/notification-type.type'
+import { NotificationTypeRepository } from './notification-type.repository'
 
 @Injectable()
 export class NotificationTypeService {
@@ -13,7 +13,7 @@ export class NotificationTypeService {
     return await this.notificationTypeRepository.findAll()
   }
 
-  async getById(id: string): Promise<NotificationType> {
+  async getById(id: number): Promise<NotificationType> {
     return await this.notificationTypeRepository.findById(id)
   }
 

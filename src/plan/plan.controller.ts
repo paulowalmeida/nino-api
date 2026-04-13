@@ -1,8 +1,8 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common'
 
-import { PlanService } from './plan.service'
-import { Plan } from './types/plan.type'
+import { Plan } from '@plan/types/plan.type'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
+import { PlanService } from './plan.service'
 
 @Controller('plans')
 export class PlanController {
@@ -15,14 +15,8 @@ export class PlanController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async getById(@Param('id') id: string): Promise<Plan> {
+  async getById(@Param('id') id: number): Promise<Plan> {
     return await this.planService.getById(id)
-  }
-
-  @Get('code/:code')
-  @UseGuards(JwtAuthGuard)
-  async getByCode(@Param('code') code: string): Promise<Plan> {
-    return await this.planService.getByCode(Number(code))
   }
 
   @Get('slug/:slug')

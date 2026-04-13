@@ -1,6 +1,7 @@
 import {
   IsBoolean,
   IsEmail,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
@@ -18,8 +19,8 @@ export class NewAccountDTO {
   @MaxLength(16)
   password: string
 
-  @IsUUID()
-  roleId: string
+  @IsInt()
+  roleId: number
 
   @IsOptional()
   @IsBoolean()

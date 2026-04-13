@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 
+import { Plan } from '@plan/types/plan.type'
 import { PlanRepository } from './plan.repository'
-import { Plan } from './types/plan.type'
 
 @Injectable()
 export class PlanService {
@@ -15,12 +15,8 @@ export class PlanService {
     return await this.planRepository.findAllIncludeInactive()
   }
 
-  async getById(id: string): Promise<Plan> {
+  async getById(id: number): Promise<Plan> {
     return await this.planRepository.findById(id)
-  }
-
-  async getByCode(code: number): Promise<Plan> {
-    return await this.planRepository.findByCode(code)
   }
 
   async getBySlug(slug: string): Promise<Plan> {
