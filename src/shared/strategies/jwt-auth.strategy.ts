@@ -1,5 +1,5 @@
 import { AuthRepository } from '@auth/auth.repository'
-import { AccountTokenData } from '@auth/types/account/account-token.data.type'
+import { AccountTokenData } from 'src/account/types/account-token.data.type'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PassportStrategy } from '@nestjs/passport'
@@ -24,11 +24,14 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: jwtRequest,
       ignoreExpiration: false,
-      passReqToCallback: true, // <--
+      passReqToCallback: true,
     })
   }
 
-  async validate(req: Request, payloadDecoded: AccountTokenData): Promise<AccountTokenData> {
+  async validate(
+    req: Request,
+    payloadDecoded: AccountTokenData,
+  ): Promise<AccountTokenData> {
     const account = await this.authRepository.findAccountByEmail(
       payloadDecoded.email,
     )
@@ -38,7 +41,7 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
         'Token inválido ou usuário não existe mais.',
       )
     }
-
+    
     req['account'] = payloadDecoded
     return payloadDecoded
   }

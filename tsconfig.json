@@ -24,8 +24,15 @@
     "strictPropertyInitialization": false,
     "types": ["jest", "node"],
     "paths": {
-      "@shared/*": ["src/shared/*"],
+      "@account/*": ["src/account/*"],
       "@auth/*": ["src/auth/*"],
+      "@credential/*": ["src/credential/*"],
+      "@notification-type/*": ["src/notification-type/*"],
+      "@plan/*": ["src/plan/*"],
+      "@role/*": ["src/role/*"],
+      "@shared/*": ["src/shared/*"],
+      "@subscription-status/*": ["src/subscription-status/*"],
+      "@user/*": ["src/user/*"],
       "@prisma/generated/*": ["prisma/generated/*"]
     }
   }

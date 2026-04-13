@@ -22,6 +22,7 @@
     "prisma:migrate": "npx prisma migrate dev",
     "prisma:seed": "ts-node -r tsconfig-paths/register src/shared/services/prisma/prisma-seed.ts",
     "prisma:sync": "npx prisma db push",
+    "prisma:reset": "npx prisma migrate reset",
     "docker:up-d": "docker compose up -d",
     "docker:up": "docker compose up",
     "docker:down-d": "docker compose down -d",
@@ -74,7 +75,6 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0",
-    "zod-prisma-types": "^3.3.11"
   },
   "jest": {
     "moduleFileExtensions": [

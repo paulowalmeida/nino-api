@@ -83,7 +83,7 @@ curl http://localhost:3000/
 - **TypeScript** — Type safety end-to-end
 - **Express** — HTTP abstrato via NestJS
 - **Prisma** — ORM tipado com migrations automáticas
-- **PostgreSQL** — Banco relacional ACID com schema-per-tenant
+- **PostgreSQL** — Banco relacional ACID com schema-per-tenant (planejado)
 
 ### Autenticação & Segurança
 
@@ -108,72 +108,52 @@ curl http://localhost:3000/
 
 ---
 
-## 📁 Estrutura do Projeto
+## 📊 Endpoints da API
 
+### **Total: 31 Endpoints em 7 Módulos**
+
+#### **Auth** (4 endpoints)
 ```
-nino-api/
-├── src/
-│   ├── auth/                 # ✅ Módulo de autenticação (80% completo)
-│   │   ├── auth.controller.ts
-│   │   ├── auth.service.ts
-│   │   ├── auth.repository.ts
-│   │   ├── guards/           # JwtRefreshGuard
-│   │   ├── strategies/       # JwtRefreshStrategy
-│   │   ├── dtos/             # DTOs tipados
-│   │   └── types/            # Types por contexto
-│   │
-│   ├── shared/               # Código compartilhado
-│   │   ├── enums/            # UserRole, Plan, SubscriptionStatus, NotificationType
-│   │   ├── guards/           # JwtAuthGuard
-│   │   ├── strategies/       # JwtAuthStrategy
-│   │   └── services/
-│   │       └── prisma/       # PrismaService, PrismaErrorService
-│   │
-│   ├── users/                # ⏳ Módulo de usuários (futuro)
-│   ├── app.module.ts         # Root module
-│   └── main.ts               # Entry point
-│
-├── prisma/
-│   ├── schema.prisma         # 11 models (User, Plan, Tenant, etc)
-│   ├── migrations/           # Histórico de migrations
-│   └── generated/zod/        # Schemas Zod gerados
-│
-├── test/                     # Testes end-to-end
-├── collections/              # Postman/Insomnia collections
-├── docker-compose.yml        # PostgreSQL + Redis
-├── package.json
-├── tsconfig.json
-├── CONTEXT.md                # 📖 Documentação completa (1.350 linhas)
-└── README.md                 # Este arquivo!
+POST   /auth/login
+POST   /auth/logout
+POST   /auth/refresh-token
+POST   /auth/change-password
 ```
 
-**Documentação detalhada:** Veja [CONTEXT.md](./CONTEXT.md) para arquitetura, padrões, fluxos e decisões de design.
+#### **Account** (9 endpoints)
+```
+POST   /accounts
+GET    /accounts
+GET    /accounts/:id
+GET    /accounts/email/:email
+GET    /accounts/:id/login-history
+PATCH  /accounts/:id/preferences
+PATCH  /accounts/:id/role
+PATCH  /accounts/:id/deactivate
+PATCH  /accounts/:id/activate
+```
+
+#### **Credentials** (5 endpoints)
+```
+GET    /credentials/:id
+GET    /credentials/account/:accountId
+PATCH  /credentials/:id
+PATCH  /credentials/:id/password
+DELETE /credentials/:id
+```
+
+#### **Role, Plan, SubscriptionStatus, NotificationType** (10 endpoints)
+```
+GET /roles | /plans | /subscription-statuses | /notification-types
+GET /roles/:id | /plans/:id | ...
+GET /roles/code/:code | /plans/code/:code | ...
+```
 
 ---
 
-## 🔐 API Endpoints
+## 🔐 Exemplos de Requisição
 
-### Autenticação
-
-#### `POST /auth/create-user`
-
-Registra novo usuário.
-
-```bash
-curl -X POST http://localhost:3000/auth/create-user \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "password123",
-    "firstName": "João",
-    "lastName": "Silva",
-    "role": 2
-  }'
-```
-
-#### `POST /auth/login`
-
-Autentica e retorna tokens.
+### Login
 
 ```bash
 curl -X POST http://localhost:3000/auth/login \
@@ -184,64 +164,23 @@ curl -X POST http://localhost:3000/auth/login \
   }'
 ```
 
-**Response:**
-
-```json
-{
-  "user": {
-    "id": "uuid-123",
-    "email": "user@example.com",
-    "firstName": "João",
-    "lastName": "Silva",
-    "role": { "code": 2, "description": "Customer" },
-    "createdAt": "2026-04-09T18:30:00Z"
-  },
-  "tokens": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-#### `GET /auth/current-user`
-
-Retorna usuário logado. **Requer JWT.**
+### Criar Conta
 
 ```bash
-curl http://localhost:3000/auth/current-user \
-  -H "Authorization: Bearer <accessToken>"
-```
-
-#### `POST /auth/logout`
-
-Remove refresh token. **Requer JWT.**
-
-```bash
-curl -X POST http://localhost:3000/auth/logout \
-  -H "Authorization: Bearer <accessToken>"
-```
-
-#### `POST /auth/refresh-token`
-
-Renova access token. **Requer refresh token.**
-
-```bash
-curl -X POST http://localhost:3000/auth/refresh-token \
-  -H "Authorization: Bearer <refreshToken>"
-```
-
-#### `POST /auth/change-password`
-
-Muda senha do usuário logado. **Requer JWT.**
-
-```bash
-curl -X POST http://localhost:3000/auth/change-password \
+curl -X POST http://localhost:3000/accounts \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <accessToken>" \
   -d '{
-    "oldPassword": "password123",
-    "newPassword": "newPassword456"
+    "email": "newuser@example.com",
+    "password": "password123",
+    "roleId": "uuid-role-customer"
   }'
+```
+
+### Listar Contas (requer JWT)
+
+```bash
+curl http://localhost:3000/accounts \
+  -H "Authorization: Bearer <accessToken>"
 ```
 
 ---
@@ -252,17 +191,16 @@ curl -X POST http://localhost:3000/auth/change-password \
 
 ```bash
 # Inicia containers
-npm run docker:up-d
+docker-compose up -d
 
 # Para tudo
-npm run docker:down
+docker-compose down
 
 # Logs
 docker-compose logs -f postgres redis
 ```
 
-**Credenciais padrão** (docker-compose.yml):
-
+**Credenciais padrão:**
 - PostgreSQL: `postgresql://ninomia:password@localhost:5432/ninomia_dev`
 - Redis: `redis://localhost:6379`
 
@@ -271,77 +209,22 @@ docker-compose logs -f postgres redis
 ## 🧪 Testes
 
 ```bash
-# Testes unitários
-npm test
-
-# Watch mode
-npm run test:watch
-
-# Com cobertura
-npm run test:cov
-
-# Testes end-to-end
-npm run test:e2e
-```
-
-**Cobertura atual:**
-
-- Auth module: ~85%
-- Shared services: ~90%
-- Geral: ~80%
-
-**Executar arquivo específico:**
-
-```bash
-npm test -- auth.service.spec.ts
-```
-
-**Debug de testes:**
-
-```bash
-npm run test:debug
+npm test              # Testes unitários
+npm run test:watch    # Watch mode
+npm run test:cov      # Com cobertura
+npm run test:e2e      # Testes end-to-end
 ```
 
 ---
 
 ## 🗄️ Prisma
 
-### Migrations
-
 ```bash
-# Gera Prisma client (necessário após mudanças no schema)
-npm run prisma:generate
-
-# Cria nova migration
-npm run prisma:migrate
-
-# Sincroniza schema com BD (dev only, cuidado!)
-npm run prisma:sync
-
-# Seed (popula dados iniciais)
-npm run prisma:seed
-
-# Abre Prisma Studio (UI visual do banco)
-npx prisma studio
+npm run prisma:generate    # Gera Prisma client
+npm run prisma:migrate     # Cria migration
+npm run prisma:seed        # Popula dados iniciais
+npx prisma studio         # UI visual do banco
 ```
-
-### Schema Atual
-
-**11 Models:**
-
-- **User** — Entidade de autenticação
-- **UserRole** — Papéis (ADMIN, CUSTOMER, DELIVERY, RESTAURANT)
-- **UserProfile** — Dados pessoais estendidos (CPF, CNPJ, avatar)
-- **UserContact** — Múltiplos contatos (phone, mobile, whatsapp)
-- **UserAddress** — Múltiplos endereços
-- **Plan** — Planos de assinatura (INICIANTE, PROFISSIONAL, REDE)
-- **Subscription** — Assinatura do usuário
-- **SubscriptionStatus** — Estados (ACTIVE, INACTIVE, CANCELLED)
-- **Tenant** — Restaurante/estabelecimento
-- **Notification** — Notificações in-app
-- **NotificationType** — Tipos de notificação (EMAIL, WHATSAPP, PUSH)
-
-**Visualizar:** `npx prisma studio`
 
 ---
 
@@ -349,94 +232,48 @@ npx prisma studio
 
 ### Variáveis de Ambiente
 
-Copie `.env.example` para `.env` e configure:
-
 ```env
-# Banco de Dados
 DATABASE_URL=postgresql://user:password@localhost:5432/ninomia_dev
-
-# JWT (gere secrets seguros!)
 JWT_SECRET=seu-secret-super-seguro-access-token
 JWT_REFRESH_SECRET=seu-secret-super-seguro-refresh-token
-
-# Servidor
 PORT=3000
 NODE_ENV=development
-
-# Opcionais (filas, emails, etc)
-RESEND_API_KEY=re_xxxxx
-Z_API_TOKEN=xxxxx
-PAGARME_API_KEY=xxxxx
 ```
 
-### Linting & Formatação
+### Linting & Build
 
 ```bash
-# Fix linting errors
-npm run lint
-
-# Format code
-npm run format
-```
-
-### Build
-
-```bash
-# Build para produção
-npm run build
-
-# Executar build
-npm run start:prod
+npm run lint          # Fix linting errors
+npm run format        # Format code
+npm run build         # Build para produção
+npm run start:prod    # Executar em produção
 ```
 
 ---
 
 ## 📊 Status do Projeto
 
-### Módulos Completos ✅
+### ✅ Módulos Implementados
 
-- ✅ **shared/prisma** — PrismaService, migrations, error handling
-- ✅ **shared/guards** — JwtAuthGuard, JwtRefreshGuard
-- ✅ **shared/strategies** — JWT strategies
-- ✅ **shared/enums** — UserRole, Plan, etc.
-- ✅ **auth** (~80%) — createUser, login, logout, refresh, changePassword
+| Módulo | Endpoints | Status |
+|--------|-----------|--------|
+| **auth** | 4 | ✅ 100% |
+| **account** | 9 | ✅ 100% |
+| **credential** | 5 | ✅ 100% |
+| **role** | 3 | ✅ 100% |
+| **plan** | 4 | ✅ 100% |
+| **subscription-status** | 3 | ✅ 100% |
+| **notification-type** | 3 | ✅ 100% |
 
-### Próximos Passos 🔄
+**Total:** 31 endpoints implementados ✨
 
-- [ ] `POST /auth/forgot-password` + `POST /auth/reset-password` (depende Resend)
-- [ ] Módulo de **tenant** com schema-per-tenant isolamento
-- [ ] Módulo de **restaurant** — cardápio, produtos
-- [ ] Módulo de **order** — pedidos, status
-- [ ] Integração **Pagar.me** — split payments
-- [ ] Módulo de **delivery** — entregadores, rastreamento real-time
-- [ ] **Notifications** — Resend, Z-API, FCM, SSE
-- [ ] **Analytics** — PostHog
+### 🔄 Próximos Passos
 
----
-
-## 🌟 Features Planejadas
-
-### MVP (3-6 meses)
-
-- [x] Autenticação JWT com refresh token rotation
-- [x] Rate limiting
-- [x] Validação automática com class-validator
-- [ ] Documentação Swagger
-- [ ] Módulo de tenant com schema-per-tenant
-- [ ] CRUD de restaurante
-- [ ] Cardápio e produtos
-- [ ] Criação e rastreamento de pedidos
-- [ ] Integração Pagar.me split payments
-- [ ] Notificações (Resend, WhatsApp, push)
-
-### Pós-MVP
-
-- [ ] Rastreamento real-time de entregador (WebSocket)
-- [ ] Marketplace de entregadores
-- [ ] Analytics e relatórios
-- [ ] App mobile (Expo)
-- [ ] Dashboard (Next.js)
-- [ ] Integrações (Automação, ERPs)
+- [ ] Swagger documentation
+- [ ] Forgot password + reset password
+- [ ] Tenant module com schema-per-tenant
+- [ ] Restaurant module
+- [ ] Order module
 
 ---
 
@@ -444,159 +281,74 @@ npm run start:prod
 
 ### Padrões Implementados
 
-- **Repository Pattern** — Abstração de dados
+- **Repository Pattern** — Abstração de dados com null/error handling centralizado
 - **Service Layer** — Lógica de negócio
-- **Controller** — Handlers HTTP
-- **DTO (Data Transfer Objects)** — Validação
 - **Dependency Injection** — NestJS nativo
 - **Error Handling Centralizado** — PrismaErrorService
-- **Types por Contexto** — Controle explícito de exposição de dados
-- **Multi-tenant Schema-per-Tenant** — Isolamento de dados
+- **Types com Prisma.GetPayload** — Tipos seguros e sincronizados
+- **Módulos Independentes** — Cada entidade tem seu módulo
 
 ### Decisões de Design
 
 - **Monolito MVP** — Velocidade > escalabilidade prematura
 - **JWT Stateless** — Escalabilidade horizontal fácil
 - **PostgreSQL** — Robusto, ACID, suporta schema isolation
-- **Prisma** — Type safety, migrations tipadas, Zod generation
-- **Refresh Token Hasheado** — Segurança — plain token nunca persiste
+- **Prisma** — Type safety, migrations tipadas
+- **Null Handling no Repository** — Evita duplicação nos services
 
-**Leia mais:** [CONTEXT.md](./CONTEXT.md) (Trade-offs & Decisões de Arquitetura)
-
----
-
-## 📦 Dependências Principais
-
-```json
-{
-  "@nestjs/common": "^11.0.1",
-  "@nestjs/config": "^4.0.3",
-  "@nestjs/core": "^11.0.1",
-  "@nestjs/jwt": "^11.0.2",
-  "@nestjs/passport": "^11.0.5",
-  "@nestjs/throttler": "^6.5.0",
-  "@prisma/client": "^7.4.1",
-  "bcrypt": "^6.0.0",
-  "class-validator": "^0.15.1",
-  "class-transformer": "^0.5.1",
-  "passport": "^0.7.0",
-  "passport-jwt": "^4.0.1"
-}
-```
-
-**Versões completas:** Veja [package.json](./package.json)
+**Leia mais:** [CONTEXT.md](./CONTEXT.md)
 
 ---
 
-## 📖 Documentação
+## 📚 Documentação Completa
 
-| Documento                                     | Descrição                                                                                          |
-| --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| **[CONTEXT.md](./CONTEXT.md)**                | 📘 Documentação completa (1.350 linhas): arquitetura, padrões, models, convenções, testes, roadmap |
-| **[NestJS Docs](https://docs.nestjs.com)**    | Framework                                                                                          |
-| **[Prisma Docs](https://www.prisma.io/docs)** | ORM                                                                                                |
-| **[JWT.io](https://jwt.io)**                  | Tokens                                                                                             |
-| **[Passport.js](http://www.passportjs.org)**  | Autenticação                                                                                       |
-| **[Jest Docs](https://jestjs.io)**            | Testes                                                                                             |
+- **[CONTEXT.md](./CONTEXT.md)** — Arquitetura, padrões, modelos, convenções, roadmap (2.000+ linhas)
+- **[NestJS Docs](https://docs.nestjs.com)** — Framework
+- **[Prisma Docs](https://www.prisma.io/docs)** — ORM
 
 ---
 
 ## 🤝 Contribuição
 
-### Branches
-
-- `main` → Produção
-- `develop` → Staging
-- `feature/nome-feature` → Feature branches
-
 ### Padrão de Commits
 
 ```
 feat(auth): implementar login com JWT
-fix(auth): corrigir validação de password
-test(auth): adicionar testes para createUser
+fix(account): corrigir validação de role
+test(credentials): adicionar testes
 docs: atualizar CONTEXT.md
-refactor(prisma): extrair queries em repository
+refactor(repository): centralizar tratamento de null
 ```
 
 ### PR Checklist
 
-- [ ] Testes passando (`npm test`)
-- [ ] Cobertura mantida/melhorada
-- [ ] Linting sem erros (`npm run lint`)
-- [ ] CONTEXT.md atualizado (se aplicável)
+- [ ] Testes passando
+- [ ] Cobertura mantida
+- [ ] Linting sem erros
+- [ ] CONTEXT.md atualizado
 - [ ] Commits descritivos
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Erro: `ECONNREFUSED` ao conectar PostgreSQL
+### PostgreSQL não conecta
 
 ```bash
-# Verificar se PostgreSQL está rodando
-npm run docker:up-d
-
-# Ou conecte ao seu banco existente
-# Edite DATABASE_URL no .env
+docker-compose up -d
 ```
 
-### Erro: `Prisma client not found`
+### Prisma client não encontrado
 
 ```bash
 npm run prisma:generate
 ```
 
-### Erro: `Migration failed`
+### Port 3000 já em uso
 
 ```bash
-# Reset banco (dev only!)
-npx prisma migrate reset
-npm run prisma:seed
-```
-
-### Erro: `Port 3000 já em uso`
-
-```bash
-# Use porta diferente
 PORT=3001 npm run start:dev
-
-# Ou mate o processo
-lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs kill -9
 ```
-
----
-
-## 📞 Suporte
-
-- 📖 **Documentação:** [CONTEXT.md](./CONTEXT.md)
-- 🐛 **Issues:** [GitHub Issues](#)
-- 💬 **Discord:** [Comunidade](#)
-- 📧 **Email:** dev@ninomia.com
-
----
-
-## 📈 Roadmap
-
-### Q2 2026 (Agora)
-
-- ✅ Auth module concluído
-- [ ] Swagger documentation
-- [ ] Forgot password + reset password
-- [ ] Tenant module com schema-per-tenant
-
-### Q3 2026
-
-- [ ] Restaurant & menu modules
-- [ ] Order creation & tracking
-- [ ] Pagar.me integration
-
-### Q4 2026
-
-- [ ] Mobile app (Expo)
-- [ ] Real-time delivery tracking
-- [ ] Notifications (Email, WhatsApp, Push)
-- [ ] Analytics
 
 ---
 
@@ -604,17 +356,7 @@ lsof -i :3000 | grep LISTEN | awk '{print $2}' | xargs kill -9
 
 **Proprietary.** Código fechado — não distribuir sem permissão.
 
-Desenvolvido por **Paulo** — Solo developer.  
-Parte do projeto **[Ninomia Delivery](https://ninomia.com)**.
-
----
-
-## 🙏 Agradecimentos
-
-- **NestJS** — Framework incrível
-- **Prisma** — ORM sensacional
-- **PostgreSQL** — Banco robusto
-- **Community** — Suporte open-source
+Desenvolvido por **Paulo** — Solo developer.
 
 ---
 
@@ -623,5 +365,7 @@ Parte do projeto **[Ninomia Delivery](https://ninomia.com)**.
 **[⬆ Voltar ao topo](#)**
 
 Feito com ❤️ em **Ananindeua, PA** 🇧🇷
+
+**45% do MVP concluído — 31 endpoints em 7 módulos modularizados! 🚀**
 
 </div>
