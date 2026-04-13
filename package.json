@@ -102,16 +102,16 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@account/(.*)$": "<rootDir>/account/$1",
       "^@auth/(.*)$": "<rootDir>/auth/$1",
       "^@credential/(.*)$": "<rootDir>/credential/$1",
       "^@notification-type/(.*)$": "<rootDir>/notification-type/$1",
       "^@plan/(.*)$": "<rootDir>/plan/$1",
+      "^@prisma/generated/(.*)$": "<rootDir>/../prisma/generated/$1",
+      "^@profile/(.*)$": "<rootDir>/profile/$1",
       "^@role/(.*)$": "<rootDir>/role/$1",
       "^@shared/(.*)$": "<rootDir>/shared/$1",
       "^@subscription-status/(.*)$": "<rootDir>/subscription-status/$1",
-      "^@user/(.*)$": "<rootDir>/user/$1",
-      "^@prisma/generated/(.*)$": "<rootDir>/../prisma/generated/$1"
+      "^@user/(.*)$": "<rootDir>/user/$1"
     }
   }
 }

@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import type { AccountTokenData } from '@account/types/account-token.data.type'
+import type { UserTokenData } from '@user/types/user-token.data.type'
 import { UpdateCredentialDTO } from '@credential/dto/update-credential.dto'
 import { Credential } from '@credential/types/credential.type'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
@@ -19,12 +19,12 @@ import { CredentialsService } from './credential.service'
 export class CredentialController {
   constructor(private readonly credentialsService: CredentialsService) {}
 
-  @Get('list-by-account-id/:accountId')
+  @Get('list-by-user-id/:userId')
   @UseGuards(JwtAuthGuard)
-  async getListByAccountId(
-    @Param('accountId') accountId: string,
+  async getListByUserId(
+    @Param('userId') userId: string,
   ): Promise<Credential[]> {
-    return await this.credentialsService.getListByAccountId(accountId)
+    return await this.credentialsService.getListByUserId(userId)
   }
 
   @Get(':id')

@@ -5,7 +5,7 @@ import { PassportStrategy } from '@nestjs/passport'
 import { Request } from 'express'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 
-import { AccountTokenData } from '@account/types/account-token.data.type'
+import { UserTokenData } from '@user/types/user-token.data.type'
 
 @Injectable()
 export class JwtRefreshStrategy extends PassportStrategy(
@@ -30,12 +30,12 @@ export class JwtRefreshStrategy extends PassportStrategy(
 
   async validate(
     req: Request,
-    payload: AccountTokenData,
-  ): Promise<AccountTokenData> {
+    payload: UserTokenData,
+  ): Promise<UserTokenData> {
     const hashedRefreshToken =
       req.headers.authorization?.replace('Bearer ', '') ?? ''
     const data = { ...payload, hashedRefreshToken }
-    req['account'] = data
+    req['user'] = data
     return data
   }
 }

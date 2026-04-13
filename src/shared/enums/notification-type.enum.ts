@@ -3,5 +3,5 @@ export enum NotificationType {
   PROMOTION = 2,
   ORDER = 3,
   PAYMENT = 4,
-  ACCOUNT = 5,
+  USER = 5,
 }

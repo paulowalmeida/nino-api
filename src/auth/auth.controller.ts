@@ -9,7 +9,7 @@ import { JwtRefreshGuard } from '@auth/jwt-refresh.guard'
 import { LoginResponse } from '@auth/types/login-response.type'
 import { Tokens } from '@auth/types/tokens.type'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
-import type { AuthRequest } from '@shared/types/account-auth-request.type'
+import type { AuthRequest } from '@shared/types/auth-request.type'
 
 @Controller('auth')
 export class AuthController {
@@ -30,7 +30,7 @@ export class AuthController {
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   async logout(@Req() req: AuthRequest): Promise<{ message: string }> {
-    await this.authService.logout(req.account.sub)
+    await this.authService.logout(req.user.sub)
     return { message: 'Logout bem-sucedido' }
   }
 
@@ -42,8 +42,8 @@ export class AuthController {
   @UseGuards(JwtRefreshGuard)
   async refreshToken(@Req() req: AuthRequest): Promise<Tokens> {
     return await this.authService.refreshToken(
-      req.account.sub,
-      req.account?.hashedRefreshToken,
+      req.user.sub,
+      req.user?.hashedRefreshToken,
     )
   }
 

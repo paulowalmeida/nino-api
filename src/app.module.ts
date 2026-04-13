@@ -7,9 +7,9 @@ import { AuthModule } from '@auth/auth.module'
 import { APP_GUARD } from '@nestjs/core'
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 
-import { AccountModule } from '@account/account.module'
 import { NotificationTypeModule } from '@notification-type/notification-type.module'
 import { PlanModule } from '@plan/plan.module'
+import { ProfileModule } from '@profile/profile.module'
 import { RoleModule } from '@role/role.module'
 import { PrismaModule } from '@shared/services/prisma/prisma.module'
 import { SubscriptionStatusModule } from '@subscription-status/subscription-status.module'
@@ -24,6 +24,7 @@ import { AppService } from './app.service'
     NotificationTypeModule,
     RoleModule,
     SubscriptionStatusModule,
+    ProfileModule,
     UserModule,
     ThrottlerModule.forRoot([
       {
@@ -35,7 +36,6 @@ import { AppService } from './app.service'
       isGlobal: true,
       envFilePath: join(process.cwd(), '.env'),
     }),
-    AccountModule,
   ],
   providers: [
     AppService,

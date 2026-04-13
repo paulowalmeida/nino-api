@@ -120,23 +120,23 @@ POST   /auth/refresh-token
 POST   /auth/change-password
 ```
 
-#### **Account** (9 endpoints)
+#### **User** (9 endpoints)
 ```
-POST   /accounts
-GET    /accounts
-GET    /accounts/:id
-GET    /accounts/email/:email
-GET    /accounts/:id/login-history
-PATCH  /accounts/:id/preferences
-PATCH  /accounts/:id/role
-PATCH  /accounts/:id/deactivate
-PATCH  /accounts/:id/activate
+POST   /users
+GET    /users
+GET    /users/:id
+GET    /users/email/:email
+GET    /users/:id/login-history
+PATCH  /users/:id/preferences
+PATCH  /users/:id/role
+PATCH  /users/:id/deactivate
+PATCH  /users/:id/activate
 ```
 
 #### **Credentials** (5 endpoints)
 ```
 GET    /credentials/:id
-GET    /credentials/account/:accountId
+GET    /credentials/user/:userId
 PATCH  /credentials/:id
 PATCH  /credentials/:id/password
 DELETE /credentials/:id
@@ -159,7 +159,7 @@ GET /roles/code/:code | /plans/code/:code | ...
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "user@example.com",
+    "email": "profile@example.com",
     "password": "password123"
   }'
 ```
@@ -167,10 +167,10 @@ curl -X POST http://localhost:3000/auth/login \
 ### Criar Conta
 
 ```bash
-curl -X POST http://localhost:3000/accounts \
+curl -X POST http://localhost:3000/users \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "newuser@example.com",
+    "email": "newprofile@example.com",
     "password": "password123",
     "roleId": "uuid-role-customer"
   }'
@@ -179,7 +179,7 @@ curl -X POST http://localhost:3000/accounts \
 ### Listar Contas (requer JWT)
 
 ```bash
-curl http://localhost:3000/accounts \
+curl http://localhost:3000/users \
   -H "Authorization: Bearer <accessToken>"
 ```
 
@@ -233,7 +233,7 @@ npx prisma studio         # UI visual do banco
 ### Variáveis de Ambiente
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/ninomia_dev
+DATABASE_URL=postgresql://profile:password@localhost:5432/ninomia_dev
 JWT_SECRET=seu-secret-super-seguro-access-token
 JWT_REFRESH_SECRET=seu-secret-super-seguro-refresh-token
 PORT=3000
@@ -258,7 +258,7 @@ npm run start:prod    # Executar em produção
 | Módulo | Endpoints | Status |
 |--------|-----------|--------|
 | **auth** | 4 | ✅ 100% |
-| **account** | 9 | ✅ 100% |
+| **user** | 9 | ✅ 100% |
 | **credential** | 5 | ✅ 100% |
 | **role** | 3 | ✅ 100% |
 | **plan** | 4 | ✅ 100% |
@@ -314,7 +314,7 @@ npm run start:prod    # Executar em produção
 
 ```
 feat(auth): implementar login com JWT
-fix(account): corrigir validação de role
+fix(user): corrigir validação de role
 test(credentials): adicionar testes
 docs: atualizar CONTEXT.md
 refactor(repository): centralizar tratamento de null

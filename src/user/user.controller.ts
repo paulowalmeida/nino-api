@@ -1,53 +1,99 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
+  Patch,
   Post,
-  Put,
   Req,
   UseGuards,
 } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
-import type { AuthRequest } from '@shared/types/account-auth-request.type'
-import { UserDto } from '@user/dto/user.dto'
-import { User } from '@user/types/user-repository.type'
-import { UserService } from './user.service'
+import { UpdatePreferencesDTO } from '@user/dto/user-update-preferences.dto'
+import { UpdateRoleDTO } from '@user/dto/user-update-role.dto'
+import { NewUserDTO } from '@user/new-user.dto'
+import type { UserTokenData } from '@user/types/user-token.data.type'
+import { User } from '@user/types/user.type'
+import { UserService } from '@user/user.service'
 
 @Controller('users')
-export class UsersController {
+export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Throttle({ default: { ttl: 3600000, limit: 5 } })
+  @Post()
+  async create(@Body() payload: NewUserDTO): Promise<User> {
+    return await this.userService.create(payload)
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  async getList(): Promise<User[]> {
-    return await this.userService.getList()
+  async listAll(): Promise<User[]> {
+    return await this.userService.listAll()
   }
 
-  @Get('/:id')
+  @Get('current')
+  @UseGuards(JwtAuthGuard)
+  async getCurrentUser(@Req() req: UserTokenData): Promise<User> {
+    return await this.userService.getByEmail(req.email)
+  }
+
+  @Get('email/:email')
+  @UseGuards(JwtAuthGuard)
+  async getByEmail(@Param('email') email: string): Promise<User> {
+    return await this.userService.getByEmail(email)
+  }
+
+  @Get(':id')
   @UseGuards(JwtAuthGuard)
   async getById(@Param('id') id: string): Promise<User> {
     return await this.userService.getById(id)
   }
 
-  @Post()
+  // @Get(':id/login-history')
+  // @UseGuards(JwtAuthGuard)
+  // async getLoginHistory(
+  //   @Param('id') id: string,
+  //   @Query('limit') limit?: number,
+  // ): Promise<any> {
+  //   return await this.userService.getLoginHistory(id, limit)
+  // }
+
+  @Patch(':id/preferences')
   @UseGuards(JwtAuthGuard)
-  async create(@Req() req: AuthRequest, @Body() body: UserDto): Promise<User> {
-    return await this.userService.create(req.account.sub, body)
+  async updatePreferences(
+    @Param('id') id: string,
+    @Body() payload: UpdatePreferencesDTO,
+  ): Promise<User> {
+    return await this.userService.updatePreferences(
+      id,
+      payload.locale,
+      payload.timezone,
+    )
   }
 
-  @Put(':id')
+  @Patch(':id/role')
   @UseGuards(JwtAuthGuard)
-  async update(@Param('id') id: string, @Body() body: UserDto): Promise<User> {
-    return await this.userService.update(id, body)
+  async updateRole(
+    @Param('id') id: string,
+    @Body() payload: UpdateRoleDTO,
+  ): Promise<User> {
+    return await this.userService.updateRole(id, payload.roleId)
   }
 
-  @Delete(':id')
+  @Patch(':id/deactivate')
   @UseGuards(JwtAuthGuard)
-  async delete(@Param('id') id: string): Promise<{ message: string }> {
-    await this.userService.delete(id)
-    return { message: 'User deleted' }
+  async deactivate(@Param('id') id: string): Promise<{ message: string }> {
+    await this.userService.deactivate(id)
+    return { message: 'User deactivated' }
+  }
+
+  @Patch(':id/activate')
+  @UseGuards(JwtAuthGuard)
+  async activate(@Param('id') id: string): Promise<{ message: string }> {
+    await this.userService.activate(id)
+    return { message: 'User activated' }
   }
 }

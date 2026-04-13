@@ -13,7 +13,7 @@ export class CredentialsRepository {
   ) {}
 
   async create(
-    accountId: string,
+    userId: string,
     email: string,
     password: string,
     provider: string,
@@ -21,7 +21,7 @@ export class CredentialsRepository {
     try {
       return await this.prisma.authCredential.create({
         data: {
-          accountId,
+          userId,
           email,
           password,
           provider,
@@ -32,10 +32,10 @@ export class CredentialsRepository {
     }
   }
 
-  async findListByAccountId(accountId: string): Promise<Credential[]> {
+  async findListByUserId(userId: string): Promise<Credential[]> {
     try {
       return await this.prisma.authCredential.findMany({
-        where: { accountId },
+        where: { userId },
         omit: { hashedRefreshToken: true, password: true },
       })
     } catch (error) {
@@ -106,10 +106,10 @@ export class CredentialsRepository {
     }
   }
 
-  async getRefreshToken(accountId: string): Promise<CredentialRepository> {
+  async getRefreshToken(userId: string): Promise<CredentialRepository> {
     try {
       const result = await this.prisma.authCredential.findFirst({
-        where: { accountId, provider: 'local' },
+        where: { userId, provider: 'local' },
       })
 
       if (!result) throw new NotFoundException('Credential not found')
@@ -121,12 +121,12 @@ export class CredentialsRepository {
   }
 
   async updateRefreshToken(
-    accountId: string,
+    userId: string,
     hashedRefreshToken: string,
   ): Promise<void> {
     try {
       await this.prisma.authCredential.updateMany({
-        where: { accountId, provider: 'local' },
+        where: { userId, provider: 'local' },
         data: { hashedRefreshToken },
       })
     } catch (error) {
@@ -134,10 +134,10 @@ export class CredentialsRepository {
     }
   }
 
-  async removeRefreshToken(accountId: string): Promise<void> {
+  async removeRefreshToken(userId: string): Promise<void> {
     try {
       await this.prisma.authCredential.updateMany({
-        where: { accountId, provider: 'local' },
+        where: { userId, provider: 'local' },
         data: { hashedRefreshToken: null },
       })
     } catch (error) {

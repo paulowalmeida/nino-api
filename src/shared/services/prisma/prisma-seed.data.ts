@@ -6,7 +6,7 @@ import { SubscriptionStatus } from '@shared/enums/subscription-status.enum'
 
 export const roles: Prisma.RoleCreateInput[] = [
   { id: Role.UNRECOGNIZED, description: 'UNRECOGNIZED' },
-  { id: Role.UNSPECIFIED, description: 'USER_ROLE_UNSPECIFIED' },
+  { id: Role.UNSPECIFIED, description: 'PROFILE_ROLE_UNSPECIFIED' },
   { id: Role.ADMIN, description: 'ADMIN' },
   { id: Role.SUPPORT, description: 'SUPPORT' },
   { id: Role.MERCHANT, description: 'MERCHANT' },
@@ -67,5 +67,5 @@ export const notificationTypes: Prisma.NotificationTypeCreateInput[] = [
   { id: NotificationType.PROMOTION, description: 'PROMOTION' },
   { id: NotificationType.ORDER, description: 'ORDER' },
   { id: NotificationType.PAYMENT, description: 'PAYMENT' },
-  { id: NotificationType.ACCOUNT, description: 'ACCOUNT' },
+  { id: NotificationType.USER, description: 'USER' },
 ]

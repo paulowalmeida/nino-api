@@ -12,14 +12,14 @@ export class AuthRepository {
   ) {}
 
   async getRefreshToken(
-    accountId: string,
+    userId: string,
   ): Promise<AuthCredentialRefreshToken> {
     try {
       const result = await this.prisma.authCredential.findFirst({
-        where: { accountId, provider: 'local' },
+        where: { userId, provider: 'local' },
         select: {
           id: true,
-          accountId: true,
+          userId: true,
           email: true,
           hashedRefreshToken: true,
         },
@@ -34,12 +34,12 @@ export class AuthRepository {
   }
 
   async updateRefreshToken(
-    accountId: string,
+    userId: string,
     hashedRefreshToken: string,
   ): Promise<void> {
     try {
       await this.prisma.authCredential.updateMany({
-        where: { accountId, provider: 'local' },
+        where: { userId, provider: 'local' },
         data: { hashedRefreshToken },
       })
     } catch (error) {
@@ -47,10 +47,10 @@ export class AuthRepository {
     }
   }
 
-  async removeRefreshToken(accountId: string): Promise<void> {
+  async removeRefreshToken(userId: string): Promise<void> {
     try {
       await this.prisma.authCredential.updateMany({
-        where: { accountId, provider: 'local' },
+        where: { userId, provider: 'local' },
         data: { hashedRefreshToken: null },
       })
     } catch (error) {

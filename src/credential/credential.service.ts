@@ -13,21 +13,21 @@ export class CredentialsService {
   ) {}
 
   async create(
-    accountId: string,
+    userId: string,
     email: string,
     password: string,
     provider: string,
   ): Promise<Credential> {
     return this.credentialsRepository.create(
-      accountId,
+      userId,
       email,
       password,
       provider,
     )
   }
 
-  async getListByAccountId(accountId: string): Promise<Credential[]> {
-    return this.credentialsRepository.findListByAccountId(accountId)
+  async getListByUserId(userId: string): Promise<Credential[]> {
+    return this.credentialsRepository.findListByUserId(userId)
   }
 
   async getById(id: string): Promise<Credential> {
@@ -57,21 +57,21 @@ export class CredentialsService {
     return this.credentialsRepository.delete(id)
   }
 
-  async getRefreshToken(accountId: string) {
-    return this.credentialsRepository.getRefreshToken(accountId)
+  async getRefreshToken(userId: string) {
+    return this.credentialsRepository.getRefreshToken(userId)
   }
 
   async updateRefreshToken(
-    accountId: string,
+    userId: string,
     hashedRefreshToken: string,
   ): Promise<void> {
     return this.credentialsRepository.updateRefreshToken(
-      accountId,
+      userId,
       hashedRefreshToken,
     )
   }
 
-  async removeRefreshToken(accountId: string): Promise<void> {
-    return this.credentialsRepository.removeRefreshToken(accountId)
+  async removeRefreshToken(userId: string): Promise<void> {
+    return this.credentialsRepository.removeRefreshToken(userId)
   }
 }
