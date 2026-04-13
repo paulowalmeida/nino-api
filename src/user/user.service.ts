@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 
-import { User } from '@user/types/user/user-repository.type'
-import { UserDto } from './user.dto'
+import { UserDto } from '@user/dto/user.dto'
+import { User } from '@user/types/user-repository.type'
 import { UserRepository } from './user.repository'
 
 @Injectable()

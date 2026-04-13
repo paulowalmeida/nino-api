@@ -9,12 +9,11 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common'
-import { Throttle } from '@nestjs/throttler'
 
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import type { AuthRequest } from '@shared/types/account-auth-request.type'
-import { User } from '@user/types/user/user-repository.type'
-import { UserDto } from './user.dto'
+import { UserDto } from '@user/dto/user.dto'
+import { User } from '@user/types/user-repository.type'
 import { UserService } from './user.service'
 
 @Controller('users')
