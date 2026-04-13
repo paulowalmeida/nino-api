@@ -5,7 +5,7 @@ import {
   Param,
   Patch,
   Post,
-  Query,
+  Req,
   UseGuards,
 } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
@@ -14,6 +14,7 @@ import { AccountService } from '@account/account.service'
 import { UpdatePreferencesDTO } from '@account/dto/update-preferences.dto'
 import { UpdateRoleDTO } from '@account/dto/update-role.dto'
 import { NewAccountDTO } from '@account/new-account.dto'
+import type { AccountTokenData } from '@account/types/account-token.data.type'
 import { Account } from '@account/types/account.type'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 
@@ -31,6 +32,12 @@ export class AccountController {
   @UseGuards(JwtAuthGuard)
   async listAll(): Promise<Account[]> {
     return await this.accountService.listAll()
+  }
+
+  @Get('current')
+  @UseGuards(JwtAuthGuard)
+  async getCurrentAccount(@Req() req: AccountTokenData): Promise<Account> {
+    return await this.accountService.getByEmail(req.email)
   }
 
   @Get('email/:email')
@@ -78,13 +85,15 @@ export class AccountController {
 
   @Patch(':id/deactivate')
   @UseGuards(JwtAuthGuard)
-  async deactivate(@Param('id') id: string): Promise<void> {
-    return await this.accountService.deactivate(id)
+  async deactivate(@Param('id') id: string): Promise<{ message: string }> {
+    await this.accountService.deactivate(id)
+    return { message: 'Account deactivated' }
   }
 
   @Patch(':id/activate')
   @UseGuards(JwtAuthGuard)
-  async activate(@Param('id') id: string): Promise<void> {
-    return await this.accountService.activate(id)
+  async activate(@Param('id') id: string): Promise<{ message: string }> {
+    await this.accountService.activate(id)
+    return { message: 'Account activated' }
   }
 }

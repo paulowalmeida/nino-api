@@ -40,7 +40,7 @@ collection:
           rebuildPath: true
 
       - url: "{{BASE_URL}}/roles/1"
-        name: get-by-id
+        name: by-id
         meta:
           id: req_role_get_id
           created: 1776000000000
