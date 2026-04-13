@@ -1,26 +1,26 @@
 import { Injectable } from '@nestjs/common'
 
 import { AccountRepository } from '@account/account.repository'
-import { Account } from '@account/types/account.type'
 import { NewAccountDTO } from '@account/new-account.dto'
+import { Account } from '@account/types/account.type'
 import { CredentialsService } from '@credential/credential.service'
+import { PasswordService } from '@shared/services/password/password.service'
 
 @Injectable()
 export class AccountService {
   constructor(
     private readonly accountRepository: AccountRepository,
     private readonly credentialsService: CredentialsService,
+    private readonly passwordService: PasswordService,
   ) {}
 
   async create(payload: NewAccountDTO): Promise<Account> {
-    const account = await this.accountRepository.create(payload.roleId)
-    await this.credentialsService.create(
-      account.id,
+    const cryptedPassword = await this.passwordService.hash(payload.password)
+    return await this.accountRepository.createWithCredential(
+      payload.roleId,
       payload.email,
-      payload.password,
-      'local',
+      cryptedPassword,
     )
-    return await this.accountRepository.findById(account.id)
   }
 
   async listAll(): Promise<Account[]> {

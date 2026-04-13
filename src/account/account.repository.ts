@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 
 import { Account } from '@account/types/account.type'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
@@ -25,18 +29,33 @@ export class AccountRepository {
     },
   }
 
-  async create(roleId: number): Promise<Account> {
+  async createWithCredential(
+    roleId: number,
+    email: string,
+    password: string,
+  ): Promise<Account> {
     try {
-      const account = await this.prisma.account.create({
-        data: { roleId },
-        include: {
-          credentials: {
-            omit: { accountId: true, hashedRefreshToken: true, password: true },
-          },
-        },
-      })
+      return await this.prisma.$transaction(async (tx) => {
+        const account = await tx.account.create({ data: { roleId } })
 
-      return await this.findById(account.id)
+        await tx.authCredential.create({
+          data: {
+            accountId: account.id,
+            email,
+            password,
+            provider: 'local',
+          },
+        })
+
+        const result = await tx.account.findUnique({
+          where: { id: account.id },
+          ...this.accountSelect,
+        })
+
+        if (!result) throw new NotFoundException('Account not found')
+
+        return result
+      })
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
@@ -97,6 +116,11 @@ export class AccountRepository {
 
   async deactivate(id: string): Promise<void> {
     try {
+      const account = await this.findById(id)
+
+      if (!account.isActive)
+        throw new ConflictException('Account is already deanactive')
+
       await this.prisma.account.update({
         where: { id },
         data: { isActive: false },
@@ -108,6 +132,11 @@ export class AccountRepository {
 
   async activate(id: string): Promise<void> {
     try {
+      const account = await this.findById(id)
+
+      if (account.isActive)
+        throw new ConflictException('Account is already active')
+
       await this.prisma.account.update({
         where: { id },
         data: { isActive: true },
@@ -140,13 +169,16 @@ export class AccountRepository {
 
   async updateRole(id: string, roleId: number): Promise<Account> {
     try {
-      const account = await this.prisma.account.update({
+      const account = await this.findById(id)
+
+      if (account.role.id === roleId)
+        throw new ConflictException('Role ID already set')
+
+      return await this.prisma.account.update({
         where: { id },
         data: { roleId },
         ...this.accountSelect,
       })
-
-      return account
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
