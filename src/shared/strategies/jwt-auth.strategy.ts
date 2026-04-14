@@ -33,7 +33,7 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
     req: Request,
     payloadDecoded: UserTokenData,
   ): Promise<UserTokenData> {
-    const user = await this.userRepository.findByEmail(
+    const user = await this.userRepository.findByCnpj(
       payloadDecoded.email,
     )
 

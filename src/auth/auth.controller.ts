@@ -1,5 +1,4 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common'
-import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { Throttle } from '@nestjs/throttler'
 
 import { AuthService } from '@auth/auth.service'
@@ -15,18 +14,12 @@ import type { AuthRequest } from '@shared/types/auth-request.type'
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Login' })
-  @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Post('login')
   async login(@Body() payload: LoginRequestDTO): Promise<LoginResponse> {
     return await this.authService.login(payload)
   }
 
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Logout' })
-  @ApiResponse({ status: 200, description: 'Logout successful' })
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   async logout(@Req() req: AuthRequest): Promise<{ message: string }> {
@@ -34,9 +27,6 @@ export class AuthController {
     return { message: 'Logout bem-sucedido' }
   }
 
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Refresh Token' })
-  @ApiResponse({ status: 200, description: 'Refresh Token successful' })
   @Throttle({ default: { ttl: 6000, limit: 10 } })
   @Post('refresh-token')
   @UseGuards(JwtRefreshGuard)
@@ -47,10 +37,6 @@ export class AuthController {
     )
   }
 
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Change Password' })
-  @ApiBody({ type: ChangePasswordRequestDTO })
-  @ApiResponse({ status: 200, description: 'Change Password successful' })
   @Throttle({ default: { ttl: 6000, limit: 3 } })
   @Post('change-password')
   @UseGuards(JwtAuthGuard)

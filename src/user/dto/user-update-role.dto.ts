@@ -1,6 +1,6 @@
 import { IsInt } from 'class-validator'
 
-export class UpdateRoleDTO {
+export class UserUpdateRoleDTO {
   @IsInt()
   roleId: number
 }

@@ -1,0 +1,147 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Auth Module
+meta:
+  id: wrk_auth_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Auth management"
+collection:
+  - name: auth
+    meta:
+      id: fld_auth_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Auth endpoints"
+    children:
+      - url: "{{BASE_URL}}/auth/login"
+        name: login
+        meta:
+          id: req_auth_login
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -1
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"email\": \"admin@nino.com\",\n  \"password\": \"senha\"\n}"
+        headers:
+          - id: pair_login_h1
+            name: Content-Type
+            value: application/json
+        authentication: {}
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/auth/logout"
+        name: logout
+        meta:
+          id: req_auth_logout
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -2
+        method: POST
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/auth/refresh-token"
+        name: refresh-token
+        meta:
+          id: req_auth_refresh
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -3
+        method: POST
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/auth/change-password"
+        name: change-password
+        meta:
+          id: req_auth_change_pw
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -4
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"oldPassword\": \"senha_antiga\",\n  \"newPassword\": \"nova_senha\"\n}"
+        headers:
+          - id: pair_changepw_h1
+            name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_auth
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_auth
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_auth_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""

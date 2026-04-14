@@ -9,12 +9,12 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 
 import { NotificationTypeModule } from '@notification-type/notification-type.module'
 import { PlanModule } from '@plan/plan.module'
-import { ProfileModule } from '@profile/profile.module'
 import { RoleModule } from '@role/role.module'
 import { PrismaModule } from '@shared/services/prisma/prisma.module'
 import { SubscriptionStatusModule } from '@subscription-status/subscription-status.module'
 import { UserModule } from '@user/user.module'
 import { AppService } from './app.service'
+import { MocksModule } from './mocks/mocks.module';
 
 @Module({
   imports: [
@@ -24,8 +24,8 @@ import { AppService } from './app.service'
     NotificationTypeModule,
     RoleModule,
     SubscriptionStatusModule,
-    ProfileModule,
     UserModule,
+    MocksModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000, // 1 minuto

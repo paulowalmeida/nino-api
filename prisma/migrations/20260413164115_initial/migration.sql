@@ -54,9 +54,28 @@ CREATE TABLE "auth_credentials" (
 );
 
 -- CreateTable
+CREATE TABLE "user_contacts" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "email" TEXT,
+    "phone" TEXT,
+    "mobile" TEXT,
+    "whatsapp" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "user_contacts_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
     "roleId" INTEGER NOT NULL,
+    "companyName" TEXT NOT NULL,
+    "cnpj" TEXT NOT NULL,
+    "legalName" TEXT,
+    "stateRegistration" TEXT,
+    "legalNature" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "lastLoginAt" TIMESTAMP(3),
     "locale" TEXT,
@@ -68,22 +87,9 @@ CREATE TABLE "users" (
 );
 
 -- CreateTable
-CREATE TABLE "profile_contacts" (
+CREATE TABLE "tenant_addresses" (
     "id" TEXT NOT NULL,
-    "profileId" TEXT NOT NULL,
-    "phone" TEXT,
-    "mobile" TEXT,
-    "whatsapp" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "profile_contacts_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "profile_addresses" (
-    "id" TEXT NOT NULL,
-    "profileId" TEXT NOT NULL,
+    "tenantId" TEXT NOT NULL,
     "cep" TEXT,
     "street" TEXT,
     "number" TEXT,
@@ -93,22 +99,7 @@ CREATE TABLE "profile_addresses" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "profile_addresses_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "profiles" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "companyName" TEXT NOT NULL,
-    "cnpj" TEXT NOT NULL,
-    "legalName" TEXT,
-    "stateRegistration" TEXT,
-    "legalNature" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "profiles_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "tenant_addresses_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -187,10 +178,10 @@ CREATE UNIQUE INDEX "notification_types_description_key" ON "notification_types"
 CREATE UNIQUE INDEX "auth_credentials_userId_provider_key" ON "auth_credentials"("userId", "provider");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "profiles_userId_key" ON "profiles"("userId");
+CREATE UNIQUE INDEX "users_cnpj_key" ON "users"("cnpj");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "profiles_cnpj_key" ON "profiles"("cnpj");
+CREATE UNIQUE INDEX "tenant_addresses_tenantId_key" ON "tenant_addresses"("tenantId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "tenants_slug_key" ON "tenants"("slug");
@@ -202,16 +193,13 @@ CREATE UNIQUE INDEX "subscriptions_userId_key" ON "subscriptions"("userId");
 ALTER TABLE "auth_credentials" ADD CONSTRAINT "auth_credentials_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "user_contacts" ADD CONSTRAINT "user_contacts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "roles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "profile_contacts" ADD CONSTRAINT "profile_contacts_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "profile_addresses" ADD CONSTRAINT "profile_addresses_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "profiles" ADD CONSTRAINT "profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "tenant_addresses" ADD CONSTRAINT "tenant_addresses_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tenants" ADD CONSTRAINT "tenants_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
