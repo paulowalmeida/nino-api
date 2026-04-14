@@ -1,0 +1,171 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: User Module
+meta:
+  id: wrk_user_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "User management"
+collection:
+  - name: user
+    meta:
+      id: fld_user_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "User endpoints"
+    children:
+      - url: "{{BASE_URL}}/users"
+        name: create
+        meta:
+          id: req_user_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -1
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"email\": \"novo@nino.com\",\n  \"password\": \"senha123\"\n}"
+        headers:
+          - id: pair_user_create_h1
+            name: Content-Type
+            value: application/json
+        authentication: {}
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/users"
+        name: list-all
+        meta:
+          id: req_user_list
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/users/current"
+        name: get-current
+        meta:
+          id: req_user_current
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -3
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/users/email/admin@nino.com"
+        name: get-by-email
+        meta:
+          id: req_user_email
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -4
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/users/ID_AQUI/preferences"
+        name: update-preferences
+        meta:
+          id: req_user_pref
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -5
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"locale\": \"pt-BR\",\n  \"timezone\": \"America/Belem\"\n}"
+        headers:
+          - id: pair_user_pref_h1
+            name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_user
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_user
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_user_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""

@@ -67,43 +67,49 @@ model AuthCredential {
   @@map("auth_credentials")
 }
 
-model User {
-  id            String    @id @default(uuid())
-  roleId        Int
-  isActive      Boolean   @default(true)
-  lastLoginAt   DateTime?
-  locale        String?
-  timezone      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  role          Role             @relation(fields: [roleId], references: [id])
-  credentials   AuthCredential[]
-  profile       Profile?
-  tenants       Tenant[]
-  subscription  Subscription?
-  notifications Notification[]
-
-  @@map("users")
-}
-
-model ProfileContact {
+model UserContact {
   id        String   @id @default(uuid())
-  profileId String
+  userId    String
+  email     String?
   phone     String?
   mobile    String?
   whatsapp  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("profile_contacts")
+  @@map("user_contacts")
 }
 
-model ProfileAddress {
+model User {
+  id                String    @id @default(uuid())
+  roleId            Int
+  companyName       String
+  cnpj              String    @unique
+  legalName         String?
+  stateRegistration String?
+  legalNature       String?
+  isActive          Boolean   @default(true)
+  lastLoginAt       DateTime?
+  locale            String?
+  timezone          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  role              Role      @relation(fields: [roleId], references: [id])
+  credentials       AuthCredential[]
+  contacts          UserContact[]
+  tenants           Tenant[]
+  subscription      Subscription?
+  notifications     Notification[]
+
+  @@map("users")
+}
+
+model TenantAddress {
   id         String   @id @default(uuid())
-  profileId  String
+  tenantId   String   @unique
   cep        String?
   street     String?
   number     String?
@@ -113,27 +119,9 @@ model ProfileAddress {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@map("profile_addresses")
-}
-
-model Profile {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  companyName       String
-  cnpj              String   @unique
-  legalName         String?
-  stateRegistration String?
-  legalNature       String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contacts  ProfileContact[]
-  addresses ProfileAddress[]
-
-  @@map("profiles")
+  @@map("tenant_addresses")
 }
 
 model Tenant {
@@ -149,7 +137,9 @@ model Tenant {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  
+  tenantAddress TenantAddress?
+  
   @@map("tenants")
 }
 

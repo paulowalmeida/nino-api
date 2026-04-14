@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 
 import { PasswordService } from '@shared/services/password/password.service'
-import { NewUserDTO } from '@user/new-user.dto'
+import { UserDTO } from '@user/dto/user.dto'
 import { User } from '@user/types/user.type'
 import { UserRepository } from '@user/user.repository'
 
@@ -12,21 +12,24 @@ export class UserService {
     private readonly passwordService: PasswordService,
   ) {}
 
-  async create(payload: NewUserDTO): Promise<User> {
+  async create(payload: UserDTO): Promise<User> {
     const cryptedPassword = await this.passwordService.hash(payload.password)
-    return await this.userRepository.createWithCredential(
-      payload.roleId,
-      payload.email,
+    return await this.userRepository.create(
+      payload,
       cryptedPassword,
     )
   }
 
-  async listAll(): Promise<User[]> {
+  async list(): Promise<User[]> {
     return await this.userRepository.findAll()
   }
 
   async getById(id: string): Promise<User> {
     return await this.userRepository.findById(id)
+  }
+
+  async update(id: string, payload: UserDTO): Promise<User> {
+    return await this.userRepository.update(id, payload)
   }
 
   async updatePreferences(
@@ -50,7 +53,11 @@ export class UserService {
   }
 
   async getByEmail(email: string): Promise<User> {
-    return await this.userRepository.findByEmail(email)
+    return await this.userRepository.findByCnpj(email)
+  }
+
+  async getByCnpj(cnpj: string): Promise<User> {
+    return await this.userRepository.findByCnpj(cnpj)
   }
 
   // async getLoginHistory(id: string, limit?: number): Promise<any> {

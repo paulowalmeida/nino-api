@@ -1,0 +1,108 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Plan Module
+meta:
+  id: wrk_plan_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Plan management"
+collection:
+  - name: plan
+    meta:
+      id: fld_plan_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Plan endpoints"
+    children:
+      - url: "{{BASE_URL}}/plans"
+        name: list
+        meta:
+          id: req_plan_list
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -1
+        method: GET
+        headers: []
+        authentication: {}
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/plans/1"
+        name: by-id
+        meta:
+          id: req_plan_get
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/plans/slug/profissional"
+        name: by-slug
+        meta:
+          id: req_plan_slug
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -3
+        method: GET
+        headers: []
+        authentication: {}
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_plan
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_plan
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_plan_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""

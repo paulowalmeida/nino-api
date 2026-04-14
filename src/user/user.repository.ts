@@ -7,6 +7,7 @@ import {
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { User } from '@user/types/user.type'
+import { UserDTO } from './dto/user.dto'
 
 @Injectable()
 export class UserRepository {
@@ -25,40 +26,44 @@ export class UserRepository {
       role: true,
       subscription: { omit: { userId: true } },
       tenants: { omit: { userId: true } },
-      profile: { omit: { userId: true } },
+      contacts: { omit: { userId: true } },
     },
   }
 
-  async createWithCredential(
-    roleId: number,
-    email: string,
-    password: string,
-  ): Promise<User> {
-    try {
-      return await this.prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({ data: { roleId } })
+  async create(data: UserDTO, password: string): Promise<User> {
+    // Usamos transação para garantir que se a credencial falhar, o usuário não seja criado (e vice-versa)
+    return await this.prisma.$transaction(async (tx) => {
+      return await tx.user.create({
+        data: {
+          companyName: data.companyName,
+          cnpj: data.cnpj,
+          isActive: data.isActive ?? true,
+          locale: data.locale ?? 'pt-BR',
+          timezone: data.timezone ?? 'America/Belem',
 
-        await tx.authCredential.create({
-          data: {
-            userId: user.id,
-            email,
-            password,
-            provider: 'local',
+          // Relacionamento com Role
+          role: {
+            connect: { id: data.roleId },
           },
-        })
 
-        const result = await tx.user.findUnique({
-          where: { id: user.id },
-          ...this.userSelect,
-        })
-
-        if (!result) throw new NotFoundException('User not found')
-
-        return result
+          // CRIANDO A CREDENCIAL JUNTO (Nested Write)
+          credentials: {
+            create: {
+              email: data.email,
+              password
+            },
+          },
+        },
+        include: {
+          role: true, // {id, description}
+          credentials: true, // {email, password, ...props}
+          contacts: true, // []
+          tenants: true, // []
+          subscription: true, // null
+          notifications: true, // []
+        },
       })
-    } catch (error) {
-      this.prismaErrorService.handleError(error)
-    }
+    })
   }
 
   async findAll(): Promise<User[]> {
@@ -84,14 +89,10 @@ export class UserRepository {
     }
   }
 
-  async findByEmail(email: string): Promise<User> {
+  async findByCnpj(cnpj: string): Promise<User> {
     try {
-      const user = await this.prisma.user.findFirst({
-        where: {
-          credentials: {
-            some: { email },
-          },
-        },
+      const user = await this.prisma.user.findUnique({
+        where: { cnpj },
         ...this.userSelect,
       })
 
@@ -134,13 +135,26 @@ export class UserRepository {
     try {
       const user = await this.findById(id)
 
-      if (user.isActive)
-        throw new ConflictException('User is already active')
+      if (user.isActive) throw new ConflictException('User is already active')
 
       await this.prisma.user.update({
         where: { id },
         data: { isActive: true },
       })
+    } catch (error) {
+      this.prismaErrorService.handleError(error)
+    }
+  }
+
+  async update(id: string, payload: UserDTO): Promise<User> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id },
+        data: { ...payload },
+        ...this.userSelect,
+      })
+
+      return user
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
