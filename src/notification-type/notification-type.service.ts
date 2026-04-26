@@ -1,23 +1,34 @@
 import { Injectable } from '@nestjs/common'
 
-import { NotificationType } from '@notification-type/types/notification-type.type'
+import { CreateNotificationTypeDto } from './dtos/create-notification-type.dto'
+import { UpdateNotificationTypeDto } from './dtos/update-notification-type.dto'
 import { NotificationTypeRepository } from './notification-type.repository'
+import { NotificationType } from './types/notification-type.type'
 
 @Injectable()
 export class NotificationTypeService {
-  constructor(
-    private readonly notificationTypeRepository: NotificationTypeRepository,
-  ) {}
+  constructor(private repo: NotificationTypeRepository) {}
 
   async getAll(): Promise<NotificationType[]> {
-    return await this.notificationTypeRepository.findAll()
+    return await this.repo.getAll()
   }
 
-  async getById(id: number): Promise<NotificationType> {
-    return await this.notificationTypeRepository.findById(id)
+  async getById(id: string): Promise<NotificationType> {
+    return await this.repo.getById(id)
   }
 
-  async getByCode(code: number): Promise<NotificationType> {
-    return await this.notificationTypeRepository.findByCode(code)
+  async create(data: CreateNotificationTypeDto): Promise<NotificationType> {
+    return this.repo.create(data)
+  }
+
+  async update(
+    id: string,
+    data: UpdateNotificationTypeDto,
+  ): Promise<NotificationType> {
+    return this.repo.update(id, data)
+  }
+
+  async delete(id: string): Promise<{ message: string }> {
+    return this.repo.delete(id)
   }
 }

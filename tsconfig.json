@@ -25,14 +25,20 @@
     "types": ["jest", "node"],
     "paths": {
       "@auth/*": ["src/auth/*"],
+      "@company/*": ["src/company/*"],
+      "@company-responsible/*": ["src/company-responsible/*"],
       "@credential/*": ["src/credential/*"],
+      "@invoice-status/*": ["src/invoice-status/*"],
+      "@mocks/*": ["src/mocks/*"],
       "@notification-type/*": ["src/notification-type/*"],
       "@plan/*": ["src/plan/*"],
+      "@plan-type/*": ["src/plan-type/*"],
       "@prisma/generated/*": ["prisma/generated/*"],
-      "@profile/*": ["src/profile/*"],
       "@role/*": ["src/role/*"],
+      "@session/*": ["src/session/*"],
       "@shared/*": ["src/shared/*"],
       "@subscription-status/*": ["src/subscription-status/*"],
+      "@tenant-status/*": ["src/tenant-status/*"],
       "@user/*": ["src/user/*"],
     }
   }

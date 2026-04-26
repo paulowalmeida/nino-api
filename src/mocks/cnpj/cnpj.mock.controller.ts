@@ -14,6 +14,6 @@ export class CnpjMockController {
   // GET /mock/cnpj/massive?count=50
   @Get('/:quantity')
   getMassiveCnpj(@Param('quantity') quantity: number) {
-    return this.cnpjMockService.getMany(quantity)
+    return this.cnpjMockService.findMany(quantity)
   }
 }

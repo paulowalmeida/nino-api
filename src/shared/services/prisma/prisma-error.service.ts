@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
@@ -18,10 +19,13 @@ export class PrismaErrorService {
   }
 
   handleError(error: unknown, customMessage?: string): never {
+    if (error instanceof HttpException) throw error
+
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       const handler = this.errorMap[error.code as keyof typeof this.errorMap]
       if (handler) throw handler(customMessage)
     }
+
     throw error
   }
 }

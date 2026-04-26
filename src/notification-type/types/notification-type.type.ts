@@ -1,3 +1,3 @@
 import { Prisma } from '@prisma/client'
 
-export type NotificationType = Prisma.NotificationTypeGetPayload<{}>
+export type NotificationType = Prisma.SubscriptionStatusGetPayload<{}>

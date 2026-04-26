@@ -1,24 +1,41 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
 
-import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
-import { SubscriptionStatus } from '@subscription-status/types/subscription-status.type'
+import { CreateSubscriptionStatusDto } from './dtos/create-subscription-status.dto'
+import { UpdateSubscriptionStatusDto } from './dtos/update-subscription-status.dto'
 import { SubscriptionStatusService } from './subscription-status.service'
+import { SubscriptionStatus } from './types/subscription-status.type'
 
 @Controller('subscription-statuses')
 export class SubscriptionStatusController {
-  constructor(
-    private readonly subscriptionStatusService: SubscriptionStatusService,
-  ) {}
+  constructor(private service: SubscriptionStatusService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard)
-  async getAll(): Promise<SubscriptionStatus[]> {
-    return await this.subscriptionStatusService.getAll()
+  getAll(): Promise<SubscriptionStatus[]> {
+    return this.service.getAll()
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  async getById(@Param('id') id: number): Promise<SubscriptionStatus> {
-    return await this.subscriptionStatusService.getById(id)
+  getById(@Param('id') id: string): Promise<SubscriptionStatus> {
+    return this.service.getById(id)
+  }
+
+  @Post()
+  create(
+    @Body() body: CreateSubscriptionStatusDto,
+  ): Promise<SubscriptionStatus> {
+    return this.service.create(body)
+  }
+
+  @Put(':id')
+  update(
+    @Param('id') id: string,
+    @Body() body: UpdateSubscriptionStatusDto,
+  ): Promise<SubscriptionStatus> {
+    return this.service.update(id, body)
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string): Promise<{ message: string }> {
+    return this.service.delete(id)
   }
 }

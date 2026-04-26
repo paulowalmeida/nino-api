@@ -1,49 +1,78 @@
-import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common'
-import { Throttle } from '@nestjs/throttler'
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common'
 
-import { AuthService } from '@auth/auth.service'
-import { ChangePasswordRequestDTO } from '@auth/dtos/change-password-request.dto'
-import { LoginRequestDTO } from '@auth/dtos/login-request.dto'
-import { JwtRefreshGuard } from '@auth/jwt-refresh.guard'
-import { LoginResponse } from '@auth/types/login-response.type'
-import { Tokens } from '@auth/types/tokens.type'
-import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
-import type { AuthRequest } from '@shared/types/auth-request.type'
+import type { Request, Response } from 'express'
+
+import { AuthService } from './auth.service'
+import { LoginRequestDto } from './dtos/login-request.dto'
+import { RegisterRequestDto } from './dtos/register-request.dto'
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Post('login')
-  async login(@Body() payload: LoginRequestDTO): Promise<LoginResponse> {
-    return await this.authService.login(payload)
+  async login(
+    @Body() dto: LoginRequestDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { user, tokens } = await this.authService.login(
+      dto,
+      req.ip,
+      req.headers['user-agent'],
+    )
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: true, // Use false in localhost
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+
+    return { user, accessToken: tokens.accessToken }
+  }
+
+  @Post('register')
+  async register(@Body() dto: RegisterRequestDto) {
+    return await this.authService.register(dto)
+  }
+
+  @Post('refresh')
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = req.cookies['refreshToken']
+    if (!token) throw new UnauthorizedException()
+
+    const tokens = await this.authService.refresh(
+      token,
+      req.ip,
+      req.headers['user-agent'],
+    )
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    })
+
+    return { accessToken: tokens.accessToken }
   }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
-  async logout(@Req() req: AuthRequest): Promise<{ message: string }> {
-    await this.authService.logout(req.user.sub)
-    return { message: 'Logout bem-sucedido' }
-  }
-
-  @Throttle({ default: { ttl: 6000, limit: 10 } })
-  @Post('refresh-token')
-  @UseGuards(JwtRefreshGuard)
-  async refreshToken(@Req() req: AuthRequest): Promise<Tokens> {
-    return await this.authService.refreshToken(
-      req.user.sub,
-      req.user?.hashedRefreshToken,
-    )
-  }
-
-  @Throttle({ default: { ttl: 6000, limit: 3 } })
-  @Post('change-password')
-  @UseGuards(JwtAuthGuard)
-  async changePassword(
-    @Req() req: AuthRequest,
-    @Body() body: ChangePasswordRequestDTO,
-  ): Promise<{ message: string }> {
-    return await this.authService.changePassword(req, body)
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const token = req.cookies['refreshToken']
+    if (token) await this.authService.logout(token)
+    res.clearCookie('refreshToken')
+    return { message: 'Logged out' }
   }
 }

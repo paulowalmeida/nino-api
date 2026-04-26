@@ -1,66 +1,35 @@
 import { Injectable } from '@nestjs/common'
 
-import { PasswordService } from '@shared/services/password/password.service'
-import { UserDTO } from '@user/dto/user.dto'
-import { User } from '@user/types/user.type'
-import { UserRepository } from '@user/user.repository'
+import { CreateUserDto } from './dtos/create-user.dto'
+import { UpdateUserDto } from './dtos/update-user.dto'
+import { User } from './types/user.type'
+import { UserRepository } from './user.repository'
 
 @Injectable()
 export class UserService {
-  constructor(
-    private readonly userRepository: UserRepository,
-    private readonly passwordService: PasswordService,
-  ) {}
+  constructor(private readonly userRepository: UserRepository) {}
 
-  async create(payload: UserDTO): Promise<User> {
-    const cryptedPassword = await this.passwordService.hash(payload.password)
-    return await this.userRepository.create(
-      payload,
-      cryptedPassword,
-    )
+  async create(createDto: CreateUserDto): Promise<User> {
+    return this.userRepository.create(createDto)
   }
 
-  async list(): Promise<User[]> {
-    return await this.userRepository.findAll()
+  async getAll(): Promise<User[]> {
+    return await this.userRepository.getAll()
   }
 
   async getById(id: string): Promise<User> {
-    return await this.userRepository.findById(id)
+    return this.userRepository.getById(id)
   }
 
-  async update(id: string, payload: UserDTO): Promise<User> {
-    return await this.userRepository.update(id, payload)
+  async getByCompanyId(companyId: string): Promise<User[]> {
+    return this.userRepository.getByCompanyId(companyId)
   }
 
-  async updatePreferences(
-    id: string,
-    locale?: string,
-    timezone?: string,
-  ): Promise<User> {
-    return await this.userRepository.updatePreferences(id, locale, timezone)
+  async update(id: string, updateDto: UpdateUserDto): Promise<void> {
+    return this.userRepository.update(id, updateDto)
   }
 
-  async updateRole(id: string, roleId: number): Promise<User> {
-    return await this.userRepository.updateRole(id, roleId)
+  async delete(id: string): Promise<void> {
+    return this.userRepository.delete(id)
   }
-
-  async deactivate(id: string): Promise<void> {
-    return await this.userRepository.deactivate(id)
-  }
-
-  async activate(id: string): Promise<void> {
-    return await this.userRepository.activate(id)
-  }
-
-  async getByEmail(email: string): Promise<User> {
-    return await this.userRepository.findByCnpj(email)
-  }
-
-  async getByCnpj(cnpj: string): Promise<User> {
-    return await this.userRepository.findByCnpj(cnpj)
-  }
-
-  // async getLoginHistory(id: string, limit?: number): Promise<any> {
-  //   return await this.userRepository.getLoginHistory(id, limit)
-  // }
 }

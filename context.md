@@ -604,7 +604,7 @@ Camada de abstração entre Service e Prisma. **Tratamento de null centralizado 
 
 ```typescript
 // ✅ Repository — trata erros Prisma + null
-async findById(id: string): Promise<User> {
+async getById(id: string): Promise<User> {
   try {
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -621,7 +621,7 @@ async findById(id: string): Promise<User> {
 
 // ✅ Service — delegação pura
 async getById(id: string): Promise<User> {
-  return await this.userRepository.findById(id)
+  return await this.userRepository.getById(id)
   // Se erro → automático do repository
 }
 
@@ -802,7 +802,7 @@ Service e Controller não tratam erros Prisma diretamente — delegam.
 
 ```typescript
 // ✅ Repository
-async findById(id: string): Promise<User> {
+async getById(id: string): Promise<User> {
   try {
     return await this.prisma.user.findUnique({ ... })
   } catch (error) {
@@ -812,7 +812,7 @@ async findById(id: string): Promise<User> {
 
 // ✅ Service — propaga naturalmente
 async getById(id: string): Promise<User> {
-  return await this.userRepository.findById(id)
+  return await this.userRepository.getById(id)
   // Se erro → automático do repository
 }
 ```
@@ -857,7 +857,7 @@ POST /auth/login
   ├─ AuthService.login()
   │   ├─ credentialsService.getByEmail()
   │   ├─ validatePassword()
-  │   ├─ userRepository.findById()
+  │   ├─ userRepository.getById()
   │   ├─ userRepository.updateLastLogin()
   │   ├─ tokenService.getTokens()
   │   │   ├─ generateToken(15m, JWT_SECRET) → accessToken
@@ -875,7 +875,7 @@ POST /auth/refresh-token (+ JWT Refresh Guard)
   ├─ AuthService.refreshToken()
   │   ├─ credentialsService.getRefreshToken()
   │   ├─ validatePassword()
-  │   ├─ userRepository.findById()
+  │   ├─ userRepository.getById()
   │   ├─ tokenService.getTokens() → novo access + novo refresh
   │   └─ credentialsService.updateRefreshToken()
   └─ Response 200: { accessToken, refreshToken }
@@ -902,7 +902,7 @@ POST /users
   ├─ UserService.create()
   │   ├─ userRepository.create(roleId)
   │   ├─ credentialsService.create(userId, email, password)
-  │   └─ userRepository.findById()
+  │   └─ userRepository.getById()
   └─ Response 201: { user }
 ```
 

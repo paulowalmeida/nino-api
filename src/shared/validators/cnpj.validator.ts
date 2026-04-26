@@ -1,4 +1,4 @@
-import { CnpjService } from '@shared/services/cnpj/cnpj.service'
+import { CnpjService } from '@shared/services/helpers/cnpj/cnpj.service'
 import {
   registerDecorator,
   ValidationOptions,

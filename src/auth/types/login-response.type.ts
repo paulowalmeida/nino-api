@@ -3,5 +3,4 @@ import { User } from '@user/types/user.type'
 
 export type LoginResponse = {
   user: User
-  tokens: Tokens
 }

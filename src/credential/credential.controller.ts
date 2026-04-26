@@ -1,3 +1,4 @@
+import { ChangePasswordRequestDTO } from '@auth/dtos/change-password-request.dto'
 import {
   Body,
   Controller,
@@ -9,44 +10,57 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import type { UserTokenData } from '@user/types/user-token.data.type'
-import { UpdateCredentialDTO } from '@credential/dto/update-credential.dto'
-import { Credential } from '@credential/types/credential.type'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { CredentialsService } from './credential.service'
+import { UpdateCredentialDto } from './dto/update-credential.dto'
+import { Credential } from './types/credential.type'
 
 @Controller('credentials')
+@UseGuards(JwtAuthGuard)
 export class CredentialController {
   constructor(private readonly credentialsService: CredentialsService) {}
 
-  @Get('list-by-user-id/:userId')
-  @UseGuards(JwtAuthGuard)
-  async getListByUserId(
-    @Param('userId') userId: string,
-  ): Promise<Credential[]> {
-    return await this.credentialsService.getListByUserId(userId)
+  @Get('list/:id')
+  async getAll(@Param('userId') userId: string): Promise<Credential[]> {
+    const credentials = await this.credentialsService.getAll(userId)
+    return credentials.map(({ password, ...credential }) => credential)
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
   async getById(@Param('id') id: string): Promise<Credential> {
-    return await this.credentialsService.getById(id)
+    const { password, ...credential } =
+      await this.credentialsService.getById(id)
+    return credential
   }
 
-  @Patch(':id/update-email')
-  @UseGuards(JwtAuthGuard)
-  async updateEmail(
+  @Patch(':id')
+  async update(
     @Param('id') id: string,
-    @Body() updateCredentialDTO: UpdateCredentialDTO,
+    @Body() updateDto: UpdateCredentialDto,
   ): Promise<Credential> {
-    if (updateCredentialDTO.email) {
-      await this.credentialsService.updateEmail(id, updateCredentialDTO.email)
-    }
-    return await this.credentialsService.getById(id)
+    const { password, ...credential } = await this.credentialsService.update(
+      id,
+      updateDto,
+    )
+    return credential
   }
 
-  @Delete(':id/')
+  @Patch('change-password')
   @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @Req() req: any,
+    @Body() body: ChangePasswordRequestDTO,
+  ): Promise<{ message: string }> {
+    const userId = req.user.sub
+    await this.credentialsService.changePassword(
+      userId,
+      body.oldPassword,
+      body.newPassword,
+    )
+    return { message: 'Password changed successfully' }
+  }
+
+  @Delete(':id')
   async delete(@Param('id') id: string): Promise<{ message: string }> {
     await this.credentialsService.delete(id)
     return { message: 'credential deleted successfully' }

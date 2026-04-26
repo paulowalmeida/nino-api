@@ -42,6 +42,7 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "cookie-parser": "^1.4.7",
     "dotenv-cli": "^11.0.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -56,6 +57,7 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.19.17",
@@ -98,20 +100,28 @@
       "!**/main.ts",
       "!**/*.dto.ts",
       "!**/*.seed.**",
-      "!**/*-seed.**"
+      "!**/*-seed.**",
+      "!**/mocks/**"
+    
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@auth/(.*)$": "<rootDir>/auth/$1",
+      "^@company/(.*)$": "<rootDir>/company/$1",
+      "^@company-responsible/(.*)$": "<rootDir>/company-responsible/$1",
       "^@credential/(.*)$": "<rootDir>/credential/$1",
+      "@invoice-status/(.*)$": "<rootDir>/invoice-status/$1",
+      "@mocks/(.*)$": "<rootDir>/mocks/$1",
       "^@notification-type/(.*)$": "<rootDir>/notification-type/$1",
       "^@plan/(.*)$": "<rootDir>/plan/$1",
+      "@plan-type/(.*)$": "<rootDir>/plan-type/$1",
       "^@prisma/generated/(.*)$": "<rootDir>/../prisma/generated/$1",
-      "^@profile/(.*)$": "<rootDir>/profile/$1",
       "^@role/(.*)$": "<rootDir>/role/$1",
+      "^@session/(.*)$": "<rootDir>/session/$1",
       "^@shared/(.*)$": "<rootDir>/shared/$1",
       "^@subscription-status/(.*)$": "<rootDir>/subscription-status/$1",
+      "^@tenant-status/(.*)$": "<rootDir>/tenant-status/$1",
       "^@user/(.*)$": "<rootDir>/user/$1"
     }
   }

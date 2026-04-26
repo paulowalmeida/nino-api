@@ -39,7 +39,7 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/roles/1"
+      - url: "{{BASE_URL}}/roles/{{ROLE_ID}}"
         name: by-id
         meta:
           id: req_role_get
@@ -49,6 +49,96 @@ collection:
           description: ""
           sortKey: -2
         method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/roles"
+        name: create
+        meta:
+          id: req_role_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -3
+        method: POST
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "ADMIN",
+              "description": "Administrator role"
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/roles/{{ROLE_ID}}"
+        name: update
+        meta:
+          id: req_role_update
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -4
+        method: PUT
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "SUPER_ADMIN",
+              "description": "Super administrator with full access"
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/roles/{{ROLE_ID}}"
+        name: delete
+        meta:
+          id: req_role_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -5
+        method: DELETE
         headers: []
         authentication:
           type: bearer
@@ -88,3 +178,4 @@ environments:
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
+        ROLE_ID: ""

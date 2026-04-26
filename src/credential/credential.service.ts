@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 
-import { CredentialRepository } from '@credential/types/credential-repository.type'
-import { Credential } from '@credential/types/credential.type'
 import { PasswordService } from '@shared/services/password/password.service'
 import { CredentialsRepository } from './credential.repository'
+import { CreateCredentialDto } from './dto/create-credentail.dto'
+import { UpdateCredentialDto } from './dto/update-credential.dto'
+import { CredentialRepository } from './types/credential-repository.type'
 
 @Injectable()
 export class CredentialsService {
@@ -12,66 +13,65 @@ export class CredentialsService {
     private readonly passwordService: PasswordService,
   ) {}
 
-  async create(
-    userId: string,
-    email: string,
-    password: string,
-    provider: string,
-  ): Promise<Credential> {
-    return this.credentialsRepository.create(
-      userId,
-      email,
-      password,
-      provider,
-    )
+  async create(createDto: CreateCredentialDto): Promise<CredentialRepository> {
+    if (createDto.password) {
+      createDto.password = await this.passwordService.hash(createDto.password)
+    }
+    return await this.credentialsRepository.create(createDto)
   }
 
-  async getListByUserId(userId: string): Promise<Credential[]> {
-    return this.credentialsRepository.findListByUserId(userId)
+  async getAll(userId: string): Promise<CredentialRepository[]> {
+    return await this.credentialsRepository.getAll(userId)
   }
 
-  async getById(id: string): Promise<Credential> {
-    return await this.credentialsRepository.findById(id)
+  async getById(id: string): Promise<CredentialRepository> {
+    return await this.credentialsRepository.getById(id)
   }
 
   async getByEmail(email: string): Promise<CredentialRepository> {
-    return this.credentialsRepository.findByEmail(email)
+    return await this.credentialsRepository.getByEmail(email)
   }
 
-  async updateEmail(credentialId: string, newEmail: string): Promise<void> {
-    return this.credentialsRepository.updateEmail(credentialId, newEmail)
+  async update(
+    id: string,
+    updateDto: UpdateCredentialDto,
+  ): Promise<CredentialRepository> {
+    if (updateDto.password) {
+      updateDto.password = await this.passwordService.hash(updateDto.password)
+    }
+    return this.credentialsRepository.update(id, updateDto)
   }
 
-  async updatePassword(
-    credentialId: string,
-    newPassword: string,
-  ): Promise<void> {
-    const hashedPassword = await this.passwordService.hash(newPassword)
-    return this.credentialsRepository.updatePassword(
-      credentialId,
-      hashedPassword,
-    )
-  }
-
-  async delete(id: string): Promise<void> {
-    return this.credentialsRepository.delete(id)
-  }
-
-  async getRefreshToken(userId: string) {
-    return this.credentialsRepository.getRefreshToken(userId)
-  }
-
-  async updateRefreshToken(
+  async changePassword(
     userId: string,
-    hashedRefreshToken: string,
+    oldPass: string,
+    newPass: string,
   ): Promise<void> {
-    return this.credentialsRepository.updateRefreshToken(
-      userId,
-      hashedRefreshToken,
+    // 1. Busca a credencial local do usuário
+    const credential = await this.credentialsRepository.getById(userId)
+
+    if (!credential || !credential.password) {
+      throw new UnauthorizedException('Invalid credentials')
+    }
+
+    // 2. Valida se a senha antiga está correta
+    const isOldValid = await this.passwordService.compare(
+      oldPass,
+      credential.password,
+    )
+    if (!isOldValid) {
+      throw new UnauthorizedException('Old password does not match')
+    }
+
+    // 3. Hash da nova senha e update
+    const hashedNewPass = await this.passwordService.hash(newPass)
+    await this.credentialsRepository.updatePassword(
+      credential.id,
+      hashedNewPass,
     )
   }
 
-  async removeRefreshToken(userId: string): Promise<void> {
-    return this.credentialsRepository.removeRefreshToken(userId)
+  async delete(id: string): Promise<{ message: string }> {
+    return await this.credentialsRepository.delete(id)
   }
 }

@@ -6,7 +6,7 @@ export class CnpjMockService {
     return { cnpj: CnpjMockService.generateFakeCnpj() };
   }
 
-  getMany(count: number) {
+  findMany(count: number) {
     // Mesma trava de segurança para não explodir a memória
     const safeCount = count ?? 10
     
