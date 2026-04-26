@@ -17,7 +17,7 @@ export class UserMockService {
     return this.generateFakeUser()
   }
 
-  getManyMocks(count: number) {
+  findManyMocks(count: number) {
     // Trava pragmática: limita a 10 para não travar o Event Loop da API
     const safeCount = count ?? 10
     return this.generateMassiveUserData(safeCount)

@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 
-import { CredentialRepository } from '@credential/types/credential-repository.type'
-import { Credential } from '@credential/types/credential.type'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { CreateCredentialDto } from './dto/create-credentail.dto'
+import { UpdateCredentialDto } from './dto/update-credential.dto'
+import { CredentialRepository } from './types/credential-repository.type'
 
 @Injectable()
 export class CredentialsRepository {
@@ -12,38 +13,27 @@ export class CredentialsRepository {
     private readonly prismaErrorService: PrismaErrorService,
   ) {}
 
-  async create(
-    userId: string,
-    email: string,
-    password: string,
-    provider: string,
-  ): Promise<Credential> {
+  async create(data: CreateCredentialDto): Promise<CredentialRepository> {
     try {
       return await this.prisma.authCredential.create({
-        data: {
-          userId,
-          email,
-          password,
-          provider,
-        },
+        data,
       })
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
   }
 
-  async findListByUserId(userId: string): Promise<Credential[]> {
+  async getAll(userId: string): Promise<CredentialRepository[]> {
     try {
       return await this.prisma.authCredential.findMany({
         where: { userId },
-        omit: { hashedRefreshToken: true, password: true },
       })
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
   }
 
-  async findById(id: string): Promise<Credential> {
+  async getById(id: string): Promise<CredentialRepository> {
     try {
       const credential = await this.prisma.authCredential.findUnique({
         where: { id },
@@ -57,7 +47,7 @@ export class CredentialsRepository {
     }
   }
 
-  async findByEmail(email: string): Promise<CredentialRepository> {
+  async getByEmail(email: string): Promise<CredentialRepository> {
     try {
       const credential = await this.prisma.authCredential.findFirst({
         where: { email, provider: 'local' },
@@ -71,75 +61,37 @@ export class CredentialsRepository {
     }
   }
 
-  async updateEmail(credentialId: string, newEmail: string): Promise<void> {
+  async update(
+    id: string,
+    data: UpdateCredentialDto,
+  ): Promise<CredentialRepository> {
     try {
-      await this.prisma.authCredential.update({
-        where: { id: credentialId },
-        data: { email: newEmail },
+      return await this.prisma.authCredential.update({
+        where: { id },
+        data,
       })
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
   }
 
-  async updatePassword(
-    credentialId: string,
-    hashedPassword: string,
-  ): Promise<void> {
+  async updatePassword(id: string, password: string): Promise<void> {
     try {
       await this.prisma.authCredential.update({
-        where: { id: credentialId },
-        data: { password: hashedPassword },
+        where: { id },
+        data: { password },
       })
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string): Promise<{ message: string }> {
     try {
       await this.prisma.authCredential.delete({
         where: { id },
       })
-    } catch (error) {
-      this.prismaErrorService.handleError(error)
-    }
-  }
-
-  async getRefreshToken(userId: string): Promise<CredentialRepository> {
-    try {
-      const result = await this.prisma.authCredential.findFirst({
-        where: { userId, provider: 'local' },
-      })
-
-      if (!result) throw new NotFoundException('Credential not found')
-
-      return result
-    } catch (error) {
-      this.prismaErrorService.handleError(error)
-    }
-  }
-
-  async updateRefreshToken(
-    userId: string,
-    hashedRefreshToken: string,
-  ): Promise<void> {
-    try {
-      await this.prisma.authCredential.updateMany({
-        where: { userId, provider: 'local' },
-        data: { hashedRefreshToken },
-      })
-    } catch (error) {
-      this.prismaErrorService.handleError(error)
-    }
-  }
-
-  async removeRefreshToken(userId: string): Promise<void> {
-    try {
-      await this.prisma.authCredential.updateMany({
-        where: { userId, provider: 'local' },
-        data: { hashedRefreshToken: null },
-      })
+      return { message: 'Credential deleted successfully' }
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }

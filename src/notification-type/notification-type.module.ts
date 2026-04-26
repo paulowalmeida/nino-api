@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 
-import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { NotificationTypeService } from './notification-type.service'
-import { NotificationTypeRepository } from './notification-type.repository'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { NotificationTypeController } from './notification-type.controller'
+import { NotificationTypeRepository } from './notification-type.repository'
+import { NotificationTypeService } from './notification-type.service'
 
 @Module({
   controllers: [NotificationTypeController],

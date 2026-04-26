@@ -5,8 +5,8 @@ import { PassportStrategy } from '@nestjs/passport'
 import { Request } from 'express'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 
-import { UserRepository } from '@user/user.repository'
 import { UserTokenData } from '@user/types/user-token.data.type'
+import { UserRepository } from '@user/user.repository'
 
 @Injectable()
 export class JwtAuthStrategy extends PassportStrategy(Strategy) {
@@ -33,9 +33,7 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
     req: Request,
     payloadDecoded: UserTokenData,
   ): Promise<UserTokenData> {
-    const user = await this.userRepository.findByCnpj(
-      payloadDecoded.email,
-    )
+    const user = await this.userRepository.getByEmail(payloadDecoded.email)
 
     if (!user) {
       throw new UnauthorizedException(
@@ -43,7 +41,6 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
       )
     }
 
-    req['user'] = payloadDecoded
     return payloadDecoded
   }
 }

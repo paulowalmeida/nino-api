@@ -1,0 +1,181 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Notification Type Module
+meta:
+  id: wrk_notification_type_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Notification type management"
+collection:
+  - name: notification-type
+    meta:
+      id: fld_notification_type_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Notification type endpoints"
+    children:
+      - url: "{{BASE_URL}}/notification-types"
+        name: list
+        meta:
+          id: req_notification_type_list
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -1
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/notification-types/{{INVOICE_STATUS_ID}}"
+        name: by-id
+        meta:
+          id: req_notification_type_get
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/notification-types"
+        name: create
+        meta:
+          id: req_notification_type_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -3
+        method: POST
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "EXAMPLE",
+              "description": "Notification type example"
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/notification-types/{{INVOICE_STATUS_ID}}"
+        name: update
+        meta:
+          id: req_notification_type_update
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -4
+        method: PUT
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "name": "EXAMPLE",
+              "description": "Notification type example"
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/notification-types/{{INVOICE_STATUS_ID}}"
+        name: delete
+        meta:
+          id: req_notification_type_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -5
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_notification_type
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_notification_type
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_notification_type_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        INVOICE_STATUS_ID: ""

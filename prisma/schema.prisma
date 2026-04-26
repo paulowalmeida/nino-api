@@ -6,19 +6,114 @@ datasource db {
   provider = "postgresql"
 }
 
-model Role {
-  id          Int       @id @unique
-  description String    @unique
+// ==========================================
+// 1. TABELAS BASE / DOMÍNIOS ESTÁTICOS (Nenhuma dependência)
+// ==========================================
 
-  users User[]
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  users       User[]
 
   @@map("roles")
 }
 
+model TenantStatus {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  tenants     Tenant[]
+
+  @@map("tenant_statuses")
+}
+
+model SubscriptionStatus {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  subscriptions Subscription[]
+
+  @@map("subscription_statuses")
+}
+
+model InvoiceStatus {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  invoices    Invoice[]
+
+  @@map("invoice_statuses")
+}
+
+model NotificationType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  notifications Notification[]
+
+  @@map("notification_types")
+}
+
+model PlanType {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  plans       Plan[]
+
+  @@map("plan_types")
+}
+
+// ==========================================
+// 2. ENTIDADE PRINCIPAL INDEPENDENTE
+// ==========================================
+
+model Company {
+  id                String    @id @default(uuid())
+  companyName       String
+  cnpj              String    @unique
+  legalName         String?
+  stateRegistration String?
+  legalNature       String?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  users              User[]
+  tenants            Tenant[]
+  subscription       Subscription?
+  companyResponsible CompanyResponsible?
+
+  @@map("companies")
+}
+
+// ==========================================
+// 3. ENTIDADES DE 1º NÍVEL DE DEPENDÊNCIA
+// ==========================================
+
 model Plan {
-  id          Int      @id @unique
+  id          Int      @id @default(autoincrement())
   name        String   @unique
   slug        String   @unique
+  typeId      String
   price       Decimal
   maxTenants  Int
   maxProducts Int
@@ -27,35 +122,58 @@ model Plan {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  type          PlanType       @relation(fields: [typeId], references: [id])
   subscriptions Subscription[]
 
   @@map("plans")
 }
 
-model SubscriptionStatus {
-  id          Int    @id @unique
-  description String @unique
+model CompanyResponsible {
+  id        String   @id @default(uuid())
+  companyId String   @unique
+  name      String
+  cpf       String   @unique
+  email     String
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  subscriptions Subscription[]
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  @@map("subscription_statuses")
+  @@map("company_responsibles")
 }
 
-model NotificationType {
-  id          Int    @id @unique
-  description String @unique
+model User {
+  id                String    @id @default(uuid())
+  companyId         String?
+  name              String
+  roleId            String
+  isActive          Boolean   @default(true)
+  lastLoginAt       DateTime?
+  locale            String?
+  timezone          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  notifications Notification[]
+  role              Role      @relation(fields: [roleId], references: [id])
+  company           Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  credentials       AuthCredential[]
+  sessions          Session[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
 
-  @@map("notification_types")
+  @@map("users")
 }
+
+// ==========================================
+// 4. ENTIDADES DE 2º NÍVEL DE DEPENDÊNCIA
+// ==========================================
 
 model AuthCredential {
   id                 String   @id @default(uuid())
   userId             String
-  email              String?
+  email              String?  @unique
   password           String?
-  hashedRefreshToken String?
   provider           String   @default("local")
   providerId         String?
   createdAt          DateTime @default(now())
@@ -67,45 +185,96 @@ model AuthCredential {
   @@map("auth_credentials")
 }
 
-model UserContact {
-  id        String   @id @default(uuid())
-  userId    String
-  email     String?
-  phone     String?
-  mobile    String?
-  whatsapp  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  refreshToken String   @unique 
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("user_contacts")
+  @@map("sessions")
 }
 
-model User {
-  id                String    @id @default(uuid())
-  roleId            Int
-  companyName       String
-  cnpj              String    @unique
-  legalName         String?
-  stateRegistration String?
-  legalNature       String?
-  isActive          Boolean   @default(true)
-  lastLoginAt       DateTime?
-  locale            String?
-  timezone          String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  typeId    String
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  role              Role      @relation(fields: [roleId], references: [id])
-  credentials       AuthCredential[]
-  contacts          UserContact[]
-  tenants           Tenant[]
-  subscription      Subscription?
-  notifications     Notification[]
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type NotificationType @relation(fields: [typeId], references: [id])
 
-  @@map("users")
+  @@map("notifications")
 }
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String   
+  entity    String   
+  entityId  String?
+  details   Json?    
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+model Tenant {
+  id               String   @id @default(uuid())
+  companyId        String
+  name             String
+  slug             String   @unique
+  statusId         String
+  logoUrl          String?
+  primaryColor     String?
+  secondaryColor   String?
+  favicon          String?
+  customDomain     String?  @unique
+  phone            String?      
+  email            String?      
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  status        TenantStatus   @relation(fields: [statusId], references: [id])
+  tenantAddress TenantAddress?
+
+  @@map("tenants")
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  companyId String   @unique
+  planId    Int
+  statusId  String
+  startedAt DateTime @default(now())
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company  Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  plan     Plan               @relation(fields: [planId], references: [id])
+  status   SubscriptionStatus @relation(fields: [statusId], references: [id])
+  invoices Invoice[] 
+
+  @@map("subscriptions")
+}
+
+// ==========================================
+// 5. ENTIDADES DE 3º NÍVEL DE DEPENDÊNCIA (As pontas)
+// ==========================================
 
 model TenantAddress {
   id         String   @id @default(uuid())
@@ -124,55 +293,20 @@ model TenantAddress {
   @@map("tenant_addresses")
 }
 
-model Tenant {
-  id        String   @id @default(uuid())
-  userId    String
-  name      String
-  slug      String   @unique
-  logoUrl   String?
-  phone     String?
-  email     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Invoice {
+  id             String   @id @default(uuid())
+  subscriptionId String
+  amount         Decimal
+  statusId       String
+  dueDate        DateTime
+  paidAt         DateTime?
+  paymentGateway String?  
+  gatewayId      String?  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  tenantAddress TenantAddress?
-  
-  @@map("tenants")
-}
+  subscription Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  status       InvoiceStatus @relation(fields: [statusId], references: [id])
 
-model Subscription {
-  id        String    @id @default(uuid())
-  userId    String    @unique
-  planId    Int
-  statusId  Int
-  startedAt DateTime  @default(now())
-  expiresAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  user   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan   Plan               @relation(fields: [planId], references: [id])
-  status SubscriptionStatus @relation(fields: [statusId], references: [id])
-
-  @@map("subscriptions")
-}
-
-model Notification {
-  id        String    @id @default(uuid())
-  userId    String
-  typeId    Int
-  title     String
-  body      String
-  isRead    Boolean   @default(false)
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type NotificationType @relation(fields: [typeId], references: [id])
-
-  @@map("notifications")
+  @@map("invoices")
 }

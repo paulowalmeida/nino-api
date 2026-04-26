@@ -1,110 +1,104 @@
-import {
-  HttpException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 
-import { UserRepository } from '@user/user.repository'
-import { UserTokenData } from '@user/types/user-token.data.type'
-import { ChangePasswordRequestDTO } from '@auth/dtos/change-password-request.dto'
-import { LoginRequestDTO } from '@auth/dtos/login-request.dto'
-import { LoginResponse } from '@auth/types/login-response.type'
-import { Tokens } from '@auth/types/tokens.type'
+import { LoginRequestDto } from '@auth/dtos/login-request.dto'
 import { CredentialsService } from '@credential/credential.service'
+import { SessionService } from '@session/session.service'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'
-import { AuthRequest } from '@shared/types/auth-request.type'
+import { UserService } from '@user/user.service'
+import { RegisterRequestDto } from './dtos/register-request.dto'
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userRepository: UserRepository,
+    private readonly userService: UserService,
     private readonly credentialsService: CredentialsService,
-    private readonly tokenService: TokenService,
+    private readonly sessionService: SessionService,
     private readonly passwordService: PasswordService,
+    private readonly tokenService: TokenService,
   ) {}
 
-  async changePassword(
-    request: AuthRequest,
-    body: ChangePasswordRequestDTO,
-  ): Promise<{ message: string }> {
-    const { oldPassword, newPassword } = body
-    const { email } = request.user
+  // async changePassword(
+  //   request: AuthRequest,
+  //   body: ChangePasswordRequestDTO,
+  // ): Promise<{ message: string }> {
+  //   const { oldPassword, newPassword } = body
+  //   const { email } = request.user
 
-    const credential = await this.credentialsService.getByEmail(email)
+  //   const credential = await this.credentialsService.getByEmail(email)
 
-    if (!credential.password)
+  //   if (!credential.password)
+  //     throw new UnauthorizedException('Invalid credentials')
+
+  //   await this.passwordService.validate(oldPassword, credential.password)
+  //   await this.credentialsService.updatePassword(credential.id, newPassword)
+
+  //   return { message: 'Password changed successfully' }
+  // }
+
+  async login(dto: LoginRequestDto, ipAddress?: string, userAgent?: string) {
+    const credential = await this.credentialsService.getByEmail(dto.email)
+
+    if (!credential.password) {
       throw new UnauthorizedException('Invalid credentials')
-
-    await this.passwordService.validate(oldPassword, credential.password)
-
-    await this.credentialsService.updatePassword(credential.id, newPassword)
-
-    return { message: 'Password changed successfully' }
-  }
-
-  async login(payload: LoginRequestDTO): Promise<LoginResponse> {
-    const credential = await this.credentialsService.getByEmail(payload.email)
-
-    if (!credential.email || !credential.password)
-      throw new UnauthorizedException('Invalid credentials')
-
-    await this.passwordService.validate(payload.password, credential.password)
-
-    const user = await this.userRepository.findById(credential.userId)
-    this.validateRole(user.role.id)
-    await this.userRepository.updateLastLogin(user.id)
-
-    const tokenData: UserTokenData = {
-      sub: user.id,
-      email: credential.email,
-      role: user.role.id || 0,
     }
 
-    const tokens = await this.tokenService.getTokens(tokenData)
-    await this.updateRefreshToken(user.id, tokens.refreshToken)
+    const isPasswordValid = await this.passwordService.compare(
+      dto.password,
+      credential.password,
+    )
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials')
+    }
+
+    const user = await this.userService.getById(credential.id)
+    const tokens = await this.tokenService.generateTokens({
+      sub: user.id,
+      role: user.roleId,
+    })
+    await this.sessionService.create({
+      userId: user.id,
+      refreshToken: tokens.refreshToken,
+      ipAddress,
+      userAgent,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    })
 
     return { user, tokens }
   }
 
-  async logout(userId: string): Promise<void> {
-    return this.credentialsService.removeRefreshToken(userId)
+  async register(dto: RegisterRequestDto) {
+    const user = await this.userService.create({
+      name: dto.name,
+      roleId: dto.roleId,
+    })
+
+    await this.credentialsService.create({
+      userId: user.id,
+      email: dto.email,
+      password: dto.password,
+    })
+
+    return user
   }
 
-  async refreshToken(
-    userId: string,
-    token: string | undefined,
-  ): Promise<Tokens> {
-    const credential = await this.credentialsService.getRefreshToken(userId)
+  async logout(refreshToken: string): Promise<void> {
+    const session = await this.sessionService.getByRefreshToken(refreshToken)
+    await this.sessionService.delete(session.id)
+  }
 
-    if (!token || !credential.hashedRefreshToken || !credential.email)
-      throw new UnauthorizedException('Invalid credentials')
-
-    await this.passwordService.validate(token, credential.hashedRefreshToken)
-
-    const user = await this.userRepository.findById(userId)
-
-    const tokenData: UserTokenData = {
-      sub: user.id,
-      email: credential.email,
-      role: user.role.id || 0,
-    }
-
-    const tokens = await this.tokenService.getTokens(tokenData)
-    await this.updateRefreshToken(user.id, tokens.refreshToken)
+  async refresh(refreshToken: string, ipAddress?: string, userAgent?: string) {
+    const payload = await this.tokenService.verifyRefreshToken(refreshToken)
+    const session = await this.sessionService.getByRefreshToken(refreshToken)
+    const tokens = await this.tokenService.generateTokens({
+      sub: payload.sub,
+      role: payload.role,
+    })
+    await this.sessionService.update(session.id, {
+      refreshToken: tokens.refreshToken,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    })
 
     return tokens
-  }
-
-  private async updateRefreshToken(
-    userId: string,
-    refreshToken: string,
-  ): Promise<void> {
-    const hashed = await this.passwordService.hash(refreshToken)
-    await this.credentialsService.updateRefreshToken(userId, hashed)
-  }
-
-  private validateRole(role: number): void {
-    if (!role) throw new HttpException('User role not found', 500)
   }
 }

@@ -14,6 +14,6 @@ export class UserMockController {
   // Rota: GET /mock/users/massive?count=500
   @Get('/:quantity')
   getMassiveUsers(@Param('quantity') quantity: number) {
-    return this.userMockService.getManyMocks(quantity)
+    return this.userMockService.findManyMocks(quantity)
   }
 }

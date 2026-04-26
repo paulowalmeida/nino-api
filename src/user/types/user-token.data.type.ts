@@ -1,6 +1,4 @@
 export type UserTokenData = {
-  sub: string
-  email: string
-  role: number
-  hashedRefreshToken?: string
-}
+  sub: string;
+  role: string;
+};

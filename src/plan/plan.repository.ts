@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-
-import { Plan } from '@plan/types/plan.type'
 import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { CreatePlanDto } from './dtos/create-plan.dto'
+import { UpdatePlanDto } from './dtos/update-plan.dto'
+import { Plan } from './types/plan.type'
 
 @Injectable()
 export class PlanRepository {
@@ -11,25 +12,23 @@ export class PlanRepository {
     private readonly prismaErrorService: PrismaErrorService,
   ) {}
 
-  async findAll(): Promise<Plan[]> {
+  async create(data: CreatePlanDto): Promise<Plan> {
     try {
-      return await this.prisma.plan.findMany({
-        where: { isActive: true },
-      })
+      return (await this.prisma.plan.create({ data })) as unknown as Plan
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
   }
 
-  async findAllIncludeInactive(): Promise<Plan[]> {
+  async getAll(): Promise<Plan[]> {
     try {
-      return await this.prisma.plan.findMany()
+      return (await this.prisma.plan.findMany()) as unknown as Plan[]
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
   }
 
-  async findById(id: number): Promise<Plan> {
+  async getById(id: number): Promise<Plan> {
     try {
       const plan = await this.prisma.plan.findUnique({
         where: { id },
@@ -37,21 +36,28 @@ export class PlanRepository {
 
       if (!plan) throw new NotFoundException('Plan not found')
 
-      return plan
+      return plan as unknown as Plan
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
   }
 
-  async findBySlug(slug: string): Promise<Plan> {
+  async update(id: number, data: UpdatePlanDto): Promise<void> {
     try {
-      const plan = await this.prisma.plan.findUnique({
-        where: { slug },
+      await this.prisma.plan.update({
+        where: { id },
+        data,
       })
+    } catch (error) {
+      this.prismaErrorService.handleError(error)
+    }
+  }
 
-      if (!plan) throw new NotFoundException('Plan not found')
-
-      return plan
+  async delete(id: number): Promise<void> {
+    try {
+      await this.prisma.plan.delete({
+        where: { id },
+      })
     } catch (error) {
       this.prismaErrorService.handleError(error)
     }
