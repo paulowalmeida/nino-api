@@ -18,24 +18,6 @@ export class AuthService {
     private readonly tokenService: TokenService,
   ) {}
 
-  // async changePassword(
-  //   request: AuthRequest,
-  //   body: ChangePasswordRequestDTO,
-  // ): Promise<{ message: string }> {
-  //   const { oldPassword, newPassword } = body
-  //   const { email } = request.user
-
-  //   const credential = await this.credentialsService.getByEmail(email)
-
-  //   if (!credential.password)
-  //     throw new UnauthorizedException('Invalid credentials')
-
-  //   await this.passwordService.validate(oldPassword, credential.password)
-  //   await this.credentialsService.updatePassword(credential.id, newPassword)
-
-  //   return { message: 'Password changed successfully' }
-  // }
-
   async login(dto: LoginRequestDto, ipAddress?: string, userAgent?: string) {
     const credential = await this.credentialsService.getByEmail(dto.email)
 

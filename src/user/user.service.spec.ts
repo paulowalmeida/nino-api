@@ -16,6 +16,7 @@ describe('UserService', () => {
           provide: UserRepository,
           useValue: {
             create: jest.fn().mockResolvedValue(mockUser),
+            getAll: jest.fn().mockResolvedValue([mockUser]),
             getById: jest.fn().mockResolvedValue(mockUser),
             getByCompanyId: jest.fn().mockResolvedValue([mockUser]),
             update: jest.fn().mockResolvedValue(undefined),
@@ -34,6 +35,12 @@ describe('UserService', () => {
     const result = await service.create(dto);
     expect(repository.create).toHaveBeenCalledWith(dto);
     expect(result).toEqual(mockUser);
+  });
+
+  it('should get all users', async () => {
+    const result = await service.getAll();
+    expect(repository.getAll).toHaveBeenCalled();
+    expect(result).toEqual([mockUser]);
   });
 
   it('should find a user by id', async () => {
