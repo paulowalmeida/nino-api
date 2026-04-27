@@ -1193,7 +1193,7 @@ refactor(repository): extrair queries em helpers
 
 Dúvidas sobre código? Consulte:
 
-1. Este CONTEXT.md
+1. Este Readme.md
 2. Tests (`.spec.ts` files)
 3. Comments inline no código
 4. Issue no repositório
