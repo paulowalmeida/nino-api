@@ -1,46 +1,175 @@
-# Ninomia Delivery — nino-api Context (v3.0)
+# Ninomia Delivery — nino-api
+## 1. 📋 Visão Geral e Modelo de Negócio (Business Core)
 
-## 📋 Visão Geral do Projeto
-
-**Ninomia Delivery** é uma plataforma SaaS **white-label** de delivery para restaurantes, lanchonetes e estabelecimentos de alimentação. Modelo B2B com cobrança por **mensalidade fixa** (zero comissão por pedido). O cliente final nunca vê o nome "Ninomia" — cada restaurante tem sua marca própria.
-
-- **Mercado inicial:** Norte do Brasil (Pará)
-- **MVP estimado:** 3-6 meses (desenvolvimento solo)
-- **Status atual:** Backend ~45% (auth completo, user/credentials modularizados, 7 módulos de API)
-- **Origem do nome:** Fusão de Nino (gato) + Mia (cachorra) — pets da família fundadora
-
+### 1.1 Identidade e Conceito do Produto
+O **Nino** (anteriormente referido como Ninomia) é uma plataforma de Software as a Service (SaaS) voltada para o mercado de alimentação (restaurantes, lanchonetes, padarias e similares). O sistema opera sob o modelo **White-Label B2B**, o que define as seguintes premissas obrigatórias:
+- **Invisibilidade da Marca:** O cliente final (o consumidor que pede a comida) nunca interage com a marca "Nino". Toda a interface, comunicação e domínio são personalizados com a identidade visual do restaurante contratante.
+- **Isolamento de Marca:** Cada `Company` (Empresa) possui sua própria configuração de identidade, permitindo que o sistema se comporte como um aplicativo proprietário para cada cliente.
+- **Origem e Propósito:** O nome é uma homenagem afetiva aos pets da família fundadora (Nino e Mia), trazendo uma identidade de proximidade e cuidado para um produto tecnológico de alta performance.
 ---
 
-## 🏗️ Arquitetura Geral
-
-### Modelo Multi-Tenant com Schema-per-Tenant (Planejado)
-
-A arquitetura adota isolamento por schema PostgreSQL:
-
-- Todos os restaurantes compartilham a mesma instância do banco
-- Cada restaurante possui seu próprio schema isolado → segurança garantida por design
-- Impossível vazar dados entre tenants mesmo com vulnerabilidades no código
-- Facilita backup/restore por cliente
-- Escalável sem custo de múltiplos bancos de dados
-- Padrão adotado por Shopify e outras grandes SaaS
-
-### Componentes Principais
-
-| Camada              | Tecnologia          | Função                                                                                      |
-| ------------------- | ------------------- | ------------------------------------------------------------------------------------------- |
-| **Backend**         | NestJS + TypeScript | Monolito MVP; API REST com autenticação JWT; processamento de negócio                       |
-| **Banco de dados**  | PostgreSQL + Prisma | Persistência com schema-per-tenant; migrations tipadas; Prisma Accelerate para pooling      |
-| **Cache & Filas**   | Redis + BullMQ      | Cache de dados frequentes; processamento assíncrono de emails, WhatsApp, push notifications |
-| **Frontend Web**    | Next.js (PWA)       | Interface cliente final + painel restaurante; SSR; PWA para instalação sem App Store        |
-| **Frontend Mobile** | React Native (Expo) | App do entregador (Android/iOS); build na nuvem sem Mac necessário                          |
-| **Storage**         | Cloudflare R2       | Fotos de cardápio, logos, arquivos; zero custo de egress                                    |
-| **CDN**             | Cloudflare          | Distribuição global; cache em edge; DNS + WAF                                               |
-| **CI/CD**           | GitHub Actions      | Testes automatizados; build; deploy contínuo                                                |
-| **Infraestrutura**  | Railway (PaaS)      | NestJS, PostgreSQL, Redis hospedados; SSL automático; escalabilidade gerenciada             |
-
+### 1.2 Modelo de Monetização e Estratégia Comercial
+O Nino rompe com o padrão de mercado de marketplaces de delivery (como iFood ou Rappi) ao abandonar a cobrança de comissões por transação.
+- **Zero Comissão:** O restaurante retém 100% do valor das vendas realizadas através da plataforma. Não existem taxas ocultas sobre o faturamento.
+- **Assinatura Fixa:** A receita da plataforma é gerada exclusivamente através de mensalidades fixas, permitindo previsibilidade de custos para o dono do restaurante e escalabilidade para a plataforma.
+- **Foco Regional:** A estratégia inicial de penetração de mercado é focada no **Norte do Brasil (Estado do Pará)**, visando atender as particularidades logísticas e de consumo da região antes da expansão nacional.
 ---
 
-## 🖥️ Stack Técnico Detalhado
+### 1.3 Detalhamento Exaustivo dos Planos e Limites (Hard Logic)
+O sistema deve validar os limites impostos pelos planos em todas as camadas de criação de recursos. Os dados são persistidos na tabela `Plan` e controlados via `Subscription`.
+
+#### 1.3.1 Plano Iniciante
+- **Valor:** R$ 97,00 mensais.
+- **Limites Físicos:**
+    - **Unidades (Tenants):** Máximo de 1 unidade ativa. O sistema deve impedir a criação de um segundo `Tenant` se a `Subscription` estiver vinculada a este plano.
+    - **Pedidos Mensais:** Limite de até 200 pedidos processados por mês.
+- **Suporte:** Suporte padrão via canais digitais (não prioritário).
+- **Indicado para:** Microempreendedores e pequenos estabelecimentos em fase de digitalização.
+
+#### 1.3.2 Plano Profissional
+- **Valor:** R$ 197,00 mensais.
+- **Limites Físicos:**
+    - **Unidades (Tenants):** Até 3 unidades (filiais) geridas sob a mesma `Company`.
+    - **Pedidos Mensais:** Ilimitados. Não há trava de volume de vendas.
+- **Diferenciais:**
+    - **Suporte Prioritário:** Acesso direto via WhatsApp (identificado pela flag `hasPrioritySupport` na lógica de atendimento).
+    - **Gestão Multiloja:** Painel administrativo preparado para alternar entre unidades.
+- **Indicado para:** Restaurantes em crescimento e pequenas redes locais.
+
+#### 1.3.3 Plano Rede
+- **Valor:** Sob consulta (negociação direta com o time de vendas).
+- **Limites Físicos:**
+    - **Unidades (Tenants):** 4 ou mais unidades.
+    - **Personalização:** Possibilidade de módulos customizados e integrações específicas.
+- **Indicado para:** Franquias e grandes redes de alimentação.
+---
+
+### 1.4 Regras de Negócio do Ciclo de Vida do Cliente
+O estado operacional de uma empresa no sistema é determinado pela combinação das tabelas `Company`, `Subscription` e `Invoice`.
+
+#### 1.4.1 Período de Degustação (Trial)
+- **Duração:** 30 dias de uso gratuito e irrestrito (baseado no plano escolhido).
+- **Sem Cartão:** O registro não exige dados de pagamento imediatos, reduzindo a fricção no onboarding.
+- **Conversão:** O sistema deve disparar gatilhos de renovação nos dias 15, 25 e 29 do período de trial.
+
+#### 1.4.2 Status de Pagamento e Suspensão (Billing Workflow)
+As regras de suspensão são rigorosas para garantir a saúde financeira do SaaS:
+- **Adimplência (Status ACTIVE):** Acesso total ao Dashboard e ao site de vendas do restaurante.
+- **Atraso Nível 1 (3 dias):** Suspensão imediata do acesso ao Dashboard administrativo. O site de vendas continua operando, mas o dono não consegue gerir pedidos novos.
+- **Atraso Nível 2 (5 dias):** Suspensão total. O site de vendas (Tenant) entra em modo "MAINTENANCE" (Manutenção Técnica), exibindo uma mensagem genérica para o consumidor final.
+- **Inatividade (Status INACTIVE):** Após um período definido de inadimplência, a `Company` é marcada como `isActive = false`, o que resulta na invalidação de todos os tokens JWT de seus usuários via `AuthGuard`.
+---
+
+### 1.5 Diferenciais Competitivos e Proposta de Valor
+- **Independência Digital:** O restaurante deixa de ser refém de algoritmos de terceiros e constrói sua própria base de dados de clientes.
+- **Facilidade de Uso:** Foco em UX (User Experience) simplificada para o dono do restaurante, que muitas vezes não é um usuário avançado de tecnologia.
+- **Infraestrutura Robusta:** Isolamento rigoroso garantido na arquitetura de banco de dados, assegurando que operações e dados de uma Unidade nunca sejam expostos ou interceptados por outra.
+---
+
+## 2. 🏗️ Arquitetura Geral
+A arquitetura do Nino é desenhada para suportar um modelo SaaS B2B Multi-Tenant com garantia absoluta de não vazamento de dados entre clientes. Para isso, adotamos uma estrutura de isolamento físico a nível de banco de dados, orquestrada por padrões de projeto estritos no back-end.
+
+### 2.1 Estratégia Multi-Tenant Absoluta (Schema-per-Tenant)
+O coração arquitetural do Nino. Abandonamos o uso de IDs compartilhados (`tenantId` em tabelas únicas) para dados sensíveis em favor de schemas independentes no PostgreSQL. Se o código falhar, o banco de dados fisicamente impede que um restaurante veja a venda de outro.
+
+#### 2.1.1 A Divisão de Schemas
+O ecossistema divide as tabelas em dois universos:
+- **Schema Central (`public`):** O cérebro do SaaS. Gerencia quem são os clientes e os acessos.
+  - *Entidades Residentes:* `Company` (O cliente pagante), `CompanyResponsible` (O dono), `Plan` (Catálogo de preços), `User` (Operadores globais ou locais), `AuthCredential` (Segurança), `Session` (Controle de dispositivos), `Role` (Permissões) e domínios estáticos (Status, Notificações).
+- **Schemas Dinâmicos (`tenant_<slug>` ou `tenant_<id>`):** O motor operacional de cada restaurante. Estes schemas são criados programaticamente durante o Onboarding de uma nova `Company`.
+  - *Entidades Residentes:* `Tenant` (A vitrine whitelabel da unidade), `Product`, `Category`, `Order`, `Customer` (O consumidor final que pede a comida).
+
+#### 2.1.2 O Motor de Roteamento Dinâmico (Tenant Injection)
+Para que a API saiba de onde ler ou gravar dados sem precisar de dezoito bancos de dados rodando, usamos injeção de contexto em tempo de execução:
+1. Toda requisição para rotas operacionais (ex: criar produto, listar pedidos) exige a identificação do Tenant alvo (via Header `X-Tenant-ID` no app do restaurante, ou subdomínio na visão do cliente final).
+2. Um `Middleware` ou `Interceptor` do NestJS captura esse identificador e valida sua existência no schema `public`.
+3. O sistema injeta o comando `SET search_path TO tenant_<id>` diretamente na transação do **TypeORM** antes da execução da regra de negócio, forçando o PostgreSQL a rotear a query para a gaveta certa.
+---
+
+### 2.2 Padrão de Camadas Estrito (Strict 3-Tier Layering)
+A separação de responsabilidades é inegociável. Nenhuma regra de negócio deve conhecer o ORM, e nenhum roteamento deve calcular dados.
+
+#### 2.2.1 **Controller Layer (`*.controller.ts`)**: 
+- **Única função:** Roteamento HTTP, extração de Headers/Cookies, aplicação de Guards (Segurança) e sanitização de entrada via DTOs.
+- **Regra:** Proibido o uso de IF/ELSE para lógicas de negócio. Só delega para o Service e devolve a resposta.
+#### 2.2.2 **Service Layer (`*.service.ts`)**: 
+- **Única função:** O coração da aplicação. Executa cálculos, regras financeiras, orquestra fluxos complexos (ex: Onboarding cria 4 entidades diferentes).
+- **Regra:** Nunca importa decoradores do TypeORM. Depende exclusivamente dos Repositories, o que permite criar Mocks perfeitos para os testes unitários.
+#### 2.2.3   **Repository Layer (`*.repository.ts`)**: 
+- **Única função:** A ponte de infraestrutura com o banco de dados. 
+- É o único lugar do código autorizado a usar `@InjectRepository()` e construir `QueryBuilders`.
+- **Tratamento de Erros:** Captura códigos de erro nativos do Postgres (ex: violação de Unique Key `23505`) e traduz para exceções HTTP do NestJS (ex: `ConflictException`), blindando o Service.
+---
+
+### 2.3 Estrutura de Diretórios e Modularização
+O projeto utiliza **Feature Modules** (Modularização por Domínio), facilitando a manutenção e a injeção de dependências.
+
+- **`/src`**: Raiz da aplicação.
+    - **`/auth`, `/company`, `/user`**: Módulos do nível B2B (operam no schema `public`).
+    - **`/shared`**: O núcleo de utilidades globais.
+        - **`/shared/database`**: Configurações do TypeORM, instâncias de `DataSource` e serviços de erro genéricos.
+        - **`/shared/middlewares`**: A lógica de captura e injeção do contexto do Tenant.
+        - Guardiões, Validadores de CNPJ/CPF e Serviços de Criptografia de Senha.
+- **`/migrations`**: Arquivos TypeScript auto-gerados ou manuais contendo o DDL (Data Definition Language) do banco.
+
+### 2.4 Defesas na Borda (Edge Configuration)
+Configurações fixadas no `AppModule` e `main.ts` que afetam globalmente o tráfego:
+- **Filtros de Exceção Globais (`ExceptionFilter`):** Impedem que erros brutos de SQL vazem no JSON de resposta.
+- **Pipes de Validação Rigorosos:** Remoção passiva de campos extras (whitelist) e bloqueio ativo (forbidNonWhitelisted).
+
+## 3. 🧰 Stack Tecnológica Oficial
+Para suportar a arquitetura acima, especialmente o requisito crítico de Schema-per-Tenant e injeção dinâmica em tempo real, a stack do Nino foi definida com as seguintes tecnologias e dependências:
+
+### 3.1 Motor e Linguagem
+- **Linguagem:** TypeScript v5.7 (Tipagem estrita obrigatória, evitando `any` a todo custo).
+- **Runtime:** Node.js (Versão LTS atual).
+- **Framework Core:** NestJS v11 (`@nestjs/core: ^11.0.1`).
+  - *Motivo:* Fornece um ecossistema maduro com Inversão de Controle (IoC) via injeção de dependência nativa, forçando uma arquitetura limpa desde o dia 1.
+
+### 3.2 Persistência de Dados e ORM
+- **Banco de Dados:** PostgreSQL v16 (Ambiente de desenvolvimento provisionado via Docker & Docker Compose).
+- **ORM Principal:** TypeORM (`typeorm`, `@nestjs/typeorm`).
+  - *Motivo da migração (Antigo Prisma):* O TypeORM suporta nativamente a manipulação dinâmica de schemas no Postgres e execução de lógicas customizadas por requisição (via QueryRunners e EntityManagers). O Prisma ORM é engessado e não suporta DDL dinâmico em tempo de execução sem severas gambiarras arquiteturais.
+- **Driver Nativo:** `pg` (Cliente PostgreSQL puramente escrito em JS).
+
+### 3.3 Autenticação, Segurança e Acesso
+- **Gestão de Tokens:** `@nestjs/jwt` acoplado ao `@nestjs/passport` utilizando a estratégia de "Access Token" (vida curta) via Header Bearer, e "Refresh Token" salvo no banco de dados para revogação instantânea de sessões de dispositivos.
+- **Criptografia:** `bcrypt` para hashing de senhas. Nenhuma credencial crua é armazenada no banco.
+- **Proteção de Redes:** `@nestjs/throttler` configurado globalmente para rate limiting (ex: bloqueia IPs que superam 10 requisições por minuto na API de login, prevenindo ataques de força bruta).
+
+### 3.4 Sanitização e Validação de Dados
+- **Ferramentas:** `class-validator` e `class-transformer` (`^0.15.1` e `^0.5.1`).
+  - *Uso:* Acoplados aos DTOs (Data Transfer Objects) na camada de Controller. Eles realizam a limpeza de dados e cast de tipos primitivos (ex: converter string numéricas para inteiros) antes que a requisição encoste na camada de Service.
+
+### 3.5 Ecossistema de Qualidade de Código e Testes
+- **Testes Unitários e de Integração:** Jest v30 (`jest: ^30.0.0`, `ts-jest: ^29.2.5`). 
+  - *Padrão de Cobertura:* Focado em Services e Repositories isolados. DTOs e entidades passivas não afetam o cálculo de métrica de cobertura.
+- **Testes E2E:** Supertest (`supertest: ^7.0.0`) para validar fluxos HTTP completos, desde a rota HTTP, passando pelas injeções de TypeORM até o banco de testes.
+- **Padronização:** ESLint estrito e Prettier.
+
+### 3.5 Tabela de Componentes Core
+
+| Camada / Responsabilidade | Tecnologia Base | Descrição e Função no Ecossistema Nino |
+| :--- | :--- | :--- |
+| **Engine / Core** | NestJS v11 + TypeScript | Framework principal operando como um monolito modular RESTful. Fornece a base de injeção de dependências (IoC), roteamento e arquitetura em camadas. |
+| **Persistência Relacional** | PostgreSQL v16 | Banco de dados central. Adota o modelo de `Schema-per-Tenant` para isolamento físico de dados entre os restaurantes, garantindo segurança extrema. |
+| **Object-Relational Mapping** | TypeORM | ORM escolhido por sua flexibilidade na injeção dinâmica de *schemas* em tempo de execução via `search_path`, viabilizando a arquitetura Multi-Tenant sem gambiarras. |
+| **Segurança e Autenticação** | Passport.js + JWT + bcrypt | O motor de acesso. `bcrypt` realiza o *hash* das senhas. O JWT (JSON Web Token) emite *Access Tokens* de vida curta, enquanto um sistema customizado com `Passport` valida os *Refresh Tokens* persistidos no banco. |
+| **Sanitização na Borda** | class-validator + class-transformer | Barreira de entrada HTTP. Valida os DTOs (Data Transfer Objects) e rejeita propriedades não mapeadas (*forbidNonWhitelisted*), protegendo a API de injeções de *payload*. |
+| **Proteção de Rede** | @nestjs/throttler | Sistema de *Rate Limiting* (limitador de requisições) configurado globalmente para evitar ataques de negação de serviço (DDoS) e força bruta em endpoints sensíveis (ex: login). |
+| **Qualidade e Testes Unitários** | Jest v30 + ts-jest | Suíte de testes unitários com foco exclusivo nas regras de negócio (Services) e infraestrutura (Repositories). O *coverage* ignora ficheiros anémicos (DTOs, Enums). |
+| **Testes E2E (Integração)** | Supertest | Validação dos fluxos completos da API de ponta a ponta, simulando requisições HTTP reais contra um banco de dados de teste (via Docker). |
+| **Gestão de Ambiente / Local** | Docker + Docker Compose | Infraestrutura como código para o ambiente de desenvolvimento. Sobe a instância do PostgreSQL localmente sem poluir o sistema operativo do programador. |
+| **Linting e Formatação** | ESLint + Prettier | Ferramentas estritas de análise estática e padronização visual do código TypeScript, garantindo consistência entre os ficheiros. |
+
+### 3.6 Omissões Deliberadas (Out of Scope)
+Para clareza dos agentes de IA e programadores, os seguintes componentes **não** fazem parte da `nino-api`, embora possam compor o ecossistema Nino como um todo:
+- **Front-ends:** Painéis de restaurante, Landing Pages e Web Apps whitelabel (geridos em repositórios separados, atualmente focados em HTML/JS puro ou Next.js).
+- **Filas e Cache:** Redis e BullMQ não estão integrados no estado atual (MVP) para evitar *over-engineering* prematuro. O processamento atual é síncrono.
+- **Storage de Imagens:** O upload de logótipos e *assets* ainda não está implementado na API e não possui dependências ativas no `package.json` (como drivers da AWS S3 ou Cloudflare R2).
+---
+
+## 4. 🖥️ Stack Técnico Detalhado
 
 ### Runtime & Framework
 
@@ -51,24 +180,26 @@ A arquitetura adota isolamento por schema PostgreSQL:
 ### Banco de Dados & ORM
 
 - **PostgreSQL** (v14+) — Banco relacional com suporte a Row Level Security (RLS)
-- **Prisma ORM** (v7.4.1) — Query builder tipado; migrations automáticas; Zod generation
-- **Prisma Accelerate** (~$10/mês) — Connection pooling gerenciado; essencial para multi-tenant
+- **Prisma ORM** (v7.4.1) — Query builder tipado; migrations automáticas
+- **`@prisma/adapter-pg` + `pg`** — Driver adapter nativo para PostgreSQL; substitui o client padrão do Prisma para conexão direta sem camada intermediária
 
 ### Autenticação & Segurança
 
-- **JWT (JSON Web Tokens)** — Stateless; access token 15min + refresh token 7 dias
+- **JWT (JSON Web Tokens)** — Stateless; access token 15min + refresh token 7 dias via cookie HttpOnly
 - **Passport.js** (v0.7) — Estratégias de autenticação plugáveis
 - **bcrypt** (v6) — Hashing de senhas e refresh tokens
 - **@nestjs/jwt** + **@nestjs/passport** — Integração nativa NestJS
+- **cookie-parser** — Parsing de cookies HTTP; essencial para leitura do refreshToken HttpOnly
 - **Rate limiting** (@nestjs/throttler v6.5) — Proteção contra força bruta e abuse
-- **Helmet** — Headers HTTP de segurança automáticos (CSP, XSS, MIME sniffing)
-- **CORS** — Apenas domínios \*.ninomia.com
+
+### Documentação
+
+- **@nestjs/swagger** + **swagger-ui-express** — Documentação interativa disponível em `/api/docs`
 
 ### Validação de Dados
 
 - **class-validator** + **class-transformer** — DTOs com validação declarativa
 - **ValidationPipe global** — `whitelist: true`, `forbidNonWhitelisted: true`, `transform: true`
-- **Zod** (via zod-prisma-types) — Schemas de validação tipados gerados do Prisma schema
 
 ### Filas & Processamento Assíncrono (Planejado)
 
@@ -97,506 +228,458 @@ A arquitetura adota isolamento por schema PostgreSQL:
   "@nestjs/jwt": "^11.0.2",
   "@nestjs/passport": "^11.0.5",
   "@nestjs/platform-express": "^11.0.1",
+  "@nestjs/swagger": "^11.2.7",
   "@nestjs/throttler": "^6.5.0",
+  "@prisma/adapter-pg": "^7.4.1",
   "@prisma/client": "^7.4.1",
   "bcrypt": "^6.0.0",
-  "class-validator": "^0.15.1",
   "class-transformer": "^0.5.1",
+  "class-validator": "^0.15.1",
+  "cookie-parser": "^1.4.7",
   "passport": "^0.7.0",
-  "passport-jwt": "^4.0.1"
+  "passport-jwt": "^4.0.1",
+  "pg": "^8.18.0",
+  "swagger-ui-express": "^5.0.1"
 }
 ```
 
 ---
 
-## 📁 Estrutura de Pastas
+## 5. 📁 Estrutura de Pastas e Arquitetura de Módulos
 
-```
+O projeto adota uma arquitetura estrita de **Feature Modules** (Modularização por Domínio). Cada diretório dentro de `src/` opera como um micro-ecossistema auto-contido, encapsulando seu próprio Controller, Service, Repository, DTOs e Tipos. Navegações relativas confusas (`../../../`) são evitadas através de Path Aliases configurados no TypeScript.
+
+Abaixo está a radiografia completa e exaustiva do repositório:
+
+```text
 nino-api/
 ├── src/
-│   ├── main.ts                          # Entry point da aplicação
-│   ├── app.module.ts                    # Root module com todos os módulos importados
-│   ├── app.controller.ts                # Controller raiz
-│   ├── app.service.ts                   # Service raiz
+│   ├── main.ts                          # Entry point (Bootstrap, Global Pipes, Swagger, Throttler)
+│   ├── app.module.ts                    # Root module orquestrador (Importa todos os Feature Modules)
+│   ├── app.controller.ts                # Healthcheck e rotas base globais
+│   ├── app.service.ts                   # Lógicas globais base
 │   │
-│   ├── auth/                            # ✅ Módulo de autenticação (100% completo)
-│   │   ├── auth.module.ts               # Imports JwtModule, Passport strategies, guards
-│   │   ├── auth.controller.ts           # POST /auth/* — login, logout, refresh, change-password
-│   │   ├── auth.service.ts              # Lógica: login, logout, refreshToken, changePassword
-│   │   │
-│   │   ├── guards/
-│   │   │   └── jwt-refresh.guard.ts     # Guard para refresh-token endpoint
-│   │   │
-│   │   ├── strategies/
-│   │   │   └── jwt-refresh.strategy.ts  # Passport strategy para JWT refresh
-│   │   │
-│   │   ├── dtos/
-│   │   │   ├── login-request.dto.ts            # { email, password }
-│   │   │   ├── change-password-request.dto.ts  # { oldPassword, newPassword }
-│   │   │   └── refresh-token.dto.ts            # { refreshToken }
-│   │   │
-│   │   └── types/
-│   │       ├── login-response.type.ts          # { user, tokens }
-│   │       ├── tokens.type.ts                  # { accessToken, refreshToken }
-│   │       ├── auth-credential-repository.type.ts
-│   │       ├── auth-credential-refresh-token.type.ts
-│   │       └── user-token.data.type.ts      # { sub, email, role } no JWT
+│   ├── auth/                            # 🔐 Módulo Central de Autenticação
+│   │   ├── auth.module.ts               # Injeção de JwtModule, Passport e Token/Password Services
+│   │   ├── auth.controller.ts           # POST /auth/register, /login, /refresh, /logout
+│   │   ├── auth.service.ts              # Orquestração do fluxo de login e emissão de tokens
+│   │   ├── auth.repository.ts           # Acesso focado nas transações de autenticação
+│   │   ├── jwt-refresh.guard.ts         # Proteção específica para a rota de Refresh Token
+│   │   ├── jwt-refresh.strategy.ts      # Estratégia Passport para decodificar o Refresh Token
+│   │   ├── dtos/                        # Validadores: login-request, register-request, change-password
+│   │   └── types/                       # Contratos: tokens.type, login-response.type
 │   │
-│   ├── user/                         # ✅ Módulo de contas (100% completo)
+│   ├── company/                         # 🏢 Módulo Core B2B (Clientes do SaaS)
+│   │   ├── company.module.ts
+│   │   ├── company.controller.ts        # CRUD de Empresas e controle de ativação
+│   │   ├── company.service.ts           # Regras de onboarding e verificação de conflitos (CNPJ)
+│   │   ├── company.repository.ts        # Interação estrita com o schema `public` via TypeORM
+│   │   ├── dto/                         # create-company.dto, update-company.dto
+│   │   └── types/                       # company.type
+│   │
+│   ├── company-responsible/             # 👤 Dados do Dono da Empresa (Representante Legal)
+│   │   ├── company-responsible.module.ts
+│   │   ├── company-responsible.controller.ts
+│   │   ├── company-responsible.service.ts
+│   │   ├── company-responsible.repository.ts
+│   │   ├── dto/                         # create e update DTOs (Validação de CPF/Telefone)
+│   │   └── type/                        # company-responsible.type
+│   │
+│   ├── session/                         # 📱 Controle de Dispositivos e Rotação de Tokens
+│   │   ├── session.module.ts
+│   │   ├── session.controller.ts        # Revogação manual de sessões ativas
+│   │   ├── session.service.ts           # Lógica de expiração (7 dias) e tracking de IP/User-Agent
+│   │   ├── session.repository.ts        # Hard-delete e upsert de refresh tokens
+│   │   ├── dtos/                        # create-session.dto, update-session.dto
+│   │   └── types/                       # session.type
+│   │
+│   ├── user/                            # 👥 Operadores do Sistema (Admins e Funcionários)
 │   │   ├── user.module.ts
-│   │   ├── user.controller.ts        # 9 endpoints
-│   │   ├── user.service.ts
-│   │   ├── user.repository.ts
-│   │   ├── new-user.dto.ts           # DTO para criar conta
-│   │   │
-│   │   ├── dto/
-│   │   │   ├── update-preferences.dto.ts
-│   │   │   └── update-role.dto.ts
-│   │   │
-│   │   └── types/
-│   │       └── user.type.ts          # Type Prisma tipado
+│   │   ├── user.controller.ts           # CRUD de usuários e vinculação com Roles
+│   │   ├── user.service.ts              # Validação de regras SetNull para companyId
+│   │   ├── user.repository.ts           # Acesso aos dados do usuário (ignora senhas)
+│   │   ├── dtos/                        # create-user, update-user, user.dto
+│   │   └── types/                       # user.type, user-token.data.type
 │   │
-│   ├── credential/                      # ✅ Módulo de credenciais (100% completo)
+│   ├── credential/                      # 🔑 Segurança Isolada (Preparado para OAuth)
 │   │   ├── credential.module.ts
-│   │   ├── credential.controller.ts     # 5 endpoints
+│   │   ├── credential.controller.ts
 │   │   ├── credential.service.ts
-│   │   ├── credential.repository.ts
-│   │   │
-│   │   ├── dto/
-│   │   │   └── update-credential.dto.ts
-│   │   │
-│   │   └── types/
-│   │       ├── credential.type.ts
-│   │       └── credential-repository.type.ts
+│   │   ├── credential.repository.ts     # Gerencia a tupla única [userId + provider]
+│   │   ├── dto/                         # create-credential (hash bcrypt embutido), update
+│   │   └── types/                       # credential.type, credential-repository.type
 │   │
-│   ├── role/                            # ✅ Módulo de roles (100% completo)
+│   ├── plan/                            # 💳 Catálogo Comercial (Limites e Preços)
+│   │   ├── plan.module.ts
+│   │   ├── plan.controller.ts
+│   │   ├── plan.service.ts              # Lógica de controle de limites (maxTenants, maxOrders)
+│   │   ├── plan.repository.ts
+│   │   ├── dtos/                        # create-plan, update-plan
+│   │   └── types/                       # plan.type
+│   │
+│   ├── plan-type/                       # 🏷️ Categorização de Planos (Mensal, Anual)
+│   │   ├── plan-type.module.ts
+│   │   ├── plan-type.controller.ts
+│   │   ├── plan-type.service.ts
+│   │   ├── plan-type.repository.ts
+│   │   ├── dtos/
+│   │   └── types/
+│   │
+│   ├── role/                            # 🛡️ RBAC (Cargos e Permissões)
 │   │   ├── role.module.ts
-│   │   ├── role.controller.ts           # 3 endpoints
+│   │   ├── role.controller.ts
 │   │   ├── role.service.ts
 │   │   ├── role.repository.ts
+│   │   ├── dtos/
 │   │   └── types/
-│   │       └── role.type.ts
 │   │
-│   ├── plan/                            # ✅ Módulo de planos (100% completo)
-│   │   ├── plan.module.ts
-│   │   ├── plan.controller.ts           # 4 endpoints
-│   │   ├── plan.service.ts
-│   │   ├── plan.repository.ts
-│   │   └── types/
-│   │       └── plan.type.ts
+│   ├── Módulos de Dicionário (Status e Tipos) # Tabelas estáticas auxiliares
+│   │   ├── invoice-status/              # PENDING, PAID, VOID
+│   │   ├── notification-type/           # SYSTEM, BILLING, ORDER
+│   │   ├── subscription-status/         # TRIAL, ACTIVE, SUSPENDED
+│   │   └── tenant-status/               # CONFIGURING, ACTIVE, MAINTENANCE
 │   │
-│   ├── subscription-status/             # ✅ Módulo de status (100% completo)
-│   │   ├── subscription-status.module.ts
-│   │   ├── subscription-status.controller.ts  # 3 endpoints
-│   │   ├── subscription-status.service.ts
-│   │   ├── subscription-status.repository.ts
-│   │   └── types/ (sem arquivo específico)
+│   ├── mocks/                           # 🧪 Utilitários para Desenvolvimento e Testes
+│   │   ├── mocks.module.ts
+│   │   ├── cnpj/                        # Mock de geração e validação de CNPJ
+│   │   ├── user/                        # Mock de injeção de usuários para E2E
+│   │   └── data/                        # user.data.mock.ts
 │   │
-│   ├── notification-type/               # ✅ Módulo de tipos de notificação (100% completo)
-│   │   ├── notification-type.module.ts
-│   │   ├── notification-type.controller.ts   # 3 endpoints
-│   │   ├── notification-type.service.ts
-│   │   ├── notification-type.repository.ts
-│   │   └── types/
-│   │       └── notification-type.type.ts
-│   │
-│   ├── profile/                            # ⏳ Módulo de usuários (planejado)
-│   │   ├── profile.repository.ts
-│   │   ├── profile.service.ts
-│   │   ├── profile.controller.ts
-│   │   ├── profile.module.ts
-│   │   ├── profile.dto.ts
-│   │   └── types/
-│   │       └── profile-repository.type.ts
-│   │
-│   └── shared/                          # Código compartilhado entre módulos
-│       ├── enums/
-│       │   └── (tipos de enum para roles, plans, etc)
-│       │
-│       ├── guards/
-│       │   └── jwt-auth.guard.ts        # Guard global para proteger endpoints
-│       │
-│       ├── strategies/
-│       │   └── jwt-auth.strategy.ts     # Passport strategy para JWT access token
-│       │
+│   └── shared/                          # 🛠️ Core Transversal (Recursos Globais)
+│       ├── database/                    # [TypeORM] Conexões, DataSources e Configurações base
+│       ├── middlewares/                 # [TypeORM] Interceptor para injetar o `search_path` (Tenant)
+│       ├── guards/                      # jwt-auth.guard.ts (Proteção global de rotas)
+│       ├── strategies/                  # jwt-auth.strategy.ts (Validação de Access Token)
+│       ├── validators/                  # cnpj.validator.ts (Custom class-validator decorators)
+│       ├── enums/                       # role.enum, plan.enum, subscription-status.enum
+│       ├── types/                       # auth-request.type.ts
 │       └── services/
-│           ├── password/
-│           │   └── password.service.ts  # bcrypt hash, compare, validate
-│           │
-│           ├── token/
-│           │   └── token.service.ts     # JWT generation
-│           │
-│           └── prisma/
-│               ├── prisma.module.ts                # Exporta PrismaService e PrismaErrorService
-│               ├── prisma.service.ts               # Singleton do Prisma client com métodos auxiliares
-│               └── prisma-error.service.ts         # Centraliza tratamento de erros Prisma
+│           ├── password/                # password.service.ts (Wrapper isolado do bcrypt)
+│           ├── token/                   # token.service.ts (Wrapper do JwtService)
+│           └── helpers/cnpj/            # Lógica de formatação de CNPJ
 │
-├── prisma/
-│   ├── schema.prisma                    # Schema do banco: 11 models
-│   ├── migrations/                      # Histórico de migrations (controlado)
-│   └── generated/
-│       └── zod/index.ts                 # Schemas Zod gerados automaticamente do schema.prisma
+├── migrations/                          # 📜 [Substitui prisma/] DDLs e TypeORM Migrations 
+│   ├── 1710000000000-InitialPublic.ts   # Migrações globais do schema B2B
+│   └── tenants/                         # Migrações dinâmicas para instanciar novos clientes
 │
-├── test/
-│   ├── app.e2e-spec.ts                  # Testes end-to-end
-│   └── jest-e2e.json                    # Config Jest para E2E
+├── test/                                # 🚥 Suíte de Testes End-to-End
+│   ├── app.e2e-spec.ts                  # Testes integrados batendo na API via Supertest
+│   └── jest-e2e.json                    # Configuração para levantar banco em memória ou Docker
 │
-├── collections/
-│   ├── auth.collection.yaml             # Postman/Insomnia collection
-│   └── hello-world.yaml
+├── collections/                         🗂️ Documentação Viva de API (Insomnia/Postman)
+│   ├── auth.collection.yaml             
+│   ├── company.collection.yaml          
+│   ├── user.collection.yaml             
+│   ├── plan.collection.yaml
+│   └── (e coleções para todos os outros domínios)
 │
-├── .env.example                         # Template de variáveis de ambiente
-├── docker-compose.yml                   # PostgreSQL + Redis localmente
-├── package.json
-├── tsconfig.json
-├── jest.config.js
-├── eslint.config.mjs
-├── README.md
-└── CONTEXT.md                           # Este arquivo!
+├── Infraestrutura e Configurações       ⚙️ Raiz do Projeto
+│   ├── docker-compose.yml               Provisionamento do PostgreSQL v16
+│   ├── .env / .env.example             Chaves JWT, Database URIs e Secrets
+│   ├── package.json                    Scripts e dependências TypeORM/NestJS
+│   ├── tsconfig.json / tsconfig.build.json
+│   ├── eslint.config.mjs              Regras estritas de Linting
+│   ├── .prettierrc                      Formatação visual de código
+│   ├── nest-cli.json                    Configuração do compilador Nest
+│   └── README.md / CONTEXT.md           A Bíblia do Projeto (Você está aqui)
 ```
+---
+
+## 6. 🗄️ Topologia do Banco de Dados e Entidades
+
+Com a migração para TypeORM para suportar o isolamento físico Multi-Tenant, a modelagem de dados passa a ser definida por classes TypeScript (`Entities`). Abaixo está o detalhamento exaustivo de cada entidade do sistema, seu propósito de negócio e como elas se relacionam na arquitetura de schemas separados.
+
+*(Nota: Colunas de infraestrutura padrão como `id`, `description`, `createdAt` e `updatedAt` são omitidas desta documentação por já estarem padronizadas em todas as entidades nas camadas base do código).*
+
+### 6.1 Schema Global B2B (`public`)
+Este schema centraliza o motor do SaaS. Ele gerencia assinaturas, empresas, segurança e o roteamento de lojas. Consumidores finais nunca interagem com os dados armazenados aqui.
+
+#### 6.1.1 Entidades de Domínio e Status (Auxiliares de Negócio)
+Estas tabelas definem as regras de estado e permissões do sistema.
+- **`Role`**: Define a hierarquia de controle de acesso (RBAC). Controla se o usuário associado é um `ADMIN_NINO` (acesso global), `OWNER` (dono da empresa), `MANAGER` (gerente de loja), ou funções operacionais (`KITCHEN`, `WAITER`, `DELIVERY_MAN`).
+- **`TenantStatus`**: Dita o estado operacional de uma unidade whitelabel. Regras de roteamento dependem disso (ex: bloquear pedidos se estiver `MAINTENANCE` ou `SUSPENDED`, permitir edição livre se `CONFIGURING`).
+- **`SubscriptionStatus`**: O motor de billing consulta esta entidade para liberar ou bloquear o acesso ao dashboard. Define se a empresa está em `TRIAL`, `ACTIVE`, `PAST_DUE` (inadimplente com tolerância) ou `CANCELED`.
+- **`InvoiceStatus`**: Rastreia o ciclo de vida de uma cobrança específica (`PENDING`, `PAID`, `VOID`). A mudança para `PAID` via webhook do gateway de pagamento é o que renova a assinatura.
+- **`PlanType`**: Categoriza a periodicidade da cobrança comercial (ex: `MONTHLY`, `YEARLY`), influenciando o cálculo de datas de expiração na renovação.
+- **`NotificationType`**: Classifica os alertas disparados no painel (`SYSTEM`, `BILLING`, `ORDER`), permitindo que os usuários filtrem notificações críticas de faturamento das operacionais.
+
+#### 6.1.2 Entidades do Core B2B (Clientes e Faturamento)
+- **`Company`**: A raiz de um cliente pagante.
+  - *Campos de Negócio:* `companyName`, `cnpj` (Unique), `legalName`, `stateRegistration`.
+  - *Comportamento:* A coluna `isActive` funciona como um Master Switch (Soft-Delete). Se for `false`, toda a árvore de usuários e lojas atreladas a esta empresa perde o acesso à API simultaneamente.
+  - *Relacionamentos:* Única dona da `Subscription` e do `CompanyResponsible`. Agrupa múltiplos `User` e `Tenant`.
+- **`CompanyResponsible`**: O representante legal perante o SaaS.
+  - *Campos de Negócio:* `name`, `cpf` (Unique), `email`, `phone`.
+  - *Comportamento:* Entidade estritamente vinculada 1:1 com a `Company`. Deletada em cascata (`CASCADE`) se o registro da empresa for fisicamente destruído.
+- **`Plan`**: O catálogo de produtos do SaaS.
+  - *Campos de Negócio:* `name`, `slug` (Unique), `price`.
+  - *Travas Lógicas de Arquitetura:* `maxTenants` (limite de lojas whitelabel permitidas), `maxProducts` e `maxOrders`. O `PlanService` lê estes inteiros para barrar ações no painel B2B (ex: impedir o dono de criar a 4ª loja no Plano Profissional).
+
+#### 6.1.3 Entidades de Segurança, Autenticação e Acesso
+- **`User`**: O operador humano (ou de sistema).
+  - *Campos de Negócio:* `isActive`, `lastLoginAt`, `locale`, `timezone`.
+  - *Relação Crítica:* Possui chave estrangeira `roleId`. 
+  - *A Regra SetNull:* A ligação com `Company` (`companyId`) é **opcional**. Isso permite a existência de usuários do tipo "Suporte Nino" que podem transitar no sistema sem estarem presos ao banco de dados de um restaurante específico.
+- **`AuthCredential`**: A blindagem de acesso.
+  - *Campos de Negócio:* `email` (Unique), `password` (Hashed), `provider` (padrão: `local`), `providerId`.
+  - *Restrição:* A chave única é composta por `userId` + `provider`. Isso isola os dados sensíveis da tabela de `User` e deixa o sistema pronto para receber OAuth (login com Google) anexando novas credenciais ao mesmo usuário sem quebrar o banco.
+- **`Session`**: O rastreio ativo de segurança.
+  - *Campos de Negócio:* `refreshToken` (Unique e criptografado), `ipAddress`, `userAgent`, `expiresAt`.
+  - *Comportamento:* A cada login é gerado um novo registro. Permite expiração forçada, auditoria de acesso e token rotation (substituição do token antigo por um novo a cada refresh).
+
+#### 6.1.4 Entidades do Produto SaaS (White-Label)
+- **`Tenant`**: A vitrine operacional (A "Loja" em si).
+  - *Campos Visuais/Identidade:* `slug` (Unique), `logoUrl`, `favicon`, `primaryColor`, `secondaryColor`.
+  - *Configuração de Rede:* `customDomain` (Unique, Nullable).
+  - *Arquitetura:* Fica no schema global (`public`) para que o middleware do NestJS possa ler o `customDomain` ou `slug` da requisição HTTP inicial e saber para qual schema dinâmico ele deve injetar o `search_path`.
+- **`Subscription`**: O contrato vigente.
+  - *Campos de Negócio:* `startedAt`, `expiresAt`.
+  - *Relacionamentos:* Amarração 1:1 com `Company`. Liga-se a um `Plan` e a um `SubscriptionStatus`.
 
 ---
 
-## 📊 Prisma Schema Detalhado (v7.4.1)
+### 6.2 Schemas Dinâmicos Operacionais (`tenant_<id>`)
+Este é o universo isolado do TypeORM. Os schemas são criados via código (Data Definition Language Dinâmico) durante a ativação de um novo `Tenant`. **Nenhuma tabela abaixo se mistura com dados de outros restaurantes.**
 
-### Models Atuais
-
-#### **Role** — Definição de papéis
-
-```prisma
-model Role {
-  id          String    @id @default(uuid())
-  code        Int       @unique
-  description String    @unique
-
-  users User[]
-
-  @@map("roles")
-}
-```
-
-#### **Plan** — Planos de assinatura
-
-```prisma
-model Plan {
-  id            String   @id @default(uuid())
-  code          Int      @unique
-  name          String   @unique
-  slug          String   @unique
-  price         Decimal
-  maxTenants    Int
-  maxProducts   Int
-  maxOrders     Int
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  subscriptions Subscription[]
-
-  @@map("plans")
-}
-```
-
-#### **SubscriptionStatus** — Estados de assinatura
-
-```prisma
-model SubscriptionStatus {
-  id            String @id @default(uuid())
-  code          Int    @unique
-  description   String @unique
-
-  subscriptions Subscription[]
-
-  @@map("subscription_statuses")
-}
-```
-
-#### **NotificationType** — Tipos de notificação
-
-```prisma
-model NotificationType {
-  id          String @id @default(uuid())
-  code        Int    @unique
-  description String @unique
-
-  notifications Notification[]
-
-  @@map("notification_types")
-}
-```
-
-#### **AuthCredential** — Credenciais de autenticação
-
-```prisma
-model AuthCredential {
-  id                 String   @id @default(uuid())
-  userId          String
-  email              String?
-  password           String?
-  hashedRefreshToken String?
-  provider           String   @default("local")
-  providerId         String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, provider])
-  @@map("auth_credentials")
-}
-```
-
-#### **User** — Entidade central de contas
-
-```prisma
-model User {
-  id            String    @id @default(uuid())
-  roleId        String
-  isActive      Boolean   @default(true)
-  lastLoginAt   DateTime?
-  locale        String?
-  timezone      String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  role          Role             @relation(fields: [roleId], references: [id])
-  credentials   AuthCredential[]
-  profile          Profile?
-  tenants       Tenant[]
-  subscription  Subscription?
-  notifications Notification[]
-
-  @@map("users")
-}
-```
-
-#### **Profile** — Dados pessoais/estendidos
-
-```prisma
-model Profile {
-  id          String   @id @default(uuid())
-  userId   String   @unique
-  firstName   String?
-  lastName    String?
-  companyName String?
-  cpf         String?  @unique
-  cnpj        String?  @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contacts  ProfileContact[]
-  addresses ProfileAddress[]
-
-  @@map("profiles")
-}
-```
-
-#### **ProfileContact** — Contatos do usuário
-
-```prisma
-model ProfileContact {
-  id        String   @id @default(uuid())
-  profileId    String
-  phone     String?
-  mobile    String?
-  whatsapp  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-  @@map("profile_contacts")
-}
-```
-
-#### **ProfileAddress** — Endereços do usuário
-
-```prisma
-model ProfileAddress {
-  id         String   @id @default(uuid())
-  profileId     String
-  cep        String?
-  street     String?
-  number     String?
-  complement String?
-  city       String?
-  state      String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-
-  @@map("profile_addresses")
-}
-```
-
-#### **Tenant** — Restaurante/estabelecimento
-
-```prisma
-model Tenant {
-  id        String   @id @default(uuid())
-  userId String
-  name      String
-  slug      String   @unique
-  logoUrl   String?
-  phone     String?
-  email     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("tenants")
-}
-```
-
-#### **Subscription** — Assinatura do usuário
-
-```prisma
-model Subscription {
-  id        String    @id @default(uuid())
-  userId String    @unique
-  planId    String
-  statusId  String
-  startedAt DateTime  @default(now())
-  expiresAt DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  user User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan    Plan               @relation(fields: [planId], references: [id])
-  status  SubscriptionStatus @relation(fields: [statusId], references: [id])
-
-  @@map("subscriptions")
-}
-```
-
-#### **Notification** — Notificações in-app
-
-```prisma
-model Notification {
-  id        String    @id @default(uuid())
-  userId String
-  typeId    String
-  title     String
-  body      String
-  isRead    Boolean   @default(false)
-  readAt    DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type    NotificationType @relation(fields: [typeId], references: [id])
-
-  @@map("notifications")
-}
-```
+- **`Product`**: A base comercial da loja.
+  - *Campos:* `name`, `price`, `promotionalPrice`, `description`, `imageUrl`, `isActive`.
+- **`Category`**: A estrutura de vitrine.
+  - *Campos:* `name`, `sortOrder` (define a posição no front-end do restaurante).
+- **`Customer`**: O cliente do restaurante.
+  - *Campos:* `name`, `whatsapp`, `email`. 
+  - *Isolamento:* Fica trancado no schema do Tenant. A lanchonete A não tem acesso aos clientes da lanchonete B.
+- **`Order`**: O registro da transação.
+  - *Campos:* `totalAmount`, `status` (preparando, a caminho, entregue), `deliveryAddress`.
+  - *Rastreio:* Vinculado ao `Customer`.
+- **`OrderItem`**: A quebra do pedido.
+  - *Campos:* Quantidade, preço congelado no momento da compra (evita que a mudança de preço do `Product` altere o histórico financeiro do `Order`), observações ("sem cebola").
 
 ---
+## 7. 🔐 Segurança, Autenticação e Autorização
 
-## 🔐 Autenticação & Segurança
+O ecossistema de acesso do Nino foi desenhado sob uma arquitetura *Stateless* para rotas operacionais, combinada com uma validação *Stateful* para renovação de credenciais. Todo o fluxo de autenticação ocorre no schema global (`public`), garantindo que o acesso B2B seja validado antes de qualquer roteamento dinâmico para os schemas de Tenants.
 
-### Fluxo de Login
+### 7.1 Arquitetura de Tokens (Dual-Token System)
+O sistema não utiliza sessões baseadas em memória ou cookies monolíticos. O controle de acesso é inteiramente gerido por JWT (JSON Web Tokens) através de um par de chaves:
 
-1. **Login:** POST `/auth/login` → valida credentials → gera access + refresh tokens → salva refresh token hasheado
-2. **Access Token:** TTL 15 minutos — usado em requests autenticadas
-3. **Refresh Token:** TTL 7 dias — usado para renovar access token sem fazer login novamente
-4. **Logout:** POST `/auth/logout` → remove hashedRefreshToken do banco
+1.  **Access Token (JWT de Vida Curta):**
+    - **TTL (Time-To-Live):** 15 minutos.
+    - **Finalidade:** Trafegado no header `Authorization: Bearer <token>` em todas as requisições autenticadas. Se for interceptado, o dano é contido a uma janela de 15 minutos.
+2.  **Refresh Token (JWT Oculto e Persistente):**
+    - **TTL (Time-To-Live):** 7 dias.
+    - **Finalidade:** Utilizado exclusivamente no endpoint `/auth/refresh` para emitir um novo par de tokens.
+    - **Segurança Física:** Sofre hash (via `bcrypt`) e é persistido na entidade `Session` no banco de dados. Isso viabiliza a funcionalidade de "Logout de todos os dispositivos", pois a deleção física do registro de sessão invalida o Refresh Token imediatamente.
 
-### JWT Payload
+### 7.2 Estrutura do JWT (Payload)
+A interface interna do sistema (`user-token.data.type.ts`) define o contrato estrito do payload injetado no Access Token. Nenhum dado sensível (como senhas ou CPFs) trafega aqui.
 
 ```typescript
 {
-  sub: string // User ID
-  email: string // Email do usuário
-  role: number // Código da role
-  iat: number // Issued at
-  exp: number // Expiration time
+  sub: string,      // Identificador único do Usuário (UUID)
+  email: string,    // E-mail atrelado à credencial para logs fáceis
+  role: string,     // O nome/código do cargo (ex: 'OWNER', 'MANAGER') para RBAC
+  iat: number,      // Issued At (Timestamp de geração - Injetado pelo Passport)
+  exp: number       // Expiration Time (Injetado pelo Passport)
 }
 ```
 
-### Estratégias Passport
+## 8. 🛣️ Endpoints da API
+Este tópico cataloga cada endpoint funcional encontrado nos controladores do projeto `nino-api`. Não há agrupamentos genéricos; cada método de cada classe Controller é detalhado abaixo.
 
-- **JwtStrategy** — Extrai JWT do header `Authorization: Bearer <token>`
-- **JwtRefreshStrategy** — Extrai refresh token e valida contra o hash no banco
+### 7.1 Módulo de Autenticação (`src/auth/auth.controller.ts`)
+* **POST `/auth/register`**
+  - Chama: `authService.register(registerRequestDto)`
+  - Descrição: Cria um novo usuário e suas credenciais iniciais.
+* **POST `/auth/login`**
+  - Chama: `authService.login(dto, req.ip, req.headers['user-agent'])`
+  - Descrição: Valida credenciais, seta cookie HttpOnly com o refreshToken e retorna `{ user, accessToken }`.
+* **POST `/auth/refresh`**
+  - Chama: `authService.refresh(token, req.ip, req.headers['user-agent'])`
+  - Descrição: Lê o refreshToken do cookie HttpOnly, emite novo par de tokens e atualiza o cookie. Retorna `{ accessToken }`.
+* **POST `/auth/logout`**
+  - Chama: `authService.logout(token)`
+  - Descrição: Invalida o refreshToken no banco e limpa o cookie.
 
-### Guards
+### 7.2 Módulo de Empresas (`src/company/company.controller.ts`)
+* **GET `/companies`**
+  - Chama: `companyService.getAll()`
+* **GET `/companies/:id`**
+  - Chama: `companyService.getById(id)`
+* **GET `/companies/cnpj/:cnpj`**
+  - Chama: `companyService.getByCnpj(cnpj)`
+* **POST `/companies`**
+  - Chama: `companyService.create(createCompanyDto)`
+* **PUT `/companies/:id`**
+  - Chama: `companyService.update(id, updateCompanyDto)`
+* **DELETE `/companies/:id`**
+  - Chama: `companyService.delete(id)`
+* **PATCH `/companies/:id/activate`**
+  - Chama: `companyService.activate(id)`
+* **PATCH `/companies/:id/deactivate`**
+  - Chama: `companyService.deactivate(id)`
 
-- **JwtAuthGuard** — Protege endpoints; valida access token
-- **JwtRefreshGuard** — Valida refresh token para renovação
+### 7.3 Módulo de Responsável pela Empresa (`src/company-responsible/company-responsible.controller.ts`)
+* **GET `/company-responsibles`**
+  - Chama: `companyResponsibleService.getAll()`
+* **GET `/company-responsibles/id/:id`**
+  - Chama: `companyResponsibleService.getById(id)`
+* **GET `/company-responsibles/doc/:id`**
+  - Chama: `companyResponsibleService.getById(id)` — busca por documento (CPF/CNPJ)
+* **POST `/company-responsibles`**
+  - Chama: `companyResponsibleService.create(createDto)`
+* **PUT `/company-responsibles/:id`**
+  - Chama: `companyResponsibleService.update(id, updateDto)`
+* **DELETE `/company-responsibles/:id`**
+  - Chama: `companyResponsibleService.delete(id)` — retorna HTTP 204
 
-### Rate Limiting por Endpoint
+### 7.4 Módulo de Usuários (`src/user/user.controller.ts`)
+* **POST `/users`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `userService.create(createUserDto)`
+* **GET `/users/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `userService.getById(id)`
+* **GET `/users/company/:companyId`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `userService.getByCompanyId(companyId)`
+* **PATCH `/users/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `userService.update(id, updateUserDto)`
+* **DELETE `/users/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `userService.delete(id)`
 
-| Endpoint                     | TTL        | Limit  | Propósito                      |
-| ---------------------------- | ---------- | ------ | ------------------------------ |
-| POST `/auth/login`           | 60s (1min) | 5 req  | Força bruta                    |
-| POST `/auth/refresh-token`   | 60s (1min) | 10 req | Renovação agressiva            |
-| POST `/auth/change-password` | 60s (1min) | 3 req  | Força bruta em senha           |
-| Global                       | 60s (1min) | 10 req | Default para qualquer endpoint |
+### 7.5 Módulo de Credenciais (`src/credential/credential.controller.ts`)
+* **GET `/credentials/list/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `credentialsService.getAll(userId)` — lista credenciais de um usuário
+* **GET `/credentials/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `credentialsService.getById(id)`
+* **PATCH `/credentials/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `credentialsService.update(id, updateDto)` — atualiza email
+* **PATCH `/credentials/change-password`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `credentialsService.changePassword(userId, oldPassword, newPassword)` — userId extraído do JWT
+* **DELETE `/credentials/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `credentialsService.delete(id)`
 
+### 7.6 Módulo de Planos (`src/plan/plan.controller.ts`)
+* **GET `/plans`**
+  - Chama: `planService.getAll()`
+* **GET `/plans/:id`**
+  - Chama: `planService.getById(id)`
+* **POST `/plans`**
+  - Chama: `planService.create(createPlanDto)`
+* **PATCH `/plans/:id`**
+  - Chama: `planService.update(id, updatePlanDto)`
+* **DELETE `/plans/:id`**
+  - Chama: `planService.delete(id)`
+
+### 7.7 Módulo de Tipo de Plano (`src/plan-type/plan-type.controller.ts`)
+* **GET `/plan-types`**
+  - Chama: `planTypeService.getAll()`
+* **GET `/plan-types/:id`**
+  - Chama: `planTypeService.getById(id)`
+* **POST `/plan-types`**
+  - Chama: `planTypeService.create(createDto)`
+* **PUT `/plan-types/:id`**
+  - Chama: `planTypeService.update(id, updateDto)`
+* **DELETE `/plan-types/:id`**
+  - Chama: `planTypeService.delete(id)`
+
+### 7.8 Módulo de Roles (`src/role/role.controller.ts`)
+* **GET `/roles`**
+  - Chama: `roleService.getAll()`
+* **GET `/roles/:id`**
+  - Chama: `roleService.getById(id)`
+* **POST `/roles`**
+  - Chama: `roleService.create(createRoleDto)`
+* **PUT `/roles/:id`**
+  - Chama: `roleService.update(id, updateRoleDto)`
+* **DELETE `/roles/:id`**
+  - Chama: `roleService.delete(id)`
+
+### 7.9 Módulo de Status do Tenant (`src/tenant-status/tenant-status.controller.ts`)
+* **GET `/tenant-statuses`**
+  - Chama: `tenantStatusService.getAll()`
+* **GET `/tenant-statuses/:id`**
+  - Chama: `tenantStatusService.getById(id)`
+* **POST `/tenant-statuses`**
+  - Chama: `tenantStatusService.create(createDto)`
+* **PUT `/tenant-statuses/:id`**
+  - Chama: `tenantStatusService.update(id, updateDto)`
+* **DELETE `/tenant-statuses/:id`**
+  - Chama: `tenantStatusService.delete(id)`
+
+### 7.10 Módulo de Status de Assinatura (`src/subscription-status/subscription-status.controller.ts`)
+* **GET `/subscription-statuses`**
+  - Chama: `subscriptionStatusService.getAll()`
+* **GET `/subscription-statuses/:id`**
+  - Chama: `subscriptionStatusService.getById(id)`
+* **POST `/subscription-statuses`**
+  - Chama: `subscriptionStatusService.create(createDto)`
+* **PUT `/subscription-statuses/:id`**
+  - Chama: `subscriptionStatusService.update(id, updateDto)`
+* **DELETE `/subscription-statuses/:id`**
+  - Chama: `subscriptionStatusService.delete(id)`
+
+### 7.11 Módulo de Status de Fatura (`src/invoice-status/invoice-status.controller.ts`)
+* **GET `/invoice-statuses`**
+  - Chama: `invoiceStatusService.getAll()`
+* **GET `/invoice-statuses/:id`**
+  - Chama: `invoiceStatusService.getById(id)`
+* **POST `/invoice-statuses`**
+  - Chama: `invoiceStatusService.create(createDto)`
+* **PUT `/invoice-statuses/:id`**
+  - Chama: `invoiceStatusService.update(id, updateDto)`
+* **DELETE `/invoice-statuses/:id`**
+  - Chama: `invoiceStatusService.delete(id)`
+
+### 7.12 Módulo de Tipo de Notificação (`src/notification-type/notification-type.controller.ts`)
+* **GET `/notification-types`**
+  - Chama: `notificationTypeService.getAll()`
+* **GET `/notification-types/:id`**
+  - Chama: `notificationTypeService.getById(id)`
+* **POST `/notification-types`**
+  - Chama: `notificationTypeService.create(createDto)`
+* **PUT `/notification-types/:id`**
+  - Chama: `notificationTypeService.update(id, updateDto)`
+* **DELETE `/notification-types/:id`**
+  - Chama: `notificationTypeService.delete(id)`
+
+### 7.13 Módulo de Sessão (`src/session/session.controller.ts`)
+* **POST `/sessions`**
+  - Chama: `sessionsService.create(createSessionDto)`
+* **GET `/sessions/list-by-user-id/:userId`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `sessionsService.getListByUserId(userId)`
+* **GET `/sessions/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `sessionsService.getById(id)`
+* **PATCH `/sessions/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `sessionsService.update(id, updateSessionDto)`
+* **DELETE `/sessions/:id`**
+  - Guard: `JwtAuthGuard`
+  - Chama: `sessionsService.delete(id)`
+
+### 7.14 Módulo de Mock de CNPJ (`src/mocks/cnpj/cnpj.mock.controller.ts`)
+* **GET `/mock/cnpjs`**
+  - Gera um CNPJ aleatório válido.
+* **GET `/mock/cnpjs/:quantity`**
+  - Gera N CNPJs aleatórios válidos.
+
+### 7.15 Módulo de Mock de Usuário (`src/mocks/user/user.mock.controller.ts`)
+* **GET `/mock/users`**
+  - Gera dados de um usuário aleatório.
+* **GET `/mock/users/:quantity`**
+  - Gera dados de N usuários aleatórios.
 ---
 
-## 🛣️ Endpoints da API
-
-### 📊 Resumo Total: 31 Endpoints
-
-#### **Auth Module** (4 endpoints)
-
-- `POST /auth/login` — Login
-- `POST /auth/logout` — Logout
-- `POST /auth/refresh-token` — Refresh token
-- `POST /auth/change-password` — Mudar senha
-
-#### **User Module** (9 endpoints)
-
-- `POST /users` — Criar conta
-- `GET /users` — Listar todas
-- `GET /users/:id` — Buscar por ID
-- `GET /users/email/:email` — Buscar por email
-- `GET /users/:id/login-history` — Histórico de logins
-- `PATCH /users/:id/preferences` — Atualizar locale + timezone
-- `PATCH /users/:id/role` — Mudar role
-- `PATCH /users/:id/deactivate` — Desativar
-- `PATCH /users/:id/activate` — Reativar
-
-#### **Credentials Module** (5 endpoints)
-
-- `GET /credentials` — Listagem (implementar)
-- `GET /credentials/:id` — Buscar por ID
-- `GET /credentials/user/:userId` — Listar por conta
-- `PATCH /credentials/:id` — Atualizar email
-- `PATCH /credentials/:id/password` — Atualizar senha
-
-#### **Role Module** (3 endpoints)
-
-- `GET /roles` — Listar todas
-- `GET /roles/:id` — Buscar por ID
-- `GET /roles/code/:code` — Buscar por code
-
-#### **Plan Module** (4 endpoints)
-
-- `GET /plans` — Listar (apenas ativos)
-- `GET /plans/:id` — Buscar por ID
-- `GET /plans/code/:code` — Buscar por code
-- `GET /plans/slug/:slug` — Buscar por slug
-
-#### **SubscriptionStatus Module** (3 endpoints)
-
-- `GET /subscription-statuses` — Listar todas
-- `GET /subscription-statuses/:id` — Buscar por ID
-- `GET /subscription-statuses/code/:code` — Buscar por code
-
-#### **NotificationType Module** (3 endpoints)
-
-- `GET /notification-types` — Listar todas
-- `GET /notification-types/:id` — Buscar por ID
-- `GET /notification-types/code/:code` — Buscar por code
-
----
-
-## 🏛️ Padrões Arquiteturais
+## 9. 🏛️ Padrões Arquiteturais
 
 ### 1. **Repository Pattern**
 
@@ -604,36 +687,32 @@ Camada de abstração entre Service e Prisma. **Tratamento de null centralizado 
 
 ```typescript
 // ✅ Repository — trata erros Prisma + null
-async getById(id: string): Promise<User> {
+async getById(id: string): Promise<Role> {
   try {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      ...this.userSelect,
-    })
+    const found = await this.prisma.role.findUnique({ where: { id } })
 
-    if (!user) throw new NotFoundException('User not found')
+    if (!found) throw new NotFoundException('Role not found')
 
-    return user
+    return found
   } catch (error) {
     this.prismaErrorService.handleError(error)
   }
 }
 
 // ✅ Service — delegação pura
-async getById(id: string): Promise<User> {
-  return await this.userRepository.getById(id)
-  // Se erro → automático do repository
+async getById(id: string): Promise<Role> {
+  return await this.roleRepository.getById(id)
 }
 
 // ✅ Controller — delegação HTTP
-async getById(@Param('id') id: string): Promise<User> {
-  return await this.userService.getById(id)
+async getById(@Param('id') id: string): Promise<Role> {
+  return await this.roleService.getById(id)
 }
 ```
 
 ### 2. **PrismaErrorService — Centralização de Erros**
 
-Mapeia códigos de erro Prisma para exceções NestJS.
+Mapeia códigos de erro Prisma para exceções NestJS. Erros `HttpException` são relançados diretamente sem transformação.
 
 ```typescript
 // Suportados:
@@ -643,7 +722,7 @@ Mapeia códigos de erro Prisma para exceções NestJS.
 
 // Uso:
 try {
-  await this.prisma.user.delete(...)
+  await this.prisma.role.delete({ where: { id } })
 } catch (error) {
   this.prismaErrorService.handleError(error)
 }
@@ -651,46 +730,34 @@ try {
 
 ### 3. **Types com Prisma.GetPayload**
 
-Múltiplos tipos de entidades para controle explícito de exposição de dados.
+Tipos gerados diretamente do schema Prisma via `GetPayload`. O genérico vazio `<{}>` retorna o tipo completo da entidade conforme definida no schema.
 
 ```typescript
-// ✅ Tipado automaticamente do schema
 import { Prisma } from '@prisma/client'
 
-export type User = Prisma.UserGetPayload<{
-  omit: { roleId: true }
-  include: {
-    credentials: { omit: { userId: true } }
-    role: { omit: { id: true } }
-    // ...
-  }
-}>
+export type Role = Prisma.RoleGetPayload<{}>
+export type User = Prisma.UserGetPayload<{}>
 ```
 
-### 4. **Omit no Prisma**
+### 4. **Remoção de campos sensíveis via destructuring**
 
-Excluir campos sensíveis nas queries.
+Campos como `password` são removidos via destructuring no controller/service, não via `omit` do Prisma.
 
 ```typescript
-// Nunca retornar password, hashedRefreshToken
-await this.prisma.authCredential.findUnique({
-  where: { id },
-  omit: {
-    password: true,
-    hashedRefreshToken: true,
-  }
-})
+// ✅ No controller (credential.controller.ts)
+const { password, ...credential } = await this.credentialsService.getById(id)
+return credential
 ```
 
 ### 5. **ConfigModule Global**
 
-Todas as variáveis de ambiente via `ConfigService`.
+Todas as variáveis de ambiente via `ConfigService`. A variável de conexão com o banco é `DB_URL`.
 
 ```typescript
 // ✅ Injeta automaticamente
 constructor(private configService: ConfigService) {}
 
-const secret = this.configService.get<string>('JWT_SECRET')
+const url = this.configService.get<string>('DB_URL')
 const port = this.configService.get<number>('PORT', 3000)  // com default
 ```
 
@@ -753,7 +820,7 @@ import { AuthService } from '../../../../auth/auth.service'
 
 ---
 
-## ✍️ Convenções de Escrita
+## 10. ✍️ Convenções de Escrita
 
 ### Funções Pequenas & Responsabilidade Única
 
@@ -786,14 +853,12 @@ if (credential.email && credential.password) {
 
 ### Separação de Dados Sensíveis
 
-Nunca retornar `password`, `hashedRefreshToken` para o cliente.
+Nunca retornar `password` para o cliente. Remoção feita via destructuring no controller.
 
 ```typescript
-// ✅ Omit no Prisma
-await this.prisma.authCredential.findUnique({
-  where: { id },
-  omit: { password: true, hashedRefreshToken: true }
-})
+// ✅ Destructuring no controller
+const { password, ...credential } = await this.credentialsService.getById(id)
+return credential
 ```
 
 ### Try/Catch Apenas no Repository
@@ -819,7 +884,7 @@ async getById(id: string): Promise<User> {
 
 ---
 
-## 🧪 Padrões de Teste
+## 11. 🧪 Padrões de Teste
 
 ### Estrutura: AAA (Arrange, Act, Assert)
 
@@ -847,83 +912,79 @@ Todo teste segue: monta dados → executa → verifica.
 
 ---
 
-## 🔄 Fluxos Principais
+## 12. 🔄 Fluxos Principais
 
-### Fluxo 1: Login & Token Generation
+### Fluxo 1: Login
 
 ```
 POST /auth/login
-  ├─ Validação DTO
-  ├─ AuthService.login()
-  │   ├─ credentialsService.getByEmail()
-  │   ├─ validatePassword()
-  │   ├─ userRepository.getById()
-  │   ├─ userRepository.updateLastLogin()
-  │   ├─ tokenService.getTokens()
-  │   │   ├─ generateToken(15m, JWT_SECRET) → accessToken
-  │   │   └─ generateToken(7d, JWT_REFRESH_SECRET) → refreshToken
-  │   ├─ credentialsService.updateRefreshToken()
-  │   └─ buildLoginResponse()
-  └─ Response 200: { user, tokens }
+  ├─ Validação DTO (LoginRequestDto)
+  ├─ AuthService.login(dto, ipAddress, userAgent)
+  │   ├─ credentialsService.getByEmail(dto.email)
+  │   ├─ passwordService.compare(dto.password, credential.password)
+  │   ├─ userService.getById(credential.id)
+  │   ├─ tokenService.generateTokens({ sub: user.id, role: user.roleId })
+  │   │   ├─ accessToken (15min, JWT_SECRET)
+  │   │   └─ refreshToken (7d, JWT_REFRESH_SECRET)
+  │   └─ sessionService.create({ userId, refreshToken, ipAddress, userAgent, expiresAt })
+  ├─ Cookie HttpOnly: refreshToken (7d, secure, sameSite: strict)
+  └─ Response 200: { user, accessToken }
 ```
 
 ### Fluxo 2: Renovação de Token (Refresh)
 
 ```
-POST /auth/refresh-token (+ JWT Refresh Guard)
-  ├─ JwtRefreshGuard valida refresh token
-  ├─ AuthService.refreshToken()
-  │   ├─ credentialsService.getRefreshToken()
-  │   ├─ validatePassword()
-  │   ├─ userRepository.getById()
-  │   ├─ tokenService.getTokens() → novo access + novo refresh
-  │   └─ credentialsService.updateRefreshToken()
-  └─ Response 200: { accessToken, refreshToken }
+POST /auth/refresh
+  ├─ Lê refreshToken do cookie HttpOnly
+  ├─ AuthService.refresh(token, ipAddress, userAgent)
+  │   ├─ tokenService.verifyRefreshToken(token) → valida assinatura JWT
+  │   ├─ sessionService.getByRefreshToken(token) → confirma sessão ativa
+  │   ├─ tokenService.generateTokens({ sub, role }) → novo par de tokens
+  │   └─ sessionService.update(session.id, { refreshToken, expiresAt }) → rotaciona token
+  ├─ Cookie HttpOnly: novo refreshToken
+  └─ Response 200: { accessToken }
 ```
 
 ### Fluxo 3: Mudança de Senha
 
 ```
-POST /auth/change-password (+ JWT Auth Guard)
-  ├─ JwtAuthGuard valida access token
-  ├─ AuthService.changePassword()
-  │   ├─ credentialsService.getByEmail()
-  │   ├─ validatePassword(oldPassword)
-  │   ├─ credentialsService.updatePassword()
-  │   └─ Response 200: { message: "Password changed successfully" }
-  └─ Nova senha em efeito imediatamente
+PATCH /credentials/change-password (+ JwtAuthGuard)
+  ├─ userId extraído do JWT (req.user.sub)
+  ├─ credentialsService.changePassword(userId, oldPassword, newPassword)
+  │   ├─ Busca credencial do usuário
+  │   ├─ passwordService.compare(oldPassword, credential.password)
+  │   └─ Atualiza password com hash bcrypt
+  └─ Response 200: { message: "Password changed successfully" }
 ```
 
-### Fluxo 4: Criar Conta
+### Fluxo 4: Registro de Conta
 
 ```
-POST /users
-  ├─ Validação DTO
-  ├─ UserService.create()
-  │   ├─ userRepository.create(roleId)
-  │   ├─ credentialsService.create(userId, email, password)
-  │   └─ userRepository.getById()
+POST /auth/register
+  ├─ Validação DTO (RegisterRequestDto)
+  ├─ AuthService.register(dto)
+  │   ├─ userService.create({ name, roleId })
+  │   └─ credentialsService.create({ userId, email, password })
   └─ Response 201: { user }
 ```
 
-### Fluxo 5: Atualizar Preferências
+### Fluxo 5: Atualizar Usuário
 
 ```
-PATCH /users/:id/preferences (+ JWT Auth Guard)
-  ├─ UserService.updatePreferences()
-  │   └─ userRepository.updatePreferences()
-  └─ Response 200: { user with updated locale/timezone }
+PATCH /users/:id (+ JwtAuthGuard)
+  ├─ UserService.update(id, updateUserDto)
+  └─ Response 200: { user atualizado }
 ```
 
 ---
 
-## 🔧 Trade-offs & Decisões Arquiteturais
+## 13. 🔧 Trade-offs & Decisões Arquiteturais
 
 | Decisão                | Escolha                     | Motivo                                                    | Alternativa                                                    |
 | ---------------------- | --------------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
 | **Arquitetura**        | Monolito                    | MVP — velocidade > escalabilidade prematura               | Microsserviços (overkill para MVP)                             |
 | **Multi-tenant**       | Schema-per-tenant           | Isolamento real sem custo de múltiplos bancos             | Database-per-tenant (mais caro), Row-per-tenant (menos seguro) |
-| **ORM**                | Prisma                      | Type-safety, migrations controladas, Zod generation       | Sequelize (menos tipado), TypeORM (mais complexo)              |
+| **ORM**                | Prisma                      | Type-safety, migrations controladas, adapter nativo pg    | Sequelize (menos tipado), TypeORM (mais complexo)              |
 | **Auth**               | JWT stateless               | Sem sessão server-side — escala horizontal fácil          | Session-based (precisa de shared cache)                        |
 | **Refresh token**      | Hasheado no banco           | Segurança — token plain nunca persiste                    | JWT de longa duração (risco de vazamento)                      |
 | **Error handling**     | Service centralizado        | Evita try/catch espalhado, mensagens consistentes         | Erros inline (código repetido)                                 |
@@ -935,35 +996,41 @@ PATCH /users/:id/preferences (+ JWT Auth Guard)
 
 ---
 
-## 📦 Status dos Módulos
+## 14. 📊 Status dos Módulos
 
-| Módulo                | Status          | Endpoints | Progresso |
-| --------------------- | --------------- | --------- | --------- |
-| **auth**              | ✅ Concluído    | 4         | 100%      |
-| **user**           | ✅ Concluído    | 9         | 100%      |
-| **credential**        | ✅ Concluído    | 5         | 100%      |
-| **role**              | ✅ Concluído    | 3         | 100%      |
-| **plan**              | ✅ Concluído    | 4         | 100%      |
-| **subscription-status** | ✅ Concluído  | 3         | 100%      |
-| **notification-type** | ✅ Concluído    | 3         | 100%      |
-| **shared/prisma**     | ✅ Concluído    | —         | 100%      |
-| **shared/guards**     | ✅ Concluído    | —         | 100%      |
-| **shared/strategies** | ✅ Concluído    | —         | 100%      |
-| **profile**              | ⏳ Futuro       | —         | 5%        |
-| **tenant**            | ⏳ Futuro       | —         | 0%        |
-| **restaurant**        | ⏳ Futuro       | —         | 0%        |
-| **order**             | ⏳ Futuro       | —         | 0%        |
-| **payment**           | ⏳ Futuro       | —         | 0%        |
-| **delivery**          | ⏳ Futuro       | —         | 0%        |
-| **notification**      | ⏳ Futuro       | —         | 0%        |
+| Módulo                    | Status        | Endpoints | Progresso |
+| ------------------------- | ------------- | --------- | --------- |
+| **auth**                  | ✅ Concluído  | 4         | 100%      |
+| **user**                  | ✅ Concluído  | 5         | 100%      |
+| **credential**            | ✅ Concluído  | 5         | 100%      |
+| **company**               | ✅ Concluído  | 8         | 100%      |
+| **company-responsible**   | ✅ Concluído  | 6         | 100%      |
+| **session**               | ✅ Concluído  | 5         | 100%      |
+| **role**                  | ✅ Concluído  | 5         | 100%      |
+| **plan**                  | ✅ Concluído  | 5         | 100%      |
+| **plan-type**             | ✅ Concluído  | 5         | 100%      |
+| **subscription-status**   | ✅ Concluído  | 5         | 100%      |
+| **invoice-status**        | ✅ Concluído  | 5         | 100%      |
+| **tenant-status**         | ✅ Concluído  | 5         | 100%      |
+| **notification-type**     | ✅ Concluído  | 5         | 100%      |
+| **mocks**                 | ✅ Concluído  | 4         | 100%      |
+| **shared/prisma**         | ✅ Concluído  | —         | 100%      |
+| **shared/guards**         | ✅ Concluído  | —         | 100%      |
+| **shared/strategies**     | ✅ Concluído  | —         | 100%      |
+| **tenant**                | ⏳ Futuro     | —         | 0%        |
+| **restaurant**            | ⏳ Futuro     | —         | 0%        |
+| **order**                 | ⏳ Futuro     | —         | 0%        |
+| **payment**               | ⏳ Futuro     | —         | 0%        |
+| **delivery**              | ⏳ Futuro     | —         | 0%        |
+| **notification**          | ⏳ Futuro     | —         | 0%        |
 
 ---
 
-## 🚀 Próximas Features (Roadmap)
+## 15. 🚀 Próximas Features (Roadmap)
 
 ### Curto Prazo (1-2 semanas)
 
-- [ ] Swagger documentation (`@nestjs/swagger`)
+- [x] Swagger documentation (`@nestjs/swagger`) — disponível em `/api/docs`
 - [ ] Implementar `POST /auth/forgot-password` + `POST /auth/reset-password`
   - Depende integração com Resend (email transacional)
   - Token de reset com TTL curto (30 min)
@@ -992,11 +1059,21 @@ PATCH /users/:id/preferences (+ JWT Auth Guard)
 
 ---
 
-## 🛠️ Variáveis de Ambiente
+## 16. 🛠️ Variáveis de Ambiente
 
 ```env
-# Banco de Dados
-DATABASE_URL=postgresql://profile:password@localhost:5432/ninomia_dev
+# Docker
+CONTAINER_NAME=container_name
+
+# Banco de Dados (variáveis individuais usadas no docker-compose)
+DB_USER=username_db
+DB_PASSWORD=password_db
+DB_NAME=database_name
+DB_HOST=127.0.0.1
+DB_PORT=5432
+
+# Prisma (connection string montada a partir das vars acima)
+DB_URL=postgresql://DB_USER:DB_PASSWORD@DB_HOST:DB_PORT/DB_NAME?schema=public
 
 # JWT Secrets
 JWT_SECRET=seu-secret-super-seguro-access-token
@@ -1006,22 +1083,19 @@ JWT_REFRESH_SECRET=seu-secret-super-seguro-refresh-token
 PORT=3000
 NODE_ENV=development
 
-# Prisma Accelerate (production)
-PRISMA_ACCELERATE_URL=https://accelerate.prisma.io/...
-
-# Resend (email)
+# Resend (email) — Planejado
 RESEND_API_KEY=re_xxxxx
 
-# Z-API (WhatsApp)
+# Z-API (WhatsApp) — Planejado
 Z_API_TOKEN=xxxxx
 
-# Pagar.me
+# Pagar.me — Planejado
 PAGARME_API_KEY=xxxxx
 
-# Firebase (push notifications)
+# Firebase (push notifications) — Planejado
 FIREBASE_CREDENTIALS_JSON={ ... }
 
-# Cloudflare R2 (storage)
+# Cloudflare R2 (storage) — Planejado
 R2_USER_ID=xxxxx
 R2_ACCESS_KEY_ID=xxxxx
 R2_SECRET_ACCESS_KEY=xxxxx
@@ -1032,14 +1106,15 @@ R2_BUCKET_NAME=ninomia-files
 
 ---
 
-## 🐳 Docker & Local Development
+## 17. 🐳 Docker & Local Development
 
 ### Docker Compose (PostgreSQL + Redis)
 
 ```bash
-docker-compose up -d        # Inicia BD
-docker-compose down         # Para BD
-docker-compose down -v      # Para + remove volumes
+npm run docker:up-d         # Inicia BD em background
+npm run docker:up           # Inicia BD com logs
+npm run docker:down-d       # Para BD em background
+npm run docker:down         # Para BD
 ```
 
 ### Prisma Migrations
@@ -1049,6 +1124,7 @@ npm run prisma:generate     # Gera Prisma client
 npm run prisma:migrate      # Cria migration
 npm run prisma:seed         # Popula dados iniciais (roles, plans, statuses)
 npm run prisma:sync         # Sync schema sem migration (dev only)
+npm run prisma:reset        # Reset completo do banco (apaga tudo)
 ```
 
 ### Executar Servidor
@@ -1070,7 +1146,7 @@ npm run test:e2e            # Testes end-to-end
 
 ---
 
-## 📚 Referências & Documentação
+## 18. 📚 Referências & Documentação
 
 - **NestJS:** https://docs.nestjs.com
 - **Prisma:** https://www.prisma.io/docs
@@ -1085,7 +1161,7 @@ npm run test:e2e            # Testes end-to-end
 
 ---
 
-## 🤝 Contribuição & Commits
+## 19. 🤝 Contribuição & Commits
 
 ### Padrão de Branches
 
@@ -1113,7 +1189,7 @@ refactor(repository): extrair queries em helpers
 
 ---
 
-## 📞 Suporte & Dúvidas
+## 20. 📞 Suporte & Dúvidas
 
 Dúvidas sobre código? Consulte:
 
@@ -1126,6 +1202,6 @@ Dúvidas sobre código? Consulte:
 
 **Última atualização:** Abril 2026  
 **Desenvolvedor:** Paulo (Solo)  
-**Status:** MVP em desenvolvimento — 45% concluído
+**Status:** MVP em desenvolvimento — ~55% concluído
 
-**31 endpoints implementados em 7 módulos completamente funcional e modular!** 🎉
+**77 endpoints implementados em 14 módulos funcionais e modulares!** 🎉

@@ -22,7 +22,7 @@ describe('AuthService', () => {
         AuthService,
         {
           provide: UserService,
-          useValue: { findById: jest.fn(), create: jest.fn() },
+          useValue: { getById: jest.fn(), create: jest.fn() },
         },
         {
           provide: CredentialsService,
@@ -59,20 +59,30 @@ describe('AuthService', () => {
     tokenService = module.get<TokenService>(TokenService)
   })
 
-  // it('should login successfully', async () => {
-  //   const mockCred = { userId: 'u1', password: 'hash' }
-  //   const mockUser = { id: 'u1', roleId: 'r1' }
-  //   const mockTokens = { accessToken: 'a', refreshToken: 'r' }
+  it('should login successfully', async () => {
+    const mockCred = { id: 'u1', password: 'hash' }
+    const mockUser = { id: 'u1', roleId: 'r1' }
+    const mockTokens = { accessToken: 'a', refreshToken: 'r' }
 
-  //   jest.spyOn(credService, 'getByEmail').mockResolvedValue(mockCred as any)
-  //   jest.spyOn(passService, 'compare').mockResolvedValue(true)
-  //   jest.spyOn(userService, 'getById').mockResolvedValue(mockUser as any)
-  //   jest.spyOn(tokenService, 'generateTokens').mockResolvedValue(mockTokens)
+    jest.spyOn(credService, 'getByEmail').mockResolvedValue(mockCred as any)
+    jest.spyOn(passService, 'compare').mockResolvedValue(true)
+    jest.spyOn(userService, 'getById').mockResolvedValue(mockUser as any)
+    jest.spyOn(tokenService, 'generateTokens').mockResolvedValue(mockTokens)
 
-  //   const result = await service.login({ email: 't@t.com', password: '123' })
-  //   expect(result.user).toEqual(mockUser)
-  //   expect(sessionService.create).toHaveBeenCalled()
-  // })
+    const result = await service.login({ email: 't@t.com', password: '123' })
+    expect(result.user).toEqual(mockUser)
+    expect(sessionService.create).toHaveBeenCalled()
+  })
+
+  it('should throw UnauthorizedException when credential has no password', async () => {
+    jest
+      .spyOn(credService, 'getByEmail')
+      .mockResolvedValue({ password: null } as any)
+
+    await expect(
+      service.login({ email: 't@t.com', password: '123' }),
+    ).rejects.toThrow(UnauthorizedException)
+  })
 
   it('should throw UnauthorizedException on invalid password', async () => {
     jest

@@ -52,6 +52,19 @@ describe('UserRepository', () => {
     expect(prismaErrorService.handleError).toHaveBeenCalledWith(error);
   });
 
+  it('should get all users successfully', async () => {
+    jest.spyOn(prismaService.user, 'findMany').mockResolvedValue([mockUser] as any);
+    const result = await repository.getAll();
+    expect(result).toEqual([mockUser]);
+  });
+
+  it('should call handleError when getAll throws an error', async () => {
+    const error = new Error('db error');
+    jest.spyOn(prismaService.user, 'findMany').mockRejectedValue(error);
+    await repository.getAll();
+    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error);
+  });
+
   it('should find a user by id', async () => {
     jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(mockUser as any);
     const result = await repository.getById('user-id');
