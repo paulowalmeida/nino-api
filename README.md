@@ -15,7 +15,7 @@ O Nino rompe com o padrão de mercado de marketplaces de delivery (como iFood ou
 - **Foco Regional:** A estratégia inicial de penetração de mercado é focada no **Norte do Brasil (Estado do Pará)**, visando atender as particularidades logísticas e de consumo da região antes da expansão nacional.
 ---
 
-### 1.3 Detalhamento Exaustivo dos Planos e Limites (Hard Logic)
+### 1.3 Detalhamento dos Planos e Limites (Hard Logic)
 O sistema deve validar os limites impostos pelos planos em todas as camadas de criação de recursos. Os dados são persistidos na tabela `Plan` e controlados via `Subscription`.
 
 #### 1.3.1 Plano Iniciante
@@ -385,7 +385,7 @@ nino-api/
 
 ## 6. 🗄️ Topologia do Banco de Dados e Entidades
 
-Com a migração para TypeORM para suportar o isolamento físico Multi-Tenant, a modelagem de dados passa a ser definida por classes TypeScript (`Entities`). Abaixo está o detalhamento exaustivo de cada entidade do sistema, seu propósito de negócio e como elas se relacionam na arquitetura de schemas separados.
+Com a migração para TypeORM para suportar o isolamento físico Multi-Tenant, a modelagem de dados passa a ser definida por classes TypeScript (`Entities`). Abaixo está o detalhamento de cada entidade do sistema, seu propósito de negócio e como elas se relacionam na arquitetura de schemas separados.
 
 *(Nota: Colunas de infraestrutura padrão como `id`, `description`, `createdAt` e `updatedAt` são omitidas desta documentação por já estarem padronizadas em todas as entidades nas camadas base do código).*
 
