@@ -13,6 +13,7 @@ collection:
       created: 1776000000000
       modified: 1776000000000
       sortKey: -1
+      description: "Session endpoints"
     children:
       - url: "{{BASE_URL}}/sessions/list-by-user-id/{{USER_ID}}"
         name: list-by-user
@@ -21,15 +22,22 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -1
         method: GET
+        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 
       - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
         name: by-id
@@ -38,15 +46,22 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -2
         method: GET
+        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 
       - url: "{{BASE_URL}}/sessions"
         name: create
@@ -55,6 +70,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -3
         method: POST
         body:
@@ -68,6 +84,10 @@ collection:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 
       - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
         name: update
@@ -76,6 +96,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -4
         method: PATCH
         body:
@@ -87,10 +108,15 @@ collection:
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 
       - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
         name: delete
@@ -99,15 +125,29 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -5
         method: DELETE
+        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_session
+    created: 1776000000000
+    modified: 1776000000000
 
 environments:
   name: Base Environment
@@ -115,12 +155,14 @@ environments:
     id: env_session
     created: 1776000000000
     modified: 1776000000000
+    isPrivate: false
   subEnvironments:
     - name: nino
       meta:
         id: env_session_nino
         created: 1776000000000
         modified: 1776000000000
+        isPrivate: false
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
