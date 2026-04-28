@@ -56,7 +56,7 @@ describe('AuthController', () => {
 
   it('should register and return the created user', async () => {
     jest.spyOn(service, 'register').mockResolvedValue(mockUser as any)
-    const dto = { name: 'N', email: 'a@a.com', password: '123', roleId: 'r1' }
+    const dto = { name: 'N', email: 'a@a.com', password: '123', role: 'ADMIN' }
 
     const result = await controller.register(dto)
 

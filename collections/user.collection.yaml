@@ -27,12 +27,15 @@ collection:
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"email\": \"novo@nino.com\",\n  \"password\": \"senha123\"\n}"
+          text: "{\n  \"name\": \"Paulo\",\n  \"roleId\": \"{{ROLE_ID}}\",\n  \"companyId\": \"{{COMPANY_ID}}\"\n}"
         headers:
           - id: pair_user_create_h1
             name: Content-Type
             value: application/json
-        authentication: {}
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -42,10 +45,10 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/users"
-        name: list-all
+      - url: "{{BASE_URL}}/users/{{USER_ID}}"
+        name: by-id
         meta:
-          id: req_user_list
+          id: req_user_get
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
@@ -66,10 +69,10 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/users/current"
-        name: get-current
+      - url: "{{BASE_URL}}/users/company/{{COMPANY_ID}}"
+        name: by-company
         meta:
-          id: req_user_current
+          id: req_user_company
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
@@ -90,17 +93,23 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/users/email/admin@nino.com"
-        name: get-by-email
+      - url: "{{BASE_URL}}/users/{{USER_ID}}"
+        name: update
         meta:
-          id: req_user_email
+          id: req_user_update
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
           description: ""
           sortKey: -4
-        method: GET
-        headers: []
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Paulo Atualizado\",\n  \"locale\": \"pt-BR\",\n  \"timezone\": \"America/Belem\"\n}"
+        headers:
+          - id: pair_user_upd_h1
+            name: Content-Type
+            value: application/json
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
@@ -114,23 +123,17 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/users/ID_AQUI/preferences"
-        name: update-preferences
+      - url: "{{BASE_URL}}/users/{{USER_ID}}"
+        name: delete
         meta:
-          id: req_user_pref
+          id: req_user_delete
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
           description: ""
           sortKey: -5
-        method: PATCH
-        body:
-          mimeType: application/json
-          text: "{\n  \"locale\": \"pt-BR\",\n  \"timezone\": \"America/Belem\"\n}"
-        headers:
-          - id: pair_user_pref_h1
-            name: Content-Type
-            value: application/json
+        method: DELETE
+        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
@@ -169,3 +172,6 @@ environments:
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
+        USER_ID: ""
+        ROLE_ID: ""
+        COMPANY_ID: ""

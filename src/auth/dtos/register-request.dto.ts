@@ -16,5 +16,5 @@ export class RegisterRequestDto {
 
   @IsString()
   @IsNotEmpty()
-  roleId: string
+  role: string
 }

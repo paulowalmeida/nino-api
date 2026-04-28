@@ -2,6 +2,7 @@ import { UnauthorizedException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { CredentialsService } from '@credential/credential.service'
+import { RoleService } from '@role/role.service'
 import { SessionService } from '@session/session.service'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'
@@ -15,6 +16,7 @@ describe('AuthService', () => {
   let sessionService: SessionService
   let passService: PasswordService
   let tokenService: TokenService
+  let roleService: RoleService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -48,6 +50,10 @@ describe('AuthService', () => {
             verifyRefreshToken: jest.fn(),
           },
         },
+        {
+          provide: RoleService,
+          useValue: { getByName: jest.fn() },
+        },
       ],
     }).compile()
 
@@ -57,6 +63,7 @@ describe('AuthService', () => {
     sessionService = module.get<SessionService>(SessionService)
     passService = module.get<PasswordService>(PasswordService)
     tokenService = module.get<TokenService>(TokenService)
+    roleService = module.get<RoleService>(RoleService)
   })
 
   it('should login successfully', async () => {
@@ -96,11 +103,13 @@ describe('AuthService', () => {
   })
 
   it('should register a new user and credentials', async () => {
-    const dto = { name: 'N', email: 'e', password: 'p', roleId: 'r' }
+    const dto = { name: 'N', email: 'e', password: 'p', role: 'ADMIN' }
+    jest.spyOn(roleService, 'getByName').mockResolvedValue({ id: 'r1', name: 'ADMIN' } as any)
     jest.spyOn(userService, 'create').mockResolvedValue({ id: 'u1' } as any)
 
-    await service.register(dto)
-    expect(userService.create).toHaveBeenCalled()
+    await service.register(dto as any)
+    expect(roleService.getByName).toHaveBeenCalledWith('ADMIN')
+    expect(userService.create).toHaveBeenCalledWith({ name: 'N', roleId: 'r1' })
     expect(credService.create).toHaveBeenCalled()
   })
 

@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 
 import { LoginRequestDto } from '@auth/dtos/login-request.dto'
 import { CredentialsService } from '@credential/credential.service'
+import { RoleService } from '@role/role.service'
 import { SessionService } from '@session/session.service'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'
@@ -16,6 +17,7 @@ export class AuthService {
     private readonly sessionService: SessionService,
     private readonly passwordService: PasswordService,
     private readonly tokenService: TokenService,
+    private readonly roleService: RoleService,
   ) {}
 
   async login(dto: LoginRequestDto, ipAddress?: string, userAgent?: string) {
@@ -50,9 +52,10 @@ export class AuthService {
   }
 
   async register(dto: RegisterRequestDto) {
+    const role = await this.roleService.getByName(dto.role)
     const user = await this.userService.create({
       name: dto.name,
-      roleId: dto.roleId,
+      roleId: role.id,
     })
 
     await this.credentialsService.create({
