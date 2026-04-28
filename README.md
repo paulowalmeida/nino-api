@@ -1,4 +1,28 @@
 # Ninomia Delivery — nino-api
+
+## 📋 Sumário
+
+* [1. 📋 Visão Geral e Modelo de Negócio (Business Core)](#1--visão-geral-e-modelo-de-negócio-business-core)
+* [2. 🏗️ Arquitetura Geral](#2-️-arquitetura-geral)
+* [3. 🧰 Stack Tecnológica Oficial](#3--stack-tecnológica-oficial)
+* [4. 🖥️ Stack Técnico Detalhado](#4-️-stack-técnico-detalhado)
+* [5. 📁 Estrutura de Pastas e Arquitetura de Módulos](#5--estrutura-de-pastas-e-arquitetura-de-módulos)
+* [6. 🗄️ Topologia do Banco de Dados e Entidades](#6-️-topologia-do-banco-de-dados-e-entidades)
+* [7. 🔐 Segurança, Autenticação e Autorização](#7--segurança-autenticação-e-autorização)
+* [8. 🛣️ Endpoints da API](#8-️-endpoints-da-api)
+* [9. 🏛️ Padrões Arquiteturais](#9-️-padrões-arquiteturais)
+* [10. ✍️ Convenções de Escrita](#10-️-convenções-de-escrita)
+* [11. 🧪 Padrões de Teste](#11--padrões-de-teste)
+* [12. 🔄 Fluxos Principais](#12--fluxos-principais)
+* [13. 🔧 Trade-offs & Decisões Arquiteturais](#13--trade-offs--decisões-arquiteturais)
+* [14. 📊 Status dos Módulos](#14--status-dos-módulos)
+* [15. 🚀 Próximas Features (Roadmap)](#15--próximas-features-roadmap)
+* [16. 🛠️ Variáveis de Ambiente](#16-️-variáveis-de-ambiente)
+* [17. 🐳 Docker & Local Development](#17--docker--local-development)
+* [18. 📚 Referências & Documentação](#18--referências--documentação)
+* [19. 🤝 Contribuição & Commits](#19--contribuição--commits)
+* [20. 📞 Suporte & Dúvidas](#20--suporte--dúvidas)
+
 ## 1. 📋 Visão Geral e Modelo de Negócio (Business Core)
 
 ### 1.1 Identidade e Conceito do Produto
