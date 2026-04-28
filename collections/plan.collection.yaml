@@ -13,6 +13,7 @@ collection:
       created: 1776000000000
       modified: 1776000000000
       sortKey: -1
+      description: "Plan endpoints"
     children:
       - url: "{{BASE_URL}}/plans"
         name: list
@@ -21,13 +22,19 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -1
         method: GET
+        headers: []
         authentication: {}
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 
       - url: "{{BASE_URL}}/plans/{{PLAN_ID}}"
         name: by-id
@@ -36,13 +43,19 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -2
         method: GET
+        headers: []
         authentication: {}
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 
       - url: "{{BASE_URL}}/plans"
         name: create
@@ -51,6 +64,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -3
         method: POST
         body:
@@ -62,10 +76,15 @@ collection:
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 
       - url: "{{BASE_URL}}/plans/{{PLAN_ID}}"
         name: update
@@ -74,6 +93,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -4
         method: PATCH
         body:
@@ -85,10 +105,15 @@ collection:
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
 
       - url: "{{BASE_URL}}/plans/{{PLAN_ID}}"
         name: delete
@@ -97,15 +122,29 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
+          description: ""
           sortKey: -5
         method: DELETE
+        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_plan
+    created: 1776000000000
+    modified: 1776000000000
 
 environments:
   name: Base Environment
@@ -113,12 +152,14 @@ environments:
     id: env_plan
     created: 1776000000000
     modified: 1776000000000
+    isPrivate: false
   subEnvironments:
     - name: nino
       meta:
         id: env_plan_nino
         created: 1776000000000
         modified: 1776000000000
+        isPrivate: false
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
