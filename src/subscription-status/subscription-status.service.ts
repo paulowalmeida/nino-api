@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { CreateSubscriptionStatusDto } from './dtos/create-subscription-status.dto'
 import { UpdateSubscriptionStatusDto } from './dtos/update-subscription-status.dto'
 import { SubscriptionStatusRepository } from './subscription-status.repository'
-import { SubscriptionStatus } from './types/subscription-status.type'
+import { SubscriptionStatus } from '@subscription-status/entities/subscription-status.entity'
 
 @Injectable()
 export class SubscriptionStatusService {

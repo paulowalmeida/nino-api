@@ -19,7 +19,7 @@ describe('JwtAuthStrategy', () => {
         },
         {
           provide: UserRepository,
-          useValue: { getByEmail: jest.fn() },
+          useValue: { getById: jest.fn() },
         },
       ],
     }).compile()
@@ -39,17 +39,18 @@ describe('JwtAuthStrategy', () => {
   })
 
   it('should return payload when user exists', async () => {
-    const payload = { sub: 'u1', email: 'a@a.com', role: 'admin' } as any
-    jest.spyOn(userRepository, 'getByEmail').mockResolvedValue({ id: 'u1' } as any)
+    const payload = { sub: 'u1', role: 'admin' } as any
+    jest.spyOn(userRepository, 'getById').mockResolvedValue({ id: 'u1' } as any)
 
     const result = await strategy.validate({} as any, payload)
 
     expect(result).toEqual(payload)
+    expect(userRepository.getById).toHaveBeenCalledWith('u1')
   })
 
   it('should throw UnauthorizedException when user is not found', async () => {
-    const payload = { sub: 'u1', email: 'a@a.com', role: 'admin' } as any
-    jest.spyOn(userRepository, 'getByEmail').mockResolvedValue(null)
+    const payload = { sub: 'u1', role: 'admin' } as any
+    jest.spyOn(userRepository, 'getById').mockResolvedValue(null as any)
 
     await expect(strategy.validate({} as any, payload)).rejects.toThrow(UnauthorizedException)
   })

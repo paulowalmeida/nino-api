@@ -1,5 +1,3 @@
-import { Prisma } from '@prisma/client'
+import { AuthCredential } from '@credential/entities/auth-credential.entity'
 
-export type Credential = Prisma.AuthCredentialGetPayload<{
-  omit: { password: true }
-}>
+export type Credential = Omit<AuthCredential, 'password'>

@@ -3,84 +3,75 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
-import { SubscriptionStatus } from './types/subscription-status.type'
+import { SubscriptionStatus } from '@subscription-status/entities/subscription-status.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreateSubscriptionStatusDto } from './dtos/create-subscription-status.dto'
 import { UpdateSubscriptionStatusDto } from './dtos/update-subscription-status.dto'
 
 @Injectable()
 export class SubscriptionStatusRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(SubscriptionStatus)
+    private readonly repository: Repository<SubscriptionStatus>,
+    private readonly errorService: ErrorService,
   ) {}
 
   async getAll(): Promise<SubscriptionStatus[]> {
     try {
-      return await this.prisma.subscriptionStatus.findMany({
-        orderBy: { name: 'asc' },
-      })
+      return await this.repository.find({ order: { name: 'ASC' } })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getById(id: string): Promise<SubscriptionStatus> {
     try {
-      const found = await this.prisma.subscriptionStatus.findUnique({
-        where: { id },
-      })
-
+      const found = await this.repository.findOneBy({ id })
       if (!found) throw new NotFoundException('Subscription Status not found')
-
       return found
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async create(data: CreateSubscriptionStatusDto): Promise<SubscriptionStatus> {
     try {
-      const existsByName = await this.prisma.subscriptionStatus.findUnique({
-        where: { name: data.name },
-      })
-      if (existsByName) throw new ConflictException('Name already exists')
+      const exists = await this.repository.findOneBy({ name: data.name })
+      if (exists) throw new ConflictException('Name already exists')
 
-      return await this.prisma.subscriptionStatus.create({ data })
+      const subscriptionStatus = this.repository.create(data)
+      return await this.repository.save(subscriptionStatus)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async update(id: string, data: UpdateSubscriptionStatusDto): Promise<SubscriptionStatus> {
     try {
-      if (data.name) {
-        const found = await this.prisma.subscriptionStatus.findUnique({
-          where: { name: data.name },
-        })
+      const subscriptionStatus = await this.getById(id)
 
-        if (found && found.id !== id) {
-          throw new ConflictException('Name already exists')
-        }
+      if (data.name && data.name !== subscriptionStatus.name) {
+        const exists = await this.repository.findOneBy({ name: data.name })
+        if (exists) throw new ConflictException('Name already exists')
       }
 
-      return await this.prisma.subscriptionStatus.update({
-        where: { id },
-        data,
-      })
+      Object.assign(subscriptionStatus, data)
+      return await this.repository.save(subscriptionStatus)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<{ message: string }> {
     try {
-      await this.prisma.subscriptionStatus.delete({ where: { id } })
+      await this.getById(id)
+      await this.repository.delete(id)
       return { message: 'Subscription Status deleted successfully' }
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 }

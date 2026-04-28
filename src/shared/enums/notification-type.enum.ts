@@ -1,7 +1,7 @@
 export enum NotificationType {
-  SYSTEM = 1,
-  PROMOTION = 2,
-  ORDER = 3,
-  PAYMENT = 4,
-  USER = 5,
+  SYSTEM = 'SYSTEM',
+  PROMOTION = 'PROMOTION',
+  ORDER = 'ORDER',
+  PAYMENT = 'PAYMENT',
+  USER = 'USER',
 }

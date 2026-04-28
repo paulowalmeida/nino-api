@@ -12,7 +12,7 @@ import {
 import { CompanyService } from './company.service'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
-import { Company } from './types/company.type'
+import { Company } from '@company/entities/company.entity'
 
 @Controller('companies')
 export class CompanyController {

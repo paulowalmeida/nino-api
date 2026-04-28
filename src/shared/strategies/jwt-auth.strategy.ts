@@ -33,7 +33,7 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
     req: Request,
     payloadDecoded: UserTokenData,
   ): Promise<UserTokenData> {
-    const user = await this.userRepository.getByEmail(payloadDecoded.email)
+    const user = await this.userRepository.getById(payloadDecoded.sub)
 
     if (!user) {
       throw new UnauthorizedException(

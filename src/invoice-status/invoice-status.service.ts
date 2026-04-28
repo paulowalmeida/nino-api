@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { CreateInvoiceStatusDto } from './dtos/create-invoice-status.dto'
 import { UpdateInvoiceStatusDto } from './dtos/update-invoice-status.dto'
 import { InvoiceStatusRepository } from './invoice-status.repository'
-import { InvoiceStatus } from './types/invoice-status.type'
+import { InvoiceStatus } from '@invoice-status/entities/invoice-status.entity'
 
 @Injectable()
 export class InvoiceStatusService {

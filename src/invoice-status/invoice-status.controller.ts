@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
 import { CreateInvoiceStatusDto } from './dtos/create-invoice-status.dto'
 import { UpdateInvoiceStatusDto } from './dtos/update-invoice-status.dto'
 import { InvoiceStatusService } from './invoice-status.service'
-import { InvoiceStatus } from './types/invoice-status.type'
+import { InvoiceStatus } from '@invoice-status/entities/invoice-status.entity'
 
 @Controller('invoice-statuses')
 export class InvoiceStatusController {

@@ -1,16 +1,16 @@
 export enum Role {
-  UNSPECIFIED = 0,
-  /** ADMIN - Dono da Plataforma (Você) */
-  ADMIN = 1,
-  /** SUPPORT - Suporte Técnico */
-  SUPPORT = 2,
-  /** MERCHANT - Dono do Restaurante */
-  MERCHANT = 3,
-  /** CUSTOMER - Cliente Final */
-  CUSTOMER = 4,
-  /** COURIER - Entregador */
-  COURIER = 5,
-  /** GUEST - Usuário Convidado (sem cadastro) */
-  GUEST = 6,
-  UNRECOGNIZED = -1,
+  UNRECOGNIZED = 'UNRECOGNIZED',
+  UNSPECIFIED = 'UNSPECIFIED',
+  /** Dono da Plataforma */
+  ADMIN = 'ADMIN',
+  /** Suporte Técnico */
+  SUPPORT = 'SUPPORT',
+  /** Dono do Restaurante */
+  MERCHANT = 'MERCHANT',
+  /** Cliente Final */
+  CUSTOMER = 'CUSTOMER',
+  /** Entregador */
+  COURIER = 'COURIER',
+  /** Usuário Convidado (sem cadastro) */
+  GUEST = 'GUEST',
 }

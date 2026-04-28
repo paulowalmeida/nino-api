@@ -1,105 +1,164 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@shared/services/prisma/prisma.service';
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service';
-import { PlanRepository } from './plan.repository';
+import { ConflictException, NotFoundException } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
+import { getRepositoryToken } from '@nestjs/typeorm'
+
+import { Plan } from '@plan/entities/plan.entity'
+import { ErrorService } from '@shared/services/error/error.service'
+import { PlanRepository } from './plan.repository'
 
 describe('PlanRepository', () => {
-  let repository: PlanRepository;
-  let prismaService: PrismaService;
-  let prismaErrorService: PrismaErrorService;
+  let repository: PlanRepository
 
-  const mockPlan = { id: 1, name: 'Pro', slug: 'pro', price: 197 };
+  const mockPlan = { id: 1, name: 'Pro', slug: 'pro', price: 197 }
+
+  const mockRepository = {
+    find: jest.fn(),
+    findOneBy: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    delete: jest.fn(),
+  }
+
+  const mockErrorService = { handle: jest.fn() }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PlanRepository,
-        {
-          provide: PrismaService,
-          useValue: {
-            plan: {
-              create: jest.fn(),
-              findMany: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-            },
-          },
-        },
-        {
-          provide: PrismaErrorService,
-          useValue: { handleError: jest.fn() },
-        },
+        { provide: getRepositoryToken(Plan), useValue: mockRepository },
+        { provide: ErrorService, useValue: mockErrorService },
       ],
-    }).compile();
+    }).compile()
 
-    repository = module.get<PlanRepository>(PlanRepository);
-    prismaService = module.get<PrismaService>(PrismaService);
-    prismaErrorService = module.get<PrismaErrorService>(PrismaErrorService);
-  });
+    repository = module.get<PlanRepository>(PlanRepository)
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
 
   it('should create a plan successfully', async () => {
-    jest.spyOn(prismaService.plan, 'create').mockResolvedValue(mockPlan as any);
-    const result = await repository.create({ name: 'Pro' } as any);
-    expect(result).toEqual(mockPlan);
-  });
+    mockRepository.findOneBy.mockResolvedValue(null)
+    mockRepository.create.mockReturnValue(mockPlan)
+    mockRepository.save.mockResolvedValue(mockPlan)
 
-  it('should call handleError when create throws an error', async () => {
-    const error = new Error('db error');
-    jest.spyOn(prismaService.plan, 'create').mockRejectedValue(error);
-    await repository.create({ name: 'Pro' } as any);
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error);
-  });
+    const result = await repository.create({ name: 'Pro', slug: 'pro' } as any)
+
+    expect(result).toEqual(mockPlan)
+    expect(mockRepository.save).toHaveBeenCalled()
+  })
+
+  it('should call errorService.handle with ConflictException if slug exists', async () => {
+    mockRepository.findOneBy.mockResolvedValue(mockPlan)
+
+    await repository.create({ name: 'Pro', slug: 'pro' } as any)
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(ConflictException))
+    expect(mockRepository.save).not.toHaveBeenCalled()
+  })
+
+  it('should call errorService.handle when create throws', async () => {
+    const error = new Error('db error')
+    mockRepository.findOneBy.mockResolvedValue(null)
+    mockRepository.create.mockReturnValue({})
+    mockRepository.save.mockRejectedValue(error)
+
+    await repository.create({ name: 'Pro', slug: 'pro' } as any)
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  })
 
   it('should find all plans', async () => {
-    jest.spyOn(prismaService.plan, 'findMany').mockResolvedValue([mockPlan] as any);
-    const result = await repository.getAll();
-    expect(result).toEqual([mockPlan]);
-  });
+    mockRepository.find.mockResolvedValue([mockPlan])
 
-  it('should call handleError when findAll throws an error', async () => {
-    const error = new Error('db error');
-    jest.spyOn(prismaService.plan, 'findMany').mockRejectedValue(error);
-    await repository.getAll();
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error);
-  });
+    const result = await repository.getAll()
+
+    expect(result).toEqual([mockPlan])
+    expect(mockRepository.find).toHaveBeenCalledWith({ order: { name: 'ASC' } })
+  })
+
+  it('should call errorService.handle when getAll throws', async () => {
+    const error = new Error('db error')
+    mockRepository.find.mockRejectedValue(error)
+
+    await repository.getAll()
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  })
 
   it('should find a plan by id', async () => {
-    jest.spyOn(prismaService.plan, 'findUnique').mockResolvedValue(mockPlan as any);
-    const result = await repository.getById(1);
-    expect(result).toEqual(mockPlan);
-  });
+    mockRepository.findOneBy.mockResolvedValue(mockPlan)
 
-  it('should throw NotFoundException and call handleError when getById finds nothing', async () => {
-    jest.spyOn(prismaService.plan, 'findUnique').mockResolvedValue(null);
-    await repository.getById(1);
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(expect.any(NotFoundException));
-  });
+    const result = await repository.getById(1)
+
+    expect(result).toEqual(mockPlan)
+    expect(mockRepository.findOneBy).toHaveBeenCalledWith({ id: 1 })
+  })
+
+  it('should call errorService.handle with NotFoundException when getById finds nothing', async () => {
+    mockRepository.findOneBy.mockResolvedValue(null)
+
+    await repository.getById(1)
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
+  })
 
   it('should update a plan successfully', async () => {
-    jest.spyOn(prismaService.plan, 'update').mockResolvedValue(mockPlan as any);
-    await repository.update(1, { name: 'New Pro' });
-    expect(prismaService.plan.update).toHaveBeenCalled();
-  });
+    mockRepository.findOneBy.mockResolvedValue(mockPlan)
+    mockRepository.save.mockResolvedValue(undefined)
 
-  it('should call handleError when update throws an error', async () => {
-    const error = new Error('db error');
-    jest.spyOn(prismaService.plan, 'update').mockRejectedValue(error);
-    await repository.update(1, { name: 'New Pro' });
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error);
-  });
+    await repository.update(1, { name: 'New Pro' })
+
+    expect(mockRepository.save).toHaveBeenCalled()
+  })
+
+  it('should call errorService.handle with ConflictException if new slug exists in another plan', async () => {
+    const anotherPlan = { ...mockPlan, id: 2, slug: 'enterprise' }
+    mockRepository.findOneBy
+      .mockResolvedValueOnce(mockPlan)
+      .mockResolvedValueOnce(anotherPlan)
+
+    await repository.update(1, { slug: 'enterprise' })
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(ConflictException))
+    expect(mockRepository.save).not.toHaveBeenCalled()
+  })
+
+  it('should allow update when slug is unchanged', async () => {
+    mockRepository.findOneBy.mockResolvedValue(mockPlan)
+    mockRepository.save.mockResolvedValue(undefined)
+
+    await repository.update(1, { slug: 'pro' })
+
+    expect(mockRepository.save).toHaveBeenCalled()
+  })
+
+  it('should call errorService.handle when update throws', async () => {
+    const error = new Error('db error')
+    mockRepository.findOneBy.mockResolvedValue(mockPlan)
+    mockRepository.save.mockRejectedValue(error)
+
+    await repository.update(1, { name: 'New Pro' })
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  })
 
   it('should delete a plan successfully', async () => {
-    jest.spyOn(prismaService.plan, 'delete').mockResolvedValue(mockPlan as any);
-    await repository.delete(1);
-    expect(prismaService.plan.delete).toHaveBeenCalled();
-  });
+    mockRepository.findOneBy.mockResolvedValue(mockPlan)
+    mockRepository.delete.mockResolvedValue(undefined)
 
-  it('should call handleError when delete throws an error', async () => {
-    const error = new Error('db error');
-    jest.spyOn(prismaService.plan, 'delete').mockRejectedValue(error);
-    await repository.delete(1);
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error);
-  });
-});
+    await repository.delete(1)
+
+    expect(mockRepository.delete).toHaveBeenCalledWith(1)
+  })
+
+  it('should call errorService.handle when delete throws', async () => {
+    const error = new Error('db error')
+    mockRepository.findOneBy.mockResolvedValue(mockPlan)
+    mockRepository.delete.mockRejectedValue(error)
+
+    await repository.delete(1)
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  })
+})

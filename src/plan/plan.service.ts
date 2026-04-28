@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { CreatePlanDto } from './dtos/create-plan.dto'
 import { UpdatePlanDto } from './dtos/update-plan.dto'
 import { PlanRepository } from './plan.repository'
-import { Plan } from './types/plan.type'
+import { Plan } from '@plan/entities/plan.entity'
 
 @Injectable()
 export class PlanService {

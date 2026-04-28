@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
 import { CreateNotificationTypeDto } from './dtos/create-notification-type.dto'
 import { UpdateNotificationTypeDto } from './dtos/update-notification-type.dto'
 import { NotificationTypeService } from './notification-type.service'
-import { NotificationType } from './types/notification-type.type'
+import { NotificationType } from '@notification-type/entities/notification-type.entity'
 
 @Controller('notification-types')
 export class NotificationTypeController {

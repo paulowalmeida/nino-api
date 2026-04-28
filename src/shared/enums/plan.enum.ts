@@ -1,6 +1,7 @@
+// Valor corresponde ao slug do plano — use findOneBy({ slug: Plan.STARTER })
 export enum Plan {
-  STARTER = 1,
-  PRO = 2,
-  BUSINESS = 3,
-  REDE = 4,
+  STARTER = 'starter',
+  PRO = 'pro',
+  BUSINESS = 'business',
+  REDE = 'rede',
 }

@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { CreateSessionDto } from './dtos/create-session.dto'
 import { UpdateSessionDto } from './dtos/update-session.dto'
 import { SessionRepository } from './session.repository'
-import { Session } from './types/session.type'
+import { Session } from '@session/entities/session.entity'
 
 @Injectable()
 export class SessionService {

@@ -3,84 +3,75 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { Role } from '@role/types/role.type'
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { Role } from '@role/entities/role.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreateRoleDto } from './dtos/create-role.dto'
 import { UpdateRoleDto } from './dtos/update-role.dto'
 
 @Injectable()
 export class RoleRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(Role)
+    private readonly repository: Repository<Role>,
+    private readonly errorService: ErrorService,
   ) {}
 
   async getAll(): Promise<Role[]> {
     try {
-      return await this.prisma.role.findMany({
-        orderBy: { name: 'asc' },
-      })
+      return await this.repository.find({ order: { name: 'ASC' } })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getById(id: string): Promise<Role> {
     try {
-      const found = await this.prisma.role.findUnique({
-        where: { id },
-      })
-
+      const found = await this.repository.findOneBy({ id })
       if (!found) throw new NotFoundException('Role not found')
-
       return found
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async create(data: CreateRoleDto): Promise<Role> {
     try {
-      const existsByName = await this.prisma.role.findUnique({
-        where: { name: data.name },
-      })
-      if (existsByName) throw new ConflictException('Name already exists')
+      const exists = await this.repository.findOneBy({ name: data.name })
+      if (exists) throw new ConflictException('Name already exists')
 
-      return await this.prisma.role.create({ data })
+      const role = this.repository.create(data)
+      return await this.repository.save(role)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async update(id: string, data: UpdateRoleDto): Promise<Role> {
     try {
-      if (data.name) {
-        const found = await this.prisma.role.findUnique({
-          where: { name: data.name },
-        })
+      const role = await this.getById(id)
 
-        if (found && found.id !== id) {
-          throw new ConflictException('Name already exists')
-        }
+      if (data.name && data.name !== role.name) {
+        const exists = await this.repository.findOneBy({ name: data.name })
+        if (exists) throw new ConflictException('Name already exists')
       }
 
-      return await this.prisma.role.update({
-        where: { id },
-        data,
-      })
+      Object.assign(role, data)
+      return await this.repository.save(role)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<{ message: string }> {
     try {
-      await this.prisma.role.delete({ where: { id } })
+      await this.getById(id)
+      await this.repository.delete(id)
       return { message: 'Role deleted successfully' }
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 }

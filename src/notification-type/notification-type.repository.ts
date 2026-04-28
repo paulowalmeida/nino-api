@@ -3,84 +3,75 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
-import { NotificationType } from './types/notification-type.type'
+import { NotificationType } from '@notification-type/entities/notification-type.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreateNotificationTypeDto } from './dtos/create-notification-type.dto'
 import { UpdateNotificationTypeDto } from './dtos/update-notification-type.dto'
 
 @Injectable()
 export class NotificationTypeRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(NotificationType)
+    private readonly repository: Repository<NotificationType>,
+    private readonly errorService: ErrorService,
   ) {}
 
   async getAll(): Promise<NotificationType[]> {
     try {
-      return await this.prisma.notificationType.findMany({
-        orderBy: { name: 'asc' },
-      })
+      return await this.repository.find({ order: { name: 'ASC' } })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getById(id: string): Promise<NotificationType> {
     try {
-      const found = await this.prisma.notificationType.findUnique({
-        where: { id },
-      })
-
+      const found = await this.repository.findOneBy({ id })
       if (!found) throw new NotFoundException('Notification Type not found')
-
       return found
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async create(data: CreateNotificationTypeDto): Promise<NotificationType> {
     try {
-      const existsByName = await this.prisma.notificationType.findUnique({
-        where: { name: data.name },
-      })
-      if (existsByName) throw new ConflictException('Name already exists')
+      const exists = await this.repository.findOneBy({ name: data.name })
+      if (exists) throw new ConflictException('Name already exists')
 
-      return await this.prisma.notificationType.create({ data })
+      const notificationType = this.repository.create(data)
+      return await this.repository.save(notificationType)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async update(id: string, data: UpdateNotificationTypeDto): Promise<NotificationType> {
     try {
-      if (data.name) {
-        const found = await this.prisma.notificationType.findUnique({
-          where: { name: data.name },
-        })
+      const notificationType = await this.getById(id)
 
-        if (found && found.id !== id) {
-          throw new ConflictException('Name already exists')
-        }
+      if (data.name && data.name !== notificationType.name) {
+        const exists = await this.repository.findOneBy({ name: data.name })
+        if (exists) throw new ConflictException('Name already exists')
       }
 
-      return await this.prisma.notificationType.update({
-        where: { id },
-        data,
-      })
+      Object.assign(notificationType, data)
+      return await this.repository.save(notificationType)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<{ message: string }> {
     try {
-      await this.prisma.notificationType.delete({ where: { id } })
+      await this.getById(id)
+      await this.repository.delete(id)
       return { message: 'Notification Type deleted successfully' }
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 }

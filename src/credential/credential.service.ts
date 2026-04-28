@@ -4,7 +4,7 @@ import { PasswordService } from '@shared/services/password/password.service'
 import { CredentialsRepository } from './credential.repository'
 import { CreateCredentialDto } from './dto/create-credentail.dto'
 import { UpdateCredentialDto } from './dto/update-credential.dto'
-import { CredentialRepository } from './types/credential-repository.type'
+import { AuthCredential } from '@credential/entities/auth-credential.entity'
 
 @Injectable()
 export class CredentialsService {
@@ -13,29 +13,29 @@ export class CredentialsService {
     private readonly passwordService: PasswordService,
   ) {}
 
-  async create(createDto: CreateCredentialDto): Promise<CredentialRepository> {
+  async create(createDto: CreateCredentialDto): Promise<AuthCredential> {
     if (createDto.password) {
       createDto.password = await this.passwordService.hash(createDto.password)
     }
     return await this.credentialsRepository.create(createDto)
   }
 
-  async getAll(userId: string): Promise<CredentialRepository[]> {
+  async getAll(userId: string): Promise<AuthCredential[]> {
     return await this.credentialsRepository.getAll(userId)
   }
 
-  async getById(id: string): Promise<CredentialRepository> {
+  async getById(id: string): Promise<AuthCredential> {
     return await this.credentialsRepository.getById(id)
   }
 
-  async getByEmail(email: string): Promise<CredentialRepository> {
+  async getByEmail(email: string): Promise<AuthCredential> {
     return await this.credentialsRepository.getByEmail(email)
   }
 
   async update(
     id: string,
     updateDto: UpdateCredentialDto,
-  ): Promise<CredentialRepository> {
+  ): Promise<AuthCredential> {
     if (updateDto.password) {
       updateDto.password = await this.passwordService.hash(updateDto.password)
     }

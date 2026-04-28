@@ -1,99 +1,84 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { AuthCredential } from '@credential/entities/auth-credential.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreateCredentialDto } from './dto/create-credentail.dto'
 import { UpdateCredentialDto } from './dto/update-credential.dto'
-import { CredentialRepository } from './types/credential-repository.type'
 
 @Injectable()
 export class CredentialsRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(AuthCredential)
+    private readonly repository: Repository<AuthCredential>,
+    private readonly errorService: ErrorService,
   ) {}
 
-  async create(data: CreateCredentialDto): Promise<CredentialRepository> {
+  async create(data: CreateCredentialDto): Promise<AuthCredential> {
     try {
-      return await this.prisma.authCredential.create({
-        data,
-      })
+      const credential = this.repository.create(data)
+      return await this.repository.save(credential)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
-  async getAll(userId: string): Promise<CredentialRepository[]> {
+  async getAll(userId: string): Promise<AuthCredential[]> {
     try {
-      return await this.prisma.authCredential.findMany({
-        where: { userId },
-      })
+      return await this.repository.findBy({ userId })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
-  async getById(id: string): Promise<CredentialRepository> {
+  async getById(id: string): Promise<AuthCredential> {
     try {
-      const credential = await this.prisma.authCredential.findUnique({
-        where: { id },
-      })
-
+      const credential = await this.repository.findOneBy({ id })
       if (!credential) throw new NotFoundException('Credential not found')
-
       return credential
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
-  async getByEmail(email: string): Promise<CredentialRepository> {
+  async getByEmail(email: string): Promise<AuthCredential> {
     try {
-      const credential = await this.prisma.authCredential.findFirst({
-        where: { email, provider: 'local' },
-      })
-
+      const credential = await this.repository.findOneBy({ email, provider: 'local' })
       if (!credential) throw new NotFoundException('Credential not found')
-
       return credential
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
-  async update(
-    id: string,
-    data: UpdateCredentialDto,
-  ): Promise<CredentialRepository> {
+  async update(id: string, data: UpdateCredentialDto): Promise<AuthCredential> {
     try {
-      return await this.prisma.authCredential.update({
-        where: { id },
-        data,
-      })
+      const credential = await this.getById(id)
+      Object.assign(credential, data)
+      return await this.repository.save(credential)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async updatePassword(id: string, password: string): Promise<void> {
     try {
-      await this.prisma.authCredential.update({
-        where: { id },
-        data: { password },
-      })
+      const credential = await this.getById(id)
+      credential.password = password
+      await this.repository.save(credential)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<{ message: string }> {
     try {
-      await this.prisma.authCredential.delete({
-        where: { id },
-      })
+      await this.getById(id)
+      await this.repository.delete(id)
       return { message: 'Credential deleted successfully' }
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 }

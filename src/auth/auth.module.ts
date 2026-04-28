@@ -6,18 +6,13 @@ import { AuthService } from '@auth/auth.service'
 import { JwtRefreshStrategy } from '@auth/jwt-refresh.strategy'
 import { CredentialsModule } from '@credential/credential.module'
 import { PasswordService } from '@shared/services/password/password.service'
-import { PrismaModule } from '@shared/services/prisma/prisma.module'
 import { TokenService } from '@shared/services/token/token.service'
 import { JwtAuthStrategy } from '@shared/strategies/jwt-auth.strategy'
+import { SessionModule } from '@session/session.module'
 import { UserModule } from '@user/user.module'
 
 @Module({
-  imports: [
-    PrismaModule,
-    JwtModule.register({}),
-    UserModule,
-    CredentialsModule,
-  ],
+  imports: [JwtModule.register({}), UserModule, CredentialsModule, SessionModule],
   controllers: [AuthController],
   providers: [
     AuthService,

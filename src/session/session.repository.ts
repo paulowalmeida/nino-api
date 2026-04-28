@@ -1,82 +1,73 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { Session } from '@session/entities/session.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreateSessionDto } from './dtos/create-session.dto'
 import { UpdateSessionDto } from './dtos/update-session.dto'
-import { Session } from './types/session.type'
 
 @Injectable()
 export class SessionRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(Session)
+    private readonly repository: Repository<Session>,
+    private readonly errorService: ErrorService,
   ) {}
 
   async create(data: CreateSessionDto): Promise<Session> {
     try {
-      return await this.prisma.session.create({ data })
+      const session = this.repository.create(data)
+      return await this.repository.save(session)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getListByUserId(userId: string): Promise<Session[]> {
     try {
-      return await this.prisma.session.findMany({
-        where: { userId },
-      })
+      return await this.repository.findBy({ userId })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getById(id: string): Promise<Session> {
     try {
-      const session = await this.prisma.session.findUnique({
-        where: { id },
-      })
-
+      const session = await this.repository.findOneBy({ id })
       if (!session) throw new NotFoundException('Session not found')
-
       return session
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getByRefreshToken(refreshToken: string): Promise<Session> {
     try {
-      const session = await this.prisma.session.findUnique({
-        where: { refreshToken },
-      })
-
+      const session = await this.repository.findOneBy({ refreshToken })
       if (!session) throw new NotFoundException('Session not found')
-
       return session
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async update(id: string, data: UpdateSessionDto): Promise<void> {
     try {
-      await this.prisma.session.update({
-        where: { id },
-        data,
-      })
+      const session = await this.getById(id)
+      Object.assign(session, data)
+      await this.repository.save(session)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<void> {
     try {
-      await this.prisma.session.delete({
-        where: { id },
-      })
+      await this.getById(id)
+      await this.repository.delete(id)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 }

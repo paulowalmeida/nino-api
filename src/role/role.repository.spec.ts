@@ -1,14 +1,13 @@
-import { ConflictException } from '@nestjs/common'
+import { ConflictException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { getRepositoryToken } from '@nestjs/typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { Role } from '@role/entities/role.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { RoleRepository } from './role.repository'
 
 describe(RoleRepository.name, () => {
   let repository: RoleRepository
-  let prismaService: PrismaService
-  let prismaErrorService: PrismaErrorService
 
   const mockRole = {
     id: 'uuid-1',
@@ -18,32 +17,26 @@ describe(RoleRepository.name, () => {
     updatedAt: new Date(),
   }
 
-  const mockPrismaService = {
-    role: {
-      findMany: jest.fn(),
-      findUnique: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
+  const mockRepository = {
+    find: jest.fn(),
+    findOneBy: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    delete: jest.fn(),
   }
 
-  const mockPrismaErrorService = {
-    handleError: jest.fn(),
-  }
+  const mockErrorService = { handle: jest.fn() }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RoleRepository,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: PrismaErrorService, useValue: mockPrismaErrorService },
+        { provide: getRepositoryToken(Role), useValue: mockRepository },
+        { provide: ErrorService, useValue: mockErrorService },
       ],
     }).compile()
 
     repository = module.get<RoleRepository>(RoleRepository)
-    prismaService = module.get<PrismaService>(PrismaService)
-    prismaErrorService = module.get<PrismaErrorService>(PrismaErrorService)
   })
 
   afterEach(() => {
@@ -51,136 +44,142 @@ describe(RoleRepository.name, () => {
   })
 
   it('getAll() should return an array of roles', async () => {
-    mockPrismaService.role.findMany.mockResolvedValue([mockRole])
+    mockRepository.find.mockResolvedValue([mockRole])
 
     const result = await repository.getAll()
 
     expect(result).toEqual([mockRole])
-    expect(prismaService.role.findMany).toHaveBeenCalledWith({
-      orderBy: { name: 'asc' },
-    })
+    expect(mockRepository.find).toHaveBeenCalledWith({ order: { name: 'ASC' } })
   })
 
-  it('getAll() should call handleError on error', async () => {
+  it('getAll() should call errorService.handle on error', async () => {
     const error = new Error('DB error')
-    mockPrismaService.role.findMany.mockRejectedValue(error)
+    mockRepository.find.mockRejectedValue(error)
 
     await repository.getAll()
 
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('getById() should return role by id', async () => {
-    mockPrismaService.role.findUnique.mockResolvedValue(mockRole)
+    mockRepository.findOneBy.mockResolvedValue(mockRole)
 
     const result = await repository.getById('uuid-1')
 
     expect(result).toEqual(mockRole)
-    expect(prismaService.role.findUnique).toHaveBeenCalledWith({
-      where: { id: 'uuid-1' },
-    })
+    expect(mockRepository.findOneBy).toHaveBeenCalledWith({ id: 'uuid-1' })
   })
 
-  it('getById() should throw NotFoundException if role missing', async () => {
-    mockPrismaService.role.findUnique.mockResolvedValue(null)
+  it('getById() should call errorService.handle with NotFoundException if not found', async () => {
+    mockRepository.findOneBy.mockResolvedValue(null)
 
-    await expect(repository.getById('invalid-id'))
+    await repository.getById('invalid-id')
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
   })
 
-  it('getById() should call handleError on error', async () => {
+  it('getById() should call errorService.handle on db error', async () => {
     const error = new Error('DB error')
-    mockPrismaService.role.findUnique.mockRejectedValue(error)
+    mockRepository.findOneBy.mockRejectedValue(error)
 
     await repository.getById('uuid-1')
 
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
-  it('create() should create a new role', async () => {
-    const createData = { name: 'ADMIN', description: 'Administrator' }
-    mockPrismaService.role.findUnique.mockResolvedValue(null)
-    mockPrismaService.role.create.mockResolvedValue(mockRole)
+  it('create() should create and return a new role', async () => {
+    const createData = { name: 'MANAGER', description: 'Manager' }
+    mockRepository.findOneBy.mockResolvedValue(null)
+    mockRepository.create.mockReturnValue(createData)
+    mockRepository.save.mockResolvedValue({ ...mockRole, ...createData })
 
     const result = await repository.create(createData)
 
-    expect(result).toEqual(mockRole)
-    expect(prismaService.role.create).toHaveBeenCalledWith({
-      data: createData,
-    })
+    expect(result).toEqual({ ...mockRole, ...createData })
+    expect(mockRepository.create).toHaveBeenCalledWith(createData)
+    expect(mockRepository.save).toHaveBeenCalled()
   })
 
-  it('create() should call handleError on error', async () => {
+  it('create() should call errorService.handle with ConflictException if name exists', async () => {
+    mockRepository.findOneBy.mockResolvedValue(mockRole)
+
+    await repository.create({ name: 'ADMIN' })
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(ConflictException))
+    expect(mockRepository.save).not.toHaveBeenCalled()
+  })
+
+  it('create() should call errorService.handle on db error', async () => {
     const error = new Error('DB error')
-    const createData = { name: 'ADMIN' }
-    mockPrismaService.role.create.mockRejectedValue(error)
+    mockRepository.findOneBy.mockResolvedValue(null)
+    mockRepository.create.mockReturnValue({})
+    mockRepository.save.mockRejectedValue(error)
 
-    await repository.create(createData)
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
+    await repository.create({ name: 'NEW' })
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
-  it('update() should update a role', async () => {
-    const updateData = { description: 'Updated description' }
-    const updatedRole = { ...mockRole, ...updateData }
-    mockPrismaService.role.update.mockResolvedValue(updatedRole)
+  it('update() should update and return the role', async () => {
+    const updateData = { description: 'Updated' }
+    const updated = { ...mockRole, ...updateData }
+    mockRepository.findOneBy.mockResolvedValue(mockRole)
+    mockRepository.save.mockResolvedValue(updated)
 
     const result = await repository.update('uuid-1', updateData)
 
-    expect(result).toEqual(updatedRole)
-    expect(prismaService.role.update).toHaveBeenCalledWith({
-      where: { id: 'uuid-1' },
-      data: updateData,
-    })
+    expect(result).toEqual(updated)
+    expect(mockRepository.save).toHaveBeenCalled()
   })
 
-  it('update() should call handleError on error', async () => {
+  it('update() should call errorService.handle with ConflictException if new name belongs to another role', async () => {
+    const another = { ...mockRole, id: 'uuid-2' }
+    mockRepository.findOneBy
+      .mockResolvedValueOnce(mockRole)
+      .mockResolvedValueOnce(another)
+
+    await repository.update('uuid-1', { name: 'OTHER' })
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(ConflictException))
+    expect(mockRepository.save).not.toHaveBeenCalled()
+  })
+
+  it('update() should allow update when name is unchanged', async () => {
+    mockRepository.findOneBy.mockResolvedValue(mockRole)
+    mockRepository.save.mockResolvedValue(mockRole)
+
+    await repository.update('uuid-1', { name: 'ADMIN' })
+
+    expect(mockRepository.save).toHaveBeenCalled()
+  })
+
+  it('update() should call errorService.handle on db error', async () => {
     const error = new Error('DB error')
-    mockPrismaService.role.update.mockRejectedValue(error)
+    mockRepository.findOneBy.mockResolvedValue(mockRole)
+    mockRepository.save.mockRejectedValue(error)
 
-    await repository.update('uuid-1', { name: 'NEW' })
+    await repository.update('uuid-1', { description: 'Oops' })
 
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
-  it('delete() should remove a role', async () => {
-    mockPrismaService.role.delete.mockResolvedValue({
-      message: 'Role deleted successfully',
-    })
+  it('delete() should delete and return success message', async () => {
+    mockRepository.findOneBy.mockResolvedValue(mockRole)
+    mockRepository.delete.mockResolvedValue(undefined)
 
     const result = await repository.delete('uuid-1')
 
     expect(result).toEqual({ message: 'Role deleted successfully' })
-    expect(prismaService.role.delete).toHaveBeenCalledWith({
-      where: { id: 'uuid-1' },
-    })
+    expect(mockRepository.delete).toHaveBeenCalledWith('uuid-1')
   })
 
-  it('delete() should call handleError on error', async () => {
+  it('delete() should call errorService.handle on db error', async () => {
     const error = new Error('DB error')
-    mockPrismaService.role.delete.mockRejectedValue(error)
+    mockRepository.findOneBy.mockResolvedValue(mockRole)
+    mockRepository.delete.mockRejectedValue(error)
 
     await repository.delete('uuid-1')
 
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
-  })
-
-  it('create() should throw ConflictException if name exists', async () => {
-    mockPrismaService.role.findUnique.mockResolvedValue(mockRole)
-
-    await repository.create({ name: 'ACTIVE' })
-
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
-  })
-
-  it('update() should throw ConflictException if name belongs to another role', async () => {
-    const another = { ...mockRole, id: 'uuid-2' }
-    mockPrismaService.role.findUnique.mockResolvedValue(another)
-
-    await repository.update('uuid-1', { name: 'ACTIVE' })
-
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 })
