@@ -1,163 +1,179 @@
 import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { getRepositoryToken } from '@nestjs/typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { AuthCredential } from '@credential/entities/auth-credential.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CredentialsRepository } from './credential.repository'
 
 describe('CredentialsRepository', () => {
   let repository: CredentialsRepository
-  let prismaService: PrismaService
-  let prismaErrorService: PrismaErrorService
 
   const mockCredential = {
     id: 'cred-id',
     userId: 'user-id',
     email: 'test@test.com',
+    provider: 'local',
+    password: 'hashed',
   }
+
+  const mockRepository = {
+    findBy: jest.fn(),
+    findOneBy: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    delete: jest.fn(),
+  }
+
+  const mockErrorService = { handle: jest.fn() }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CredentialsRepository,
-        {
-          provide: PrismaService,
-          useValue: {
-            authCredential: {
-              create: jest.fn(),
-              findMany: jest.fn(),
-              findUnique: jest.fn(),
-              findFirst: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-            },
-          },
-        },
-        {
-          provide: PrismaErrorService,
-          useValue: { handleError: jest.fn() },
-        },
+        { provide: getRepositoryToken(AuthCredential), useValue: mockRepository },
+        { provide: ErrorService, useValue: mockErrorService },
       ],
     }).compile()
 
     repository = module.get<CredentialsRepository>(CredentialsRepository)
-    prismaService = module.get<PrismaService>(PrismaService)
-    prismaErrorService = module.get<PrismaErrorService>(PrismaErrorService)
+  })
+
+  afterEach(() => {
+    jest.clearAllMocks()
   })
 
   it('should create a credential successfully', async () => {
-    jest
-      .spyOn(prismaService.authCredential, 'create')
-      .mockResolvedValue(mockCredential as any)
-    const result = await repository.create({ userId: 'user-id' })
+    mockRepository.create.mockReturnValue(mockCredential)
+    mockRepository.save.mockResolvedValue(mockCredential)
+
+    const result = await repository.create({ userId: 'user-id' } as any)
+
     expect(result).toEqual(mockCredential)
+    expect(mockRepository.save).toHaveBeenCalled()
   })
 
-  it('should call handleError when create throws an error', async () => {
+  it('should call errorService.handle when create throws', async () => {
     const error = new Error('db error')
-    jest.spyOn(prismaService.authCredential, 'create').mockRejectedValue(error)
-    await repository.create({ userId: 'user-id' })
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
+    mockRepository.create.mockReturnValue({})
+    mockRepository.save.mockRejectedValue(error)
+
+    await repository.create({ userId: 'user-id' } as any)
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
-  it('should get a list of credentials by user id', async () => {
-    jest
-      .spyOn(prismaService.authCredential, 'findMany')
-      .mockResolvedValue([mockCredential] as any)
+  it('should get credentials by userId', async () => {
+    mockRepository.findBy.mockResolvedValue([mockCredential])
+
     const result = await repository.getAll('user-id')
+
     expect(result).toEqual([mockCredential])
+    expect(mockRepository.findBy).toHaveBeenCalledWith({ userId: 'user-id' })
   })
 
-  it('should call handleError when getListByUserId throws an error', async () => {
+  it('should call errorService.handle when getAll throws', async () => {
     const error = new Error('db error')
-    jest
-      .spyOn(prismaService.authCredential, 'findMany')
-      .mockRejectedValue(error)
+    mockRepository.findBy.mockRejectedValue(error)
+
     await repository.getAll('user-id')
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('should get a credential by id', async () => {
-    jest
-      .spyOn(prismaService.authCredential, 'findUnique')
-      .mockResolvedValue(mockCredential as any)
+    mockRepository.findOneBy.mockResolvedValue(mockCredential)
+
     const result = await repository.getById('cred-id')
+
     expect(result).toEqual(mockCredential)
+    expect(mockRepository.findOneBy).toHaveBeenCalledWith({ id: 'cred-id' })
   })
 
-  it('should throw NotFoundException and call handleError when getById finds nothing', async () => {
-    jest
-      .spyOn(prismaService.authCredential, 'findUnique')
-      .mockResolvedValue(null)
+  it('should call errorService.handle with NotFoundException when getById finds nothing', async () => {
+    mockRepository.findOneBy.mockResolvedValue(null)
+
     await repository.getById('cred-id')
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(
-      expect.any(NotFoundException),
-    )
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
   })
 
   it('should get a credential by email', async () => {
-    jest
-      .spyOn(prismaService.authCredential, 'findFirst')
-      .mockResolvedValue(mockCredential as any)
+    mockRepository.findOneBy.mockResolvedValue(mockCredential)
+
     const result = await repository.getByEmail('test@test.com')
+
     expect(result).toEqual(mockCredential)
+    expect(mockRepository.findOneBy).toHaveBeenCalledWith({ email: 'test@test.com', provider: 'local' })
   })
 
-  it('should throw NotFoundException and call handleError when getByEmail finds nothing', async () => {
-    jest
-      .spyOn(prismaService.authCredential, 'findFirst')
-      .mockResolvedValue(null)
+  it('should call errorService.handle with NotFoundException when getByEmail finds nothing', async () => {
+    mockRepository.findOneBy.mockResolvedValue(null)
+
     await repository.getByEmail('test@test.com')
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(
-      expect.any(NotFoundException),
-    )
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
   })
 
   it('should update a credential successfully', async () => {
-    jest
-      .spyOn(prismaService.authCredential, 'update')
-      .mockResolvedValue(mockCredential as any)
-    await repository.update('cred-id', { email: 'new@test.com' })
-    expect(prismaService.authCredential.update).toHaveBeenCalled()
+    const updated = { ...mockCredential, email: 'new@test.com' }
+    mockRepository.findOneBy.mockResolvedValue(mockCredential)
+    mockRepository.save.mockResolvedValue(updated)
+
+    const result = await repository.update('cred-id', { email: 'new@test.com' })
+
+    expect(result).toEqual(updated)
+    expect(mockRepository.save).toHaveBeenCalled()
   })
 
-  it('should call handleError when update throws an error', async () => {
+  it('should call errorService.handle when update throws', async () => {
     const error = new Error('db error')
-    jest.spyOn(prismaService.authCredential, 'update').mockRejectedValue(error)
+    mockRepository.findOneBy.mockResolvedValue(mockCredential)
+    mockRepository.save.mockRejectedValue(error)
+
     await repository.update('cred-id', { email: 'new@test.com' })
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('should update password successfully', async () => {
-    jest
-      .spyOn(prismaService.authCredential, 'update')
-      .mockResolvedValue(mockCredential as any)
+    mockRepository.findOneBy.mockResolvedValue({ ...mockCredential })
+    mockRepository.save.mockResolvedValue(undefined)
+
     await repository.updatePassword('cred-id', 'new-password')
-    expect(prismaService.authCredential.update).toHaveBeenCalledWith({
-      where: { id: 'cred-id' },
-      data: { password: 'new-password' },
-    })
+
+    expect(mockRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ password: 'new-password' }),
+    )
   })
 
-  it('should call handleError when updatePassword throws', async () => {
+  it('should call errorService.handle when updatePassword throws', async () => {
     const error = new Error('db error')
-    jest.spyOn(prismaService.authCredential, 'update').mockRejectedValue(error)
+    mockRepository.findOneBy.mockResolvedValue(mockCredential)
+    mockRepository.save.mockRejectedValue(error)
+
     await repository.updatePassword('cred-id', 'new-password')
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('should delete a credential successfully', async () => {
-    jest
-      .spyOn(prismaService.authCredential, 'delete')
-      .mockResolvedValue(mockCredential as any)
-    await repository.delete('cred-id')
-    expect(prismaService.authCredential.delete).toHaveBeenCalled()
+    mockRepository.findOneBy.mockResolvedValue(mockCredential)
+    mockRepository.delete.mockResolvedValue(undefined)
+
+    const result = await repository.delete('cred-id')
+
+    expect(result).toEqual({ message: 'Credential deleted successfully' })
+    expect(mockRepository.delete).toHaveBeenCalledWith('cred-id')
   })
 
-  it('should call handleError when delete throws an error', async () => {
+  it('should call errorService.handle when delete throws', async () => {
     const error = new Error('db error')
-    jest.spyOn(prismaService.authCredential, 'delete').mockRejectedValue(error)
+    mockRepository.findOneBy.mockResolvedValue(mockCredential)
+    mockRepository.delete.mockRejectedValue(error)
+
     await repository.delete('cred-id')
-    expect(prismaErrorService.handleError).toHaveBeenCalledWith(error)
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 })

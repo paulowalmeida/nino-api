@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { CompanyResponsibleRepository } from './company-responsible.repository'
 import { CreateCompanyResponsibleDto } from './dto/create-company-responsible.dto'
 import { UpdateCompanyResponsibleDto } from './dto/update-company-responsible.dto'
-import { CompanyResponsible } from './type/company-responsible.type'
+import { CompanyResponsible } from '@company-responsible/entities/company-responsible.entity'
 
 @Injectable()
 export class CompanyResponsibleService {

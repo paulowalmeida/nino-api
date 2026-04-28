@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
 import { CreateTenantStatusDto } from './dtos/create-tenant-status.dto'
 import { UpdateTenantStatusDto } from './dtos/update-tenant-status.dto'
 import { TenantStatusService } from './tenant-status.service'
-import { TenantStatus } from './types/tenant-status.type'
+import { TenantStatus } from '@tenant-status/entities/tenant-status.entity'
 
 @Controller('tenant-statuses')
 export class TenantStatusController {

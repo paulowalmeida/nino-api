@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
 import { CreateSubscriptionStatusDto } from './dtos/create-subscription-status.dto'
 import { UpdateSubscriptionStatusDto } from './dtos/update-subscription-status.dto'
 import { SubscriptionStatusService } from './subscription-status.service'
-import { SubscriptionStatus } from './types/subscription-status.type'
+import { SubscriptionStatus } from '@subscription-status/entities/subscription-status.entity'
 
 @Controller('subscription-statuses')
 export class SubscriptionStatusController {

@@ -3,7 +3,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common'
 import { CreatePlanTypeDto } from './dtos/create-plan-type.dto'
 import { UpdatePlanTypeDto } from './dtos/update-plan-type.dto'
 import { PlanTypeService } from './plan-type.service'
-import { PlanType } from './types/plan-type.type'
+import { PlanType } from '@plan-type/entities/plan-type.entity'
 
 @Controller('plan-types')
 export class PlanTypeController {

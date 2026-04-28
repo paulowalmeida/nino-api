@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { CreateNotificationTypeDto } from './dtos/create-notification-type.dto'
 import { UpdateNotificationTypeDto } from './dtos/update-notification-type.dto'
 import { NotificationTypeRepository } from './notification-type.repository'
-import { NotificationType } from './types/notification-type.type'
+import { NotificationType } from '@notification-type/entities/notification-type.entity'
 
 @Injectable()
 export class NotificationTypeService {

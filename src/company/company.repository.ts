@@ -3,119 +3,105 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { Company } from '@company/entities/company.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
-import { Company } from './types/company.type'
 
 @Injectable()
 export class CompanyRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(Company)
+    private readonly repository: Repository<Company>,
+    private readonly errorService: ErrorService,
   ) {}
 
   async getAll(): Promise<Company[]> {
     try {
-      return await this.prisma.company.findMany({
-        orderBy: { companyName: 'asc' },
-      })
+      return await this.repository.find({ order: { companyName: 'ASC' } })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getById(id: string): Promise<Company> {
     try {
-      const found = await this.getCompany('id', id)
+      const found = await this.repository.findOneBy({ id })
       if (!found) throw new NotFoundException('Company not found')
       return found
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getByCnpj(cnpj: string): Promise<Company> {
     try {
-      const found = await this.getCompany('cnpj', cnpj)
+      const found = await this.repository.findOneBy({ cnpj })
       if (!found) throw new NotFoundException('Company not found')
       return found
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
-  
+
   async create(data: CreateCompanyDto): Promise<Company> {
     try {
-      const exists = await this.prisma.company.findUnique({
-        where: { cnpj: data.cnpj },
-      })
+      const exists = await this.repository.findOneBy({ cnpj: data.cnpj })
       if (exists) throw new ConflictException('CNPJ already exists')
 
-      return await this.prisma.company.create({ data })
+      const company = this.repository.create(data)
+      return await this.repository.save(company)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async update(id: string, data: UpdateCompanyDto): Promise<Company> {
     try {
-      if (data.cnpj) {
-        const conflict = await this.prisma.company.findUnique({
-          where: { cnpj: data.cnpj },
-        })
-        if (conflict && conflict.id !== id) {
-          throw new ConflictException('CNPJ já cadastrado')
-        }
+      const company = await this.getById(id)
+
+      if (data.cnpj && data.cnpj !== company.cnpj) {
+        const exists = await this.repository.findOneBy({ cnpj: data.cnpj })
+        if (exists) throw new ConflictException('CNPJ already exists')
       }
 
-      return await this.prisma.company.update({ where: { id }, data })
+      Object.assign(company, data)
+      return await this.repository.save(company)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<{ message: string }> {
     try {
-      await this.prisma.company.delete({ where: { id } })
+      await this.getById(id)
+      await this.repository.delete(id)
       return { message: 'Company deleted successfully' }
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async activate(id: string): Promise<Company> {
     try {
-      return await this.prisma.company.update({
-        data: {
-          isActive: true,
-        },
-        where: { id },
-      })
+      const company = await this.getById(id)
+      company.isActive = true
+      return await this.repository.save(company)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async deactivate(id: string): Promise<Company> {
     try {
-      return await this.prisma.company.update({
-        data: {
-          isActive: false,
-        },
-        where: { id },
-      })
+      const company = await this.getById(id)
+      company.isActive = false
+      return await this.repository.save(company)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
-  }
-
-  private async getCompany(param: 'id' | 'cnpj', value: string) {
-    const where = param === 'id' ? { id: value } : { cnpj: value }
-    return await this.prisma.company.findUnique({
-      where,
-    })
   }
 }

@@ -179,9 +179,9 @@ Para clareza dos agentes de IA e programadores, os seguintes componentes **não*
 
 ### Banco de Dados & ORM
 
-- **PostgreSQL** (v14+) — Banco relacional com suporte a Row Level Security (RLS)
-- **Prisma ORM** (v7.4.1) — Query builder tipado; migrations automáticas
-- **`@prisma/adapter-pg` + `pg`** — Driver adapter nativo para PostgreSQL; substitui o client padrão do Prisma para conexão direta sem camada intermediária
+- **PostgreSQL** (v16) — Banco relacional com suporte a Schema-per-Tenant para isolamento físico de dados
+- **TypeORM** (v0.3.28) — ORM escolhido pela flexibilidade com schemas dinâmicos e QueryRunners nativos
+- **`pg`** — Driver nativo PostgreSQL para Node.js
 
 ### Autenticação & Segurança
 
@@ -230,8 +230,6 @@ Para clareza dos agentes de IA e programadores, os seguintes componentes **não*
   "@nestjs/platform-express": "^11.0.1",
   "@nestjs/swagger": "^11.2.7",
   "@nestjs/throttler": "^6.5.0",
-  "@prisma/adapter-pg": "^7.4.1",
-  "@prisma/client": "^7.4.1",
   "bcrypt": "^6.0.0",
   "class-transformer": "^0.5.1",
   "class-validator": "^0.15.1",

@@ -1,19 +1,16 @@
 import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { InvoiceStatus } from '@invoice-status/entities/invoice-status.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { InvoiceStatusController } from './invoice-status.controller'
 import { InvoiceStatusRepository } from './invoice-status.repository'
 import { InvoiceStatusService } from './invoice-status.service'
 
 @Module({
+  imports: [TypeOrmModule.forFeature([InvoiceStatus])],
   controllers: [InvoiceStatusController],
-  providers: [
-    InvoiceStatusService,
-    InvoiceStatusRepository,
-    PrismaService,
-    PrismaErrorService,
-  ],
+  providers: [InvoiceStatusService, InvoiceStatusRepository, ErrorService],
   exports: [InvoiceStatusService],
 })
 export class InvoiceStatusModule {}

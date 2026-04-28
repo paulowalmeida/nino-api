@@ -13,7 +13,7 @@ import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { CreatePlanDto } from './dtos/create-plan.dto'
 import { UpdatePlanDto } from './dtos/update-plan.dto'
 import { PlanService } from './plan.service'
-import { Plan } from './types/plan.type'
+import { Plan } from '@plan/entities/plan.entity'
 
 @Controller('plans')
 export class PlanController {

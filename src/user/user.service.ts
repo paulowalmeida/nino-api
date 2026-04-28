@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UpdateUserDto } from './dtos/update-user.dto'
-import { User } from './types/user.type'
+import { User } from '@user/entities/user.entity'
 import { UserRepository } from './user.repository'
 
 @Injectable()

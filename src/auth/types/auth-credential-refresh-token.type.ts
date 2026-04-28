@@ -1,10 +1,3 @@
-import { Prisma } from '@prisma/client'
+import { AuthCredential } from '@credential/entities/auth-credential.entity'
 
-export type AuthCredentialRefreshToken = Prisma.AuthCredentialGetPayload<{
-  select: {
-    id: true
-    userId: true
-    email: true
-    hashedRefreshToken: true
-  }
-}>
+export type AuthCredentialRefreshToken = Pick<AuthCredential, 'id' | 'userId' | 'email'>

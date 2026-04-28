@@ -13,7 +13,7 @@ import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { CreateSessionDto } from './dtos/create-session.dto'
 import { UpdateSessionDto } from './dtos/update-session.dto'
 import { SessionService } from './session.service'
-import { Session } from './types/session.type'
+import { Session } from '@session/entities/session.entity'
 
 @Controller('sessions')
 export class SessionController {

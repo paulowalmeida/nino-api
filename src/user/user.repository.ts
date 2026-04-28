@@ -1,76 +1,71 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { User } from '@user/entities/user.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UpdateUserDto } from './dtos/update-user.dto'
-import { User } from './types/user.type'
 
 @Injectable()
 export class UserRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(User)
+    private readonly repository: Repository<User>,
+    private readonly errorService: ErrorService,
   ) {}
 
   async create(data: CreateUserDto): Promise<User> {
     try {
-      return await this.prisma.user.create({ data })
+      const user = this.repository.create(data)
+      return await this.repository.save(user)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getAll(): Promise<User[]> {
     try {
-      return await this.prisma.user.findMany()
+      return await this.repository.find({ order: { name: 'ASC' } })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getById(id: string): Promise<User> {
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id },
-      })
-
+      const user = await this.repository.findOneBy({ id })
       if (!user) throw new NotFoundException('User not found')
-
       return user
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getByCompanyId(companyId: string): Promise<User[]> {
     try {
-      return await this.prisma.user.findMany({
-        where: { companyId },
-      })
+      return await this.repository.findBy({ companyId })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async update(id: string, data: UpdateUserDto): Promise<void> {
     try {
-      await this.prisma.user.update({
-        where: { id },
-        data,
-      })
+      const user = await this.getById(id)
+      Object.assign(user, data)
+      await this.repository.save(user)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<void> {
     try {
-      await this.prisma.user.delete({
-        where: { id },
-      })
+      await this.getById(id)
+      await this.repository.delete(id)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 }

@@ -1,19 +1,16 @@
 import { Module } from '@nestjs/common'
+import { TypeOrmModule } from '@nestjs/typeorm'
 
-import { PrismaService } from '@shared/services/prisma/prisma.service'
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { SubscriptionStatusService } from './subscription-status.service'
-import { SubscriptionStatusRepository } from './subscription-status.repository'
+import { SubscriptionStatus } from '@subscription-status/entities/subscription-status.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { SubscriptionStatusController } from './subscription-status.controller'
+import { SubscriptionStatusRepository } from './subscription-status.repository'
+import { SubscriptionStatusService } from './subscription-status.service'
 
 @Module({
+  imports: [TypeOrmModule.forFeature([SubscriptionStatus])],
   controllers: [SubscriptionStatusController],
-  providers: [
-    SubscriptionStatusService,
-    SubscriptionStatusRepository,
-    PrismaService,
-    PrismaErrorService,
-  ],
+  providers: [SubscriptionStatusService, SubscriptionStatusRepository, ErrorService],
   exports: [SubscriptionStatusService],
 })
 export class SubscriptionStatusModule {}

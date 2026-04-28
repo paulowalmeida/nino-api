@@ -3,84 +3,75 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
-import { InvoiceStatus } from './types/invoice-status.type'
+import { InvoiceStatus } from '@invoice-status/entities/invoice-status.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreateInvoiceStatusDto } from './dtos/create-invoice-status.dto'
 import { UpdateInvoiceStatusDto } from './dtos/update-invoice-status.dto'
 
 @Injectable()
 export class InvoiceStatusRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(InvoiceStatus)
+    private readonly repository: Repository<InvoiceStatus>,
+    private readonly errorService: ErrorService,
   ) {}
 
   async getAll(): Promise<InvoiceStatus[]> {
     try {
-      return await this.prisma.invoiceStatus.findMany({
-        orderBy: { name: 'asc' },
-      })
+      return await this.repository.find({ order: { name: 'ASC' } })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getById(id: string): Promise<InvoiceStatus> {
     try {
-      const found = await this.prisma.invoiceStatus.findUnique({
-        where: { id },
-      })
-
+      const found = await this.repository.findOneBy({ id })
       if (!found) throw new NotFoundException('Invoice Status not found')
-
       return found
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async create(data: CreateInvoiceStatusDto): Promise<InvoiceStatus> {
     try {
-      const existsByName = await this.prisma.invoiceStatus.findUnique({
-        where: { name: data.name },
-      })
-      if (existsByName) throw new ConflictException('Name already exists')
+      const exists = await this.repository.findOneBy({ name: data.name })
+      if (exists) throw new ConflictException('Name already exists')
 
-      return await this.prisma.invoiceStatus.create({ data })
+      const invoiceStatus = this.repository.create(data)
+      return await this.repository.save(invoiceStatus)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async update(id: string, data: UpdateInvoiceStatusDto): Promise<InvoiceStatus> {
     try {
-      if (data.name) {
-        const found = await this.prisma.invoiceStatus.findUnique({
-          where: { name: data.name },
-        })
+      const invoiceStatus = await this.getById(id)
 
-        if (found && found.id !== id) {
-          throw new ConflictException('Name already exists')
-        }
+      if (data.name && data.name !== invoiceStatus.name) {
+        const exists = await this.repository.findOneBy({ name: data.name })
+        if (exists) throw new ConflictException('Name already exists')
       }
 
-      return await this.prisma.invoiceStatus.update({
-        where: { id },
-        data,
-      })
+      Object.assign(invoiceStatus, data)
+      return await this.repository.save(invoiceStatus)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<{ message: string }> {
     try {
-      await this.prisma.invoiceStatus.delete({ where: { id } })
+      await this.getById(id)
+      await this.repository.delete(id)
       return { message: 'Invoice Status deleted successfully' }
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 }

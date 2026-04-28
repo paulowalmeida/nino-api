@@ -1,92 +1,74 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { CompanyResponsible } from '@company-responsible/entities/company-responsible.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreateCompanyResponsibleDto } from './dto/create-company-responsible.dto'
 import { UpdateCompanyResponsibleDto } from './dto/update-company-responsible.dto'
-import { CompanyResponsible } from './type/company-responsible.type'
 
 @Injectable()
 export class CompanyResponsibleRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(CompanyResponsible)
+    private readonly repository: Repository<CompanyResponsible>,
+    private readonly errorService: ErrorService,
   ) {}
 
   async getAll(): Promise<CompanyResponsible[]> {
     try {
-      return await this.prisma.companyResponsible.findMany({
-        orderBy: { name: 'asc' },
-      })
+      return await this.repository.find({ order: { name: 'ASC' } })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getById(id: string): Promise<CompanyResponsible> {
     try {
-      const found = await this.prisma.companyResponsible.findUnique({
-        where: { id },
-      })
-
-      if (!found) {
-        throw new NotFoundException('Company responsible not found')
-      }
+      const found = await this.repository.findOneBy({ id })
+      if (!found) throw new NotFoundException('Company responsible not found')
       return found
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getByCpf(cpf: string): Promise<CompanyResponsible> {
     try {
-      const found = await this.prisma.companyResponsible.findUnique({
-        where: { cpf },
-      })
-
-      if (!found) {
-        throw new NotFoundException('Company responsible not found')
-      }
-
+      const found = await this.repository.findOneBy({ cpf })
+      if (!found) throw new NotFoundException('Company responsible not found')
       return found
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async create(dto: CreateCompanyResponsibleDto): Promise<CompanyResponsible> {
     try {
-      return await this.prisma.companyResponsible.create({
-        data: { ...dto },
-      })
+      const responsible = this.repository.create(dto)
+      return await this.repository.save(responsible)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
-  async update(
-    id: string,
-    dto: UpdateCompanyResponsibleDto,
-  ): Promise<CompanyResponsible> {
+  async update(id: string, dto: UpdateCompanyResponsibleDto): Promise<CompanyResponsible> {
     try {
-      return await this.prisma.companyResponsible.update({
-        where: { id },
-        data: dto,
-      })
+      const responsible = await this.getById(id)
+      Object.assign(responsible, dto)
+      return await this.repository.save(responsible)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<{ message: string }> {
     try {
-      await this.prisma.companyResponsible.delete({
-        where: { id },
-      })
-
+      await this.getById(id)
+      await this.repository.delete(id)
       return { message: 'Responsible was deleted successfully' }
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 }

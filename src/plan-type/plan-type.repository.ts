@@ -3,84 +3,75 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import { InjectRepository } from '@nestjs/typeorm'
+import { Repository } from 'typeorm'
 
-import { PrismaErrorService } from '@shared/services/prisma/prisma-error.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
-import { PlanType } from './types/plan-type.type'
+import { PlanType } from '@plan-type/entities/plan-type.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 import { CreatePlanTypeDto } from './dtos/create-plan-type.dto'
 import { UpdatePlanTypeDto } from './dtos/update-plan-type.dto'
 
 @Injectable()
 export class PlanTypeRepository {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly prismaErrorService: PrismaErrorService,
+    @InjectRepository(PlanType)
+    private readonly repository: Repository<PlanType>,
+    private readonly errorService: ErrorService,
   ) {}
 
   async getAll(): Promise<PlanType[]> {
     try {
-      return await this.prisma.planType.findMany({
-        orderBy: { name: 'asc' },
-      })
+      return await this.repository.find({ order: { name: 'ASC' } })
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async getById(id: string): Promise<PlanType> {
     try {
-      const found = await this.prisma.planType.findUnique({
-        where: { id },
-      })
-
+      const found = await this.repository.findOneBy({ id })
       if (!found) throw new NotFoundException('Plan Type not found')
-
       return found
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async create(data: CreatePlanTypeDto): Promise<PlanType> {
     try {
-      const existsByName = await this.prisma.planType.findUnique({
-        where: { name: data.name },
-      })
-      if (existsByName) throw new ConflictException('Name already exists')
+      const exists = await this.repository.findOneBy({ name: data.name })
+      if (exists) throw new ConflictException('Name already exists')
 
-      return await this.prisma.planType.create({ data })
+      const planType = this.repository.create(data)
+      return await this.repository.save(planType)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async update(id: string, data: UpdatePlanTypeDto): Promise<PlanType> {
     try {
-      if (data.name) {
-        const found = await this.prisma.planType.findUnique({
-          where: { name: data.name },
-        })
+      const planType = await this.getById(id)
 
-        if (found && found.id !== id) {
-          throw new ConflictException('Name already exists')
-        }
+      if (data.name && data.name !== planType.name) {
+        const exists = await this.repository.findOneBy({ name: data.name })
+        if (exists) throw new ConflictException('Name already exists')
       }
 
-      return await this.prisma.planType.update({
-        where: { id },
-        data,
-      })
+      Object.assign(planType, data)
+      return await this.repository.save(planType)
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 
   async delete(id: string): Promise<{ message: string }> {
     try {
-      await this.prisma.planType.delete({ where: { id } })
+      await this.getById(id)
+      await this.repository.delete(id)
       return { message: 'Plan Type deleted successfully' }
     } catch (error) {
-      this.prismaErrorService.handleError(error)
+      this.errorService.handle(error)
     }
   }
 }

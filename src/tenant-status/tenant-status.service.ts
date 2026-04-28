@@ -5,7 +5,7 @@ import {
 import { CreateTenantStatusDto } from './dtos/create-tenant-status.dto'
 import { UpdateTenantStatusDto } from './dtos/update-tenant-status.dto'
 import { TenantStatusRepository } from './tenant-status.repository'
-import { TenantStatus } from './types/tenant-status.type'
+import { TenantStatus } from '@tenant-status/entities/tenant-status.entity'
 
 @Injectable()
 export class TenantStatusService {
