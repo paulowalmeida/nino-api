@@ -6,4 +6,4 @@ build/
 .vscode/
 coverage/
 .idea/
-.continue/
+.continue/*
