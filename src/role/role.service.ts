@@ -17,6 +17,10 @@ export class RoleService {
     return await this.repo.getById(id)
   }
 
+  async getByName(name: string): Promise<Role> {
+    return await this.repo.getByName(name)
+  }
+
   async create(data: CreateRoleDto): Promise<Role> {
     return this.repo.create(data)
   }

@@ -1,24 +1,23 @@
 type: collection.insomnia.rest/5.0
 schema_version: "5.1"
-name: Credential Module
+name: Company Responsible Module
 meta:
-  id: wrk_credential_module
+  id: wrk_company_responsible_module
   created: 1776000000000
   modified: 1776000000000
-  description: "Credential management"
+  description: "Company responsible management"
 collection:
-  - name: credential
+  - name: company-responsible
     meta:
-      id: fld_credential_module
+      id: fld_company_responsible_module
       created: 1776000000000
       modified: 1776000000000
       sortKey: -1
-      description: "Credential endpoints"
     children:
-      - url: "{{BASE_URL}}/credentials/list/{{USER_ID}}"
-        name: list-by-user
+      - url: "{{BASE_URL}}/company-responsibles"
+        name: list
         meta:
-          id: req_credential_list
+          id: req_company_responsible_list
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
@@ -32,10 +31,10 @@ collection:
           encodeUrl: true
           followRedirects: global
 
-      - url: "{{BASE_URL}}/credentials/{{CREDENTIAL_ID}}"
+      - url: "{{BASE_URL}}/company-responsibles/id/{{USER_ID}}"
         name: by-id
         meta:
-          id: req_credential_get
+          id: req_company_responsible_get
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
@@ -49,21 +48,15 @@ collection:
           encodeUrl: true
           followRedirects: global
 
-      - url: "{{BASE_URL}}/credentials/{{CREDENTIAL_ID}}"
-        name: update
+      - url: "{{BASE_URL}}/company-responsibles/doc/{{USER_ID}}"
+        name: by-doc
         meta:
-          id: req_credential_update
+          id: req_company_responsible_get_doc
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
           sortKey: -3
-        method: PATCH
-        body:
-          mimeType: application/json
-          text: "{\n  \"provider\": \"EMAIL\"\n}"
-        headers:
-          - name: Content-Type
-            value: application/json
+        method: GET
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
@@ -72,18 +65,18 @@ collection:
           encodeUrl: true
           followRedirects: global
 
-      - url: "{{BASE_URL}}/credentials/change-password"
-        name: change-password
+      - url: "{{BASE_URL}}/company-responsibles"
+        name: create
         meta:
-          id: req_credential_change_pwd
+          id: req_company_responsible_create
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
           sortKey: -4
-        method: PATCH
+        method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"oldPassword\": \"senhaAntiga123\",\n  \"newPassword\": \"novaSenha123\"\n}"
+          text: "{\n  \"userId\": \"{{USER_ID}}\",\n  \"cpf\": \"000.000.000-00\",\n  \"phone\": \"91999999999\"\n}"
         headers:
           - name: Content-Type
             value: application/json
@@ -95,14 +88,37 @@ collection:
           encodeUrl: true
           followRedirects: global
 
-      - url: "{{BASE_URL}}/credentials/{{CREDENTIAL_ID}}"
-        name: delete
+      - url: "{{BASE_URL}}/company-responsibles/{{USER_ID}}"
+        name: update
         meta:
-          id: req_credential_delete
+          id: req_company_responsible_update
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
           sortKey: -5
+        method: PUT
+        body:
+          mimeType: application/json
+          text: "{\n  \"phone\": \"91988888888\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+
+      - url: "{{BASE_URL}}/company-responsibles/{{USER_ID}}"
+        name: delete
+        meta:
+          id: req_company_responsible_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          sortKey: -6
         method: DELETE
         authentication:
           type: bearer
@@ -115,17 +131,16 @@ collection:
 environments:
   name: Base Environment
   meta:
-    id: env_credential
+    id: env_company_responsible
     created: 1776000000000
     modified: 1776000000000
   subEnvironments:
     - name: nino
       meta:
-        id: env_credential_nino
+        id: env_company_responsible_nino
         created: 1776000000000
         modified: 1776000000000
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
         USER_ID: ""
-        CREDENTIAL_ID: ""

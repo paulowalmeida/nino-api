@@ -37,6 +37,16 @@ export class RoleRepository {
     }
   }
 
+  async getByName(name: string): Promise<Role> {
+    try {
+      const found = await this.repository.findOneBy({ name })
+      if (!found) throw new NotFoundException('Role not found')
+      return found
+    } catch (error) {
+      this.errorService.handle(error)
+    }
+  }
+
   async create(data: CreateRoleDto): Promise<Role> {
     try {
       const exists = await this.repository.findOneBy({ name: data.name })

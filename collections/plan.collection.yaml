@@ -13,7 +13,6 @@ collection:
       created: 1776000000000
       modified: 1776000000000
       sortKey: -1
-      description: "Plan endpoints"
     children:
       - url: "{{BASE_URL}}/plans"
         name: list
@@ -22,71 +21,91 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
           sortKey: -1
         method: GET
-        headers: []
         authentication: {}
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
 
-      - url: "{{BASE_URL}}/plans/1"
+      - url: "{{BASE_URL}}/plans/{{PLAN_ID}}"
         name: by-id
         meta:
           id: req_plan_get
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
           sortKey: -2
         method: GET
-        headers: []
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/plans/slug/profissional"
-        name: by-slug
-        meta:
-          id: req_plan_slug
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: ""
-          sortKey: -3
-        method: GET
-        headers: []
         authentication: {}
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
 
-cookieJar:
-  name: Default Jar
-  meta:
-    id: jar_plan
-    created: 1776000000000
-    modified: 1776000000000
+      - url: "{{BASE_URL}}/plans"
+        name: create
+        meta:
+          id: req_plan_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          sortKey: -3
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Profissional\",\n  \"price\": 197,\n  \"planTypeId\": \"{{PLAN_TYPE_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+
+      - url: "{{BASE_URL}}/plans/{{PLAN_ID}}"
+        name: update
+        meta:
+          id: req_plan_update
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          sortKey: -4
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"price\": 297\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+
+      - url: "{{BASE_URL}}/plans/{{PLAN_ID}}"
+        name: delete
+        meta:
+          id: req_plan_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          sortKey: -5
+        method: DELETE
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
 
 environments:
   name: Base Environment
@@ -94,15 +113,14 @@ environments:
     id: env_plan
     created: 1776000000000
     modified: 1776000000000
-    isPrivate: false
   subEnvironments:
     - name: nino
       meta:
         id: env_plan_nino
         created: 1776000000000
         modified: 1776000000000
-        isPrivate: false
-        sortKey: 1776000000000
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
+        PLAN_ID: ""
+        PLAN_TYPE_ID: ""

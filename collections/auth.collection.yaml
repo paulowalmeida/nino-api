@@ -15,10 +15,10 @@ collection:
       sortKey: -1
       description: "Auth endpoints"
     children:
-      - url: "{{BASE_URL}}/auth/login"
-        name: login
+      - url: "{{BASE_URL}}/auth/register"
+        name: register
         meta:
-          id: req_auth_login
+          id: req_auth_register
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
@@ -27,11 +27,59 @@ collection:
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"email\": \"admin@nino.com\",\n  \"password\": \"senha\"\n}"
+          text: "{\n  \"name\": \"Paulo\",\n  \"email\": \"paulo@nino.com\",\n  \"password\": \"senha123\",\n  \"role\": \"ADMIN\"\n}"
+        headers:
+          - id: pair_register_h1
+            name: Content-Type
+            value: application/json
+        authentication: {}
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/auth/login"
+        name: login
+        meta:
+          id: req_auth_login
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -2
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"email\": \"paulo@nino.com\",\n  \"password\": \"senha123\"\n}"
         headers:
           - id: pair_login_h1
             name: Content-Type
             value: application/json
+        authentication: {}
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/auth/refresh"
+        name: refresh
+        meta:
+          id: req_auth_refresh
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -3
+        method: POST
+        headers: []
         authentication: {}
         settings:
           renderRequestBody: true
@@ -50,63 +98,9 @@ collection:
           modified: 1776000000000
           isPrivate: false
           description: ""
-          sortKey: -2
-        method: POST
-        headers: []
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/auth/refresh-token"
-        name: refresh-token
-        meta:
-          id: req_auth_refresh
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: ""
-          sortKey: -3
-        method: POST
-        headers: []
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/auth/change-password"
-        name: change-password
-        meta:
-          id: req_auth_change_pw
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: ""
           sortKey: -4
         method: POST
-        body:
-          mimeType: application/json
-          text: "{\n  \"oldPassword\": \"senha_antiga\",\n  \"newPassword\": \"nova_senha\"\n}"
-        headers:
-          - id: pair_changepw_h1
-            name: Content-Type
-            value: application/json
+        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"

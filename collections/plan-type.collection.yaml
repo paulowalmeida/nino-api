@@ -13,7 +13,6 @@ collection:
       created: 1776000000000
       modified: 1776000000000
       sortKey: -1
-      description: "Plan type endpoints"
     children:
       - url: "{{BASE_URL}}/plan-types"
         name: list
@@ -22,46 +21,32 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
           sortKey: -1
         method: GET
-        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
 
-      - url: "{{BASE_URL}}/plan-types/{{INVOICE_STATUS_ID}}"
+      - url: "{{BASE_URL}}/plan-types/{{PLAN_TYPE_ID}}"
         name: by-id
         meta:
           id: req_plan_type_get
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
           sortKey: -2
         method: GET
-        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
 
       - url: "{{BASE_URL}}/plan-types"
         name: create
@@ -70,95 +55,61 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
           sortKey: -3
         method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"MENSAL\",\n  \"description\": \"Plano cobrado mensalmente\"\n}"
         headers:
           - name: Content-Type
             value: application/json
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        body:
-          mimeType: application/json
-          text: |
-            {
-              "name": "EXAMPLE",
-              "description": "Plan type example"
-            }
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
 
-      - url: "{{BASE_URL}}/plan-types/{{PLAN_STATUS_ID}}"
+      - url: "{{BASE_URL}}/plan-types/{{PLAN_TYPE_ID}}"
         name: update
         meta:
           id: req_plan_type_update
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
           sortKey: -4
         method: PUT
+        body:
+          mimeType: application/json
+          text: "{\n  \"description\": \"Plano cobrado mensalmente atualizado\"\n}"
         headers:
           - name: Content-Type
             value: application/json
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        body:
-          mimeType: application/json
-          text: |
-            {
-              "name": "EXAMPLE",
-              "description": "Plan type example"
-            }
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
 
-      - url: "{{BASE_URL}}/plan-types/{{PLAN_STATUS_ID}}"
+      - url: "{{BASE_URL}}/plan-types/{{PLAN_TYPE_ID}}"
         name: delete
         meta:
           id: req_plan_type_delete
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
           sortKey: -5
         method: DELETE
-        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
           followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-cookieJar:
-  name: Default Jar
-  meta:
-    id: jar_plan_type
-    created: 1776000000000
-    modified: 1776000000000
 
 environments:
   name: Base Environment
@@ -166,16 +117,13 @@ environments:
     id: env_plan_type
     created: 1776000000000
     modified: 1776000000000
-    isPrivate: false
   subEnvironments:
     - name: nino
       meta:
         id: env_plan_type_nino
         created: 1776000000000
         modified: 1776000000000
-        isPrivate: false
-        sortKey: 1776000000000
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
-        INVOICE_STATUS_ID: ""
+        PLAN_TYPE_ID: ""
