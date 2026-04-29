@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 
@@ -15,7 +16,9 @@ import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UpdateUserDto } from './dtos/update-user.dto'
-import { UserResponse } from './types/user.type'
+import { UserQueryDto } from './dtos/user-query.dto'
+import { UserPaginatedResponse } from './types/user-paginated-response.type'
+import { UserResponse } from './types/user-response.type'
 import { UserService } from './user.service'
 
 @Controller('users')
@@ -31,8 +34,8 @@ export class UserController {
 
   @Get()
   @Roles(Role.ADMIN, Role.SUPPORT)
-  async getAll(): Promise<UserResponse[]> {
-    return await this.userService.getAll()
+  async getAll(@Query() query: UserQueryDto): Promise<UserPaginatedResponse> {
+    return await this.userService.getAll(query)
   }
 
   @Get(':id')
