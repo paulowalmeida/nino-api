@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { Credential } from '@credential/entities/credential.entity'
 import { User } from '@user/entities/user.entity'
 import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { CredentialsModule } from '@credential/credential.module'
 import { PasswordService } from '@shared/services/password/password.service'
 import { UserController } from '@user/user.controller'
@@ -13,7 +14,7 @@ import { UserService } from '@user/user.service'
 @Module({
   imports: [TypeOrmModule.forFeature([User, Credential]), CredentialsModule],
   controllers: [UserController],
-  providers: [UserService, UserRepository, ErrorService, PasswordService],
+  providers: [UserService, UserRepository, ErrorService, PasswordService, PaginationService],
   exports: [UserService, UserRepository],
 })
 export class UserModule {}

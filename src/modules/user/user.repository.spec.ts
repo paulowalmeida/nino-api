@@ -5,6 +5,7 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { Credential } from '@credential/entities/credential.entity'
 import { User } from '@user/entities/user.entity'
 import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { UserRepository } from './user.repository'
 
 describe('UserRepository', () => {
@@ -16,6 +17,7 @@ describe('UserRepository', () => {
   const mockRepository = {
     find: jest.fn(),
     findOne: jest.fn(),
+    findAndCount: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
@@ -31,6 +33,7 @@ describe('UserRepository', () => {
         { provide: getRepositoryToken(User), useValue: mockRepository },
         { provide: getRepositoryToken(Credential), useValue: mockCredentialRepository },
         { provide: ErrorService, useValue: mockErrorService },
+        PaginationService,
       ],
     }).compile()
 
@@ -62,23 +65,26 @@ describe('UserRepository', () => {
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
-  it('should get all users', async () => {
-    mockRepository.find.mockResolvedValue([mockUser])
+  it('should get all users with pagination', async () => {
+    mockRepository.findAndCount.mockResolvedValue([[mockUser], 1])
 
-    const result = await repository.getAll()
+    const result = await repository.getAll({ page: 1, limit: 20 })
 
-    expect(result).toEqual([mockUserResponse])
-    expect(mockRepository.find).toHaveBeenCalledWith({
+    expect(result.data).toEqual([mockUserResponse])
+    expect(result.pagination).toEqual({ page: 1, limit: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null })
+    expect(mockRepository.findAndCount).toHaveBeenCalledWith({
       order: { name: 'ASC' },
       relations: ['role', 'company'],
+      skip: 0,
+      take: 20,
     })
   })
 
   it('should call errorService.handle when getAll throws', async () => {
     const error = new Error('db error')
-    mockRepository.find.mockRejectedValue(error)
+    mockRepository.findAndCount.mockRejectedValue(error)
 
-    await repository.getAll()
+    await repository.getAll({})
 
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })

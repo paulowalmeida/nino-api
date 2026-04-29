@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common'
 
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UpdateUserDto } from './dtos/update-user.dto'
-import { UserResponse } from './types/user.type'
+import { UserQueryDto } from './dtos/user-query.dto'
+import { UserPaginatedResponse } from './types/user-paginated-response.type'
+import { UserResponse } from './types/user-response.type'
 import { UserRepository } from './user.repository'
 
 @Injectable()
@@ -14,8 +16,8 @@ export class UserService {
     return this.userRepository.getById(user.id)
   }
 
-  async getAll(): Promise<UserResponse[]> {
-    return await this.userRepository.getAll()
+  async getAll(query: UserQueryDto): Promise<UserPaginatedResponse> {
+    return await this.userRepository.getAll(query)
   }
 
   async getById(id: string): Promise<UserResponse> {

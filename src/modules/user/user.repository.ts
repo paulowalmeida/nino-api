@@ -3,11 +3,16 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
 import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { Credential } from '@credential/entities/credential.entity'
+import { CredentialInfo } from '@credential/types/credential-info.type'
 import { User } from '@user/entities/user.entity'
-import { UserResponse } from '@user/types/user.type'
+import { UserPaginatedResponse } from '@user/types/user-paginated-response.type'
+import { UserResponse } from '@user/types/user-response.type'
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UpdateUserDto } from './dtos/update-user.dto'
+import { UserOrderBy } from './types/user-order-by.type'
+import { UserQueryDto } from './dtos/user-query.dto'
 
 @Injectable()
 export class UserRepository {
@@ -17,6 +22,7 @@ export class UserRepository {
     @InjectRepository(Credential)
     private readonly credentialRepository: Repository<Credential>,
     private readonly errorService: ErrorService,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(data: CreateUserDto): Promise<User> {
@@ -27,23 +33,24 @@ export class UserRepository {
     }
   }
 
-  private async fetchCredentials(userId: string) {
+  private async fetchCredentials(userId: string): Promise<CredentialInfo[]> {
     const items = await this.credentialRepository.find({ where: { userId } })
     return items.map(({ password: _, ...c }) => c)
   }
 
-  async getAll(): Promise<UserResponse[]> {
+  private async toResponse(user: User): Promise<UserResponse> {
+    return { ...user, credentials: await this.fetchCredentials(user.id) }
+  }
+
+  async getAll(query: UserQueryDto): Promise<UserPaginatedResponse> {
     try {
-      const users = await this.repository.find({
-        order: { name: 'ASC' },
+      const [users, total] = await this.repository.findAndCount({
+        order: { [query.orderBy ?? UserOrderBy.NAME]: query.orderDir ?? 'ASC' },
         relations: ['role', 'company'],
+        ...this.paginationService.getOptions(query),
       })
-      return Promise.all(
-        users.map(async (user) => ({
-          ...user,
-          credentials: await this.fetchCredentials(user.id),
-        })),
-      ) as Promise<UserResponse[]>
+      const data = await Promise.all(users.map((user) => this.toResponse(user)))
+      return this.paginationService.paginate(data, total, query)
     } catch (error) {
       this.errorService.handle(error)
     }
@@ -56,10 +63,7 @@ export class UserRepository {
         relations: ['role', 'company'],
       })
       if (!user) throw new NotFoundException('User not found')
-      return {
-        ...user,
-        credentials: await this.fetchCredentials(id),
-      } as UserResponse
+      return this.toResponse(user)
     } catch (error) {
       this.errorService.handle(error)
     }
@@ -71,12 +75,7 @@ export class UserRepository {
         where: { companyId },
         relations: ['role', 'company'],
       })
-      return Promise.all(
-        users.map(async (user) => ({
-          ...user,
-          credentials: await this.fetchCredentials(user.id),
-        })),
-      ) as Promise<UserResponse[]>
+      return Promise.all(users.map((user) => this.toResponse(user)))
     } catch (error) {
       this.errorService.handle(error)
     }

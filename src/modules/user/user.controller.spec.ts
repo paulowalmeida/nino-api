@@ -16,6 +16,7 @@ describe('UserController', () => {
           provide: UserService,
           useValue: {
             create: jest.fn().mockResolvedValue(mockUser),
+            getAll: jest.fn().mockResolvedValue({ data: [mockUser], pagination: { page: 1, limit: 20, total: 1, totalPages: 1 } }),
             getById: jest.fn().mockResolvedValue(mockUser),
             getByCompanyId: jest.fn().mockResolvedValue([mockUser]),
             update: jest.fn().mockResolvedValue(undefined),
@@ -34,6 +35,14 @@ describe('UserController', () => {
     const result = await controller.create(dto);
     expect(service.create).toHaveBeenCalledWith(dto);
     expect(result).toEqual(mockUser);
+  });
+
+  it('should get all users with pagination', async () => {
+    const query = { page: 1, limit: 20 }
+    const result = await controller.getAll(query as any)
+    expect(service.getAll).toHaveBeenCalledWith(query)
+    expect(result.data).toEqual([mockUser])
+    expect(result.pagination.total).toBe(1)
   });
 
   it('should find a user by id', async () => {
