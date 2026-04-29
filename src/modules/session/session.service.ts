@@ -26,6 +26,14 @@ export class SessionService {
     return this.sessionsRepository.getByRefreshToken(refreshToken)
   }
 
+  async findByRefreshToken(refreshToken: string): Promise<Session | null> {
+    return this.sessionsRepository.findByRefreshToken(refreshToken)
+  }
+
+  async deleteAllByUserId(userId: string): Promise<void> {
+    return this.sessionsRepository.deleteAllByUserId(userId)
+  }
+
   async update(id: string, updateDto: UpdateSessionDto): Promise<void> {
     return this.sessionsRepository.update(id, updateDto)
   }

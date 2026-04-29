@@ -2,14 +2,15 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Post,
   Req,
-  Res,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 
-import type { Request, Response } from 'express'
+import type { Request } from 'express'
 
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import type { AuthRequest } from '@shared/types/auth-request.type'
@@ -27,11 +28,11 @@ export class AuthController {
     return await this.authService.me(req.user.sub)
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
   async login(
     @Body() dto: LoginRequestDto,
     @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
   ) {
     const { user, tokens } = await this.authService.login(
       dto,
@@ -39,14 +40,7 @@ export class AuthController {
       req.headers['user-agent'],
     )
 
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: false, // Use false in localhost
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
-
-    return { user, accessToken: tokens.accessToken }
+    return { user, tokens }
   }
 
   @Post('register')
@@ -55,11 +49,8 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const token = req.cookies['refreshToken']
+  async refresh(@Headers('authorization') auth: string, @Req() req: Request) {
+    const token = auth?.replace('Bearer ', '')
     if (!token) throw new UnauthorizedException()
 
     const tokens = await this.authService.refresh(
@@ -68,21 +59,13 @@ export class AuthController {
       req.headers['user-agent'],
     )
 
-    res.cookie('refreshToken', tokens.refreshToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
-
-    return { accessToken: tokens.accessToken }
+    return { tokens }
   }
 
   @Post('logout')
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const token = req.cookies['refreshToken']
+  async logout(@Headers('authorization') auth: string) {
+    const token = auth?.replace('Bearer ', '')
     if (token) await this.authService.logout(token)
-    res.clearCookie('refreshToken')
     return { message: 'Logged out' }
   }
 }

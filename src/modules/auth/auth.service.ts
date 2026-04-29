@@ -80,7 +80,13 @@ export class AuthService {
 
   async refresh(refreshToken: string, ipAddress?: string, userAgent?: string) {
     const payload = await this.tokenService.verifyRefreshToken(refreshToken)
-    const session = await this.sessionService.getByRefreshToken(refreshToken)
+    const session = await this.sessionService.findByRefreshToken(refreshToken)
+
+    if (!session) {
+      await this.sessionService.deleteAllByUserId(payload.sub)
+      throw new UnauthorizedException('Refresh token reuse detected')
+    }
+
     const tokens = await this.tokenService.generateTokens({
       sub: payload.sub,
       role: payload.role,

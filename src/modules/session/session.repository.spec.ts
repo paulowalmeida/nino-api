@@ -134,6 +134,40 @@ describe('SessionRepository', () => {
     )
   })
 
+  it('should find a session by refresh token (returns null if not found)', async () => {
+    mockRepository.findOneBy.mockResolvedValue(null)
+
+    const result = await repository.findByRefreshToken('missing-token')
+
+    expect(result).toBeNull()
+    expect(mockRepository.findOneBy).toHaveBeenCalledWith({ refreshToken: 'missing-token' })
+  })
+
+  it('should find a session by refresh token (returns session if found)', async () => {
+    mockRepository.findOneBy.mockResolvedValue(mockSession)
+
+    const result = await repository.findByRefreshToken('token')
+
+    expect(result).toEqual(mockSession)
+  })
+
+  it('should delete all sessions by userId', async () => {
+    mockRepository.delete.mockResolvedValue(undefined)
+
+    await repository.deleteAllByUserId('user-id')
+
+    expect(mockRepository.delete).toHaveBeenCalledWith({ userId: 'user-id' })
+  })
+
+  it('should call errorService.handle when deleteAllByUserId throws', async () => {
+    const error = new Error('db error')
+    mockRepository.delete.mockRejectedValue(error)
+
+    await repository.deleteAllByUserId('user-id')
+
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  })
+
   it('should update a session successfully', async () => {
     mockRepository.findOne.mockResolvedValue(mockSession)
     mockRepository.save.mockResolvedValue(undefined)

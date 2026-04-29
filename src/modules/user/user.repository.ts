@@ -36,7 +36,7 @@ export class UserRepository {
     try {
       const users = await this.repository.find({
         order: { name: 'ASC' },
-        relations: ['role'],
+        relations: ['role', 'company'],
       })
       return Promise.all(
         users.map(async (user) => ({
@@ -53,7 +53,7 @@ export class UserRepository {
     try {
       const user = await this.repository.findOne({
         where: { id },
-        relations: ['role'],
+        relations: ['role', 'company'],
       })
       if (!user) throw new NotFoundException('User not found')
       return {
@@ -69,7 +69,7 @@ export class UserRepository {
     try {
       const users = await this.repository.find({
         where: { companyId },
-        relations: ['role'],
+        relations: ['role', 'company'],
       })
       return Promise.all(
         users.map(async (user) => ({

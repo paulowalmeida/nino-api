@@ -10,13 +10,17 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Roles } from '@shared/decorators/roles.decorator'
+import { Role } from '@shared/enums/role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
+import { RolesGuard } from '@shared/guards/roles.guard'
 import { CompanyResponsibleService } from './company-responsible.service'
 import { CreateCompanyResponsibleDto } from './dto/create-company-responsible.dto'
 import { UpdateCompanyResponsibleDto } from './dto/update-company-responsible.dto'
 
 @Controller('company-responsibles')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.SUPPORT)
 export class CompanyResponsibleController {
   constructor(private service: CompanyResponsibleService) {}
 

@@ -9,7 +9,8 @@
 * [5. 📁 Estrutura de Pastas e Arquitetura de Módulos](#5--estrutura-de-pastas-e-arquitetura-de-módulos)
 * [6. 🗄️ Topologia do Banco de Dados e Entidades](#6-️-topologia-do-banco-de-dados-e-entidades)
 * [7. 🔐 Segurança, Autenticação e Autorização](#7--segurança-autenticação-e-autorização)
-* [8. 🛣️ Endpoints da API](#8-️-endpoints-da-api)
+* [8. 🛡️ Guards por Role (RBAC)](#8-️-guards-por-role-rbac)
+* [9. 🛣️ Endpoints da API](#9-️-endpoints-da-api)
 * [9. 🏛️ Padrões Arquiteturais](#9-️-padrões-arquiteturais)
 * [10. ✍️ Convenções de Escrita](#10-️-convenções-de-escrita)
 * [11. 🧪 Padrões de Teste](#11--padrões-de-teste)
@@ -505,7 +506,82 @@ A interface interna do sistema (`user-token.data.type.ts`) define o contrato est
 }
 ```
 
-## 8. 🛣️ Endpoints da API
+## 8. 🛡️ Guards por Role (RBAC)
+
+O acesso a cada endpoint é controlado pela combinação de `JwtAuthGuard` + `RolesGuard`. O role do usuário é extraído diretamente do payload do JWT (`role`), sem consulta adicional ao banco.
+
+### 8.1 Matriz de Permissões
+
+| Endpoint | ADMIN | SUPPORT | MERCHANT |
+|---|:---:|:---:|:---:|
+| `GET /users` | ✓ | ✓ | — |
+| `GET /users/:id` | ✓ | ✓ | ✓ |
+| `GET /users/company/:companyId` | ✓ | ✓ | ✓ |
+| `POST /users` | ✓ | — | — |
+| `PATCH /users/:id` | ✓ | ✓ | ✓ |
+| `DELETE /users/:id` | ✓ | — | — |
+| `GET /companies` | ✓ | ✓ | — |
+| `GET /companies/:id` | ✓ | ✓ | ✓ |
+| `GET /companies/cnpj/:cnpj` | ✓ | ✓ | ✓ |
+| `POST /companies` | ✓ | ✓ | — |
+| `PUT /companies/:id` | ✓ | ✓ | — |
+| `DELETE /companies/:id` | ✓ | — | — |
+| `PATCH /companies/:id/activate` | ✓ | ✓ | — |
+| `PATCH /companies/:id/deactivate` | ✓ | ✓ | — |
+| `* /company-responsibles` | ✓ | ✓ | — |
+| `GET /plans` | ✓ | ✓ | ✓ |
+| `POST/PATCH/DELETE /plans` | ✓ | — | — |
+| `GET /roles` | ✓ | ✓ | ✓ |
+| `POST/PUT/DELETE /roles` | ✓ | — | — |
+| `GET /plan-types` | ✓ | ✓ | ✓ |
+| `POST/PUT/DELETE /plan-types` | ✓ | — | — |
+| `GET /tenant-statuses` | ✓ | ✓ | ✓ |
+| `POST/PUT/DELETE /tenant-statuses` | ✓ | — | — |
+| `GET /subscription-statuses` | ✓ | ✓ | ✓ |
+| `POST/PUT/DELETE /subscription-statuses` | ✓ | — | — |
+| `GET /invoice-statuses` | ✓ | ✓ | ✓ |
+| `POST/PUT/DELETE /invoice-statuses` | ✓ | — | — |
+| `GET /notification-types` | ✓ | ✓ | ✓ |
+| `POST/PUT/DELETE /notification-types` | ✓ | — | — |
+| `POST /user-tenants` | ✓ | ✓ | — |
+| `GET /user-tenants/user/:userId` | ✓ | ✓ | ✓ |
+| `GET /user-tenants/tenant/:tenantId` | ✓ | ✓ | ✓ |
+| `DELETE /user-tenants/:userId/:tenantId` | ✓ | ✓ | — |
+| `POST /sessions` | ✓ | — | — |
+| `GET /sessions/list-by-user-id/:userId` | ✓ | ✓ | — |
+| `GET /sessions/:id` | ✓ | ✓ | — |
+| `PATCH /sessions/:id` | ✓ | — | — |
+| `DELETE /sessions/:id` | ✓ | ✓ | — |
+
+### 8.2 Implementação
+
+```typescript
+// src/shared/decorators/roles.decorator.ts
+export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles)
+
+// src/shared/guards/roles.guard.ts
+canActivate(context: ExecutionContext): boolean {
+  const roles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
+    context.getHandler(),
+    context.getClass(),
+  ])
+  if (!roles?.length) return true
+  const { user } = context.switchToHttp().getRequest<AuthRequest>()
+  return roles.includes(user.role as Role)
+}
+
+// Uso no controller
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class UserController {
+  @Get()
+  @Roles(Role.ADMIN, Role.SUPPORT)
+  getAll() { ... }
+}
+```
+
+---
+
+## 9. 🛣️ Endpoints da API
 Este tópico cataloga cada endpoint funcional encontrado nos controladores do projeto `nino-api`. Não há agrupamentos genéricos; cada método de cada classe Controller é detalhado abaixo.
 
 ### 7.1 Módulo de Autenticação (`src/auth/auth.controller.ts`)

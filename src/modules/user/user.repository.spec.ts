@@ -70,7 +70,7 @@ describe('UserRepository', () => {
     expect(result).toEqual([mockUserResponse])
     expect(mockRepository.find).toHaveBeenCalledWith({
       order: { name: 'ASC' },
-      relations: ['role'],
+      relations: ['role', 'company'],
     })
   })
 
@@ -91,7 +91,7 @@ describe('UserRepository', () => {
     expect(result).toEqual(mockUserResponse)
     expect(mockRepository.findOne).toHaveBeenCalledWith({
       where: { id: 'user-id' },
-      relations: ['role'],
+      relations: ['role', 'company'],
     })
   })
 
@@ -111,7 +111,7 @@ describe('UserRepository', () => {
     expect(result).toEqual([mockUserResponse])
     expect(mockRepository.find).toHaveBeenCalledWith({
       where: { companyId: 'company-id' },
-      relations: ['role'],
+      relations: ['role', 'company'],
     })
   })
 

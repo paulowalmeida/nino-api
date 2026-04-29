@@ -26,7 +26,10 @@ collection:
           sortKey: -1
         method: GET
         headers: []
-        authentication: {}
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -47,7 +50,10 @@ collection:
           sortKey: -2
         method: GET
         headers: []
-        authentication: {}
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
