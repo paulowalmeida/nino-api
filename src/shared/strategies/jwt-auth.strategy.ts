@@ -33,12 +33,11 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
     req: Request,
     payloadDecoded: UserTokenData,
   ): Promise<UserTokenData> {
-    const user = await this.userRepository.getById(payloadDecoded.sub)
-
-    if (!user) {
-      throw new UnauthorizedException(
-        'Token inválido ou usuário não existe mais.',
-      )
+    try {
+      const user = await this.userRepository.getById(payloadDecoded.sub)
+      if (!user) throw new UnauthorizedException('Token inválido.')
+    } catch {
+      throw new UnauthorizedException('Token inválido.')
     }
 
     return payloadDecoded

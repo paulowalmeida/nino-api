@@ -705,19 +705,17 @@ Este tópico cataloga cada endpoint funcional encontrado nos controladores do pr
 
 ### 1. **Repository Pattern**
 
-Camada de abstração entre Service e Prisma. **Tratamento de null centralizado no repository.**
+Camada de abstração entre Service e TypeORM. **Tratamento de null e erros centralizados no repository.**
 
 ```typescript
-// ✅ Repository — trata erros Prisma + null
+// ✅ Repository — trata erros TypeORM + null
 async getById(id: string): Promise<Role> {
   try {
-    const found = await this.prisma.role.findUnique({ where: { id } })
-
+    const found = await this.repository.findOneBy({ id })
     if (!found) throw new NotFoundException('Role not found')
-
     return found
   } catch (error) {
-    this.prismaErrorService.handleError(error)
+    this.errorService.handle(error)
   }
 }
 
@@ -732,38 +730,48 @@ async getById(@Param('id') id: string): Promise<Role> {
 }
 ```
 
-### 2. **PrismaErrorService — Centralização de Erros**
+### 2. **ErrorService — Centralização de Erros**
 
-Mapeia códigos de erro Prisma para exceções NestJS. Erros `HttpException` são relançados diretamente sem transformação.
+Mapeia códigos de erro PostgreSQL para exceções NestJS via `QueryFailedError` do TypeORM. Erros `HttpException` são relançados diretamente sem transformação.
 
 ```typescript
 // Suportados:
-// P2025 — NotFoundException (recurso não encontrado)
-// P2002 — ConflictException (unique constraint)
-// P2003 — BadRequestException (foreign key constraint)
+// 23505 — ConflictException (unique constraint violation)
+// 23503 — BadRequestException (foreign key constraint violation)
+// 23502 — BadRequestException (NOT NULL constraint violation)
 
 // Uso:
 try {
-  await this.prisma.role.delete({ where: { id } })
+  await this.repository.delete(id)
 } catch (error) {
-  this.prismaErrorService.handleError(error)
+  this.errorService.handle(error)
 }
 ```
 
-### 3. **Types com Prisma.GetPayload**
+### 3. **Entidades TypeORM com Decoradores**
 
-Tipos gerados diretamente do schema Prisma via `GetPayload`. O genérico vazio `<{}>` retorna o tipo completo da entidade conforme definida no schema.
+Tipos derivados diretamente das classes Entity via decoradores TypeORM. O ORM garante sincronização automática entre código e banco.
 
 ```typescript
-import { Prisma } from '@prisma/client'
+@Entity()
+export class Role {
+  @PrimaryGeneratedColumn('uuid')
+  id: string
 
-export type Role = Prisma.RoleGetPayload<{}>
-export type User = Prisma.UserGetPayload<{}>
+  @Column({ type: 'varchar', unique: true })
+  name: string
+
+  @CreateDateColumn()
+  createdAt: Date
+
+  @UpdateDateColumn()
+  updatedAt: Date
+}
 ```
 
 ### 4. **Remoção de campos sensíveis via destructuring**
 
-Campos como `password` são removidos via destructuring no controller/service, não via `omit` do Prisma.
+Campos como `password` são removidos via destructuring no controller/service, não via ORM omit.
 
 ```typescript
 // ✅ No controller (credential.controller.ts)
@@ -785,7 +793,7 @@ const port = this.configService.get<number>('PORT', 3000)  // com default
 
 ### 6. **ValidationPipe Global**
 
-Valida e transforma payloads automaticamente.
+Valida e transforma payloads automaticamente via DTOs com class-validator.
 
 ```typescript
 app.useGlobalPipes(
@@ -811,18 +819,21 @@ ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }])
 async login(...) { ... }
 ```
 
-### 8. **Middleware de Tenant (Futuro)**
+### 8. **Middleware e Interceptors para Tenant**
 
-A cada requisição, identifica o restaurante (via JWT) e conecta ao schema correto.
+A cada requisição, identifica o restaurante (via JWT) e injeta o schema correto no TypeORM.
 
 ```typescript
-// Após implementação schema-per-tenant:
-export class TenantMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction) {
-    const tenantId = req.profile.tenantId // Extraído do JWT
-    // Conecta Prisma ao schema "tenant_<tenantId>"
-    this.prisma.$queryRaw`SET search_path TO tenant_${tenantId}`
-    next()
+// Interceptor que seta search_path antes de executar queries
+export class TenantInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const request = context.switchToHttp().getRequest()
+    const tenantId = request.user?.tenantId // Extraído do JWT
+
+    // Via QueryRunner do TypeORM:
+    // SET search_path TO tenant_<tenantId>
+    
+    return next.handle()
   }
 }
 ```
@@ -834,7 +845,8 @@ Imports sem relativos confusos.
 ```typescript
 // ✅
 import { AuthService } from '@auth/auth.service'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { Role } from '@role/entities/role.entity'
+import { ErrorService } from '@shared/services/error/error.service'
 
 // ❌ Evitar
 import { AuthService } from '../../../../auth/auth.service'

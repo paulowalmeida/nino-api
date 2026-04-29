@@ -60,6 +60,34 @@ collection:
             name: Content-Type
             value: application/json
         authentication: {}
+        scripts:
+          afterResponse: |
+            const data = await insomnia.response.json();
+            insomnia.environment.set("ACCESS_TOKEN", data.accessToken);
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/auth/me"
+        name: me
+        meta:
+          id: req_auth_me
+          created: 1776000000001
+          modified: 1776000000001
+          isPrivate: false
+          description: ""
+          sortKey: -3
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true

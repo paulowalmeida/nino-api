@@ -1,0 +1,149 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: UserTenant Module
+meta:
+  id: wrk_user_tenant_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "UserTenant management"
+collection:
+  - name: user-tenant
+    meta:
+      id: fld_user_tenant_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "UserTenant endpoints"
+    children:
+      - url: "{{BASE_URL}}/user-tenants"
+        name: create
+        meta:
+          id: req_user_tenant_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -1
+        method: POST
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        body:
+          mimeType: application/json
+          text: |
+            {
+              "userId": "{{USER_ID}}",
+              "tenantId": "{{TENANT_ID}}"
+            }
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/user-tenants/user/{{USER_ID}}"
+        name: by-user
+        meta:
+          id: req_user_tenant_by_user
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/user-tenants/tenant/{{TENANT_ID}}"
+        name: by-tenant
+        meta:
+          id: req_user_tenant_by_tenant
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -3
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/user-tenants/{{USER_ID}}/{{TENANT_ID}}"
+        name: delete
+        meta:
+          id: req_user_tenant_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -4
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_user_tenant
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_user_tenant
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_user_tenant_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        USER_ID: ""
+        TENANT_ID: ""
