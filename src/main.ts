@@ -2,8 +2,9 @@ import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
-import { AppModule } from './app.module'
 import cookieParser from 'cookie-parser'
+
+import { AppModule } from './app.module'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -17,7 +18,7 @@ async function bootstrap() {
     }),
   )
 
-  app.use(cookieParser());
+  app.use(cookieParser())
 
   const config = new DocumentBuilder()
     .setTitle('Nino API')
@@ -30,5 +31,6 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document)
 
   await app.listen(process.env.PORT ?? 3000)
+  console.log(`Nino API is running on port ${process.env.PORT ?? 3000} 🐱🐱!!`)
 }
 bootstrap()

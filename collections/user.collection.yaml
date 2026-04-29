@@ -45,6 +45,30 @@ collection:
             store: true
           rebuildPath: true
 
+      - url: "{{BASE_URL}}/users"
+        name: list
+        meta:
+          id: req_user_list
+          created: 1776000000001
+          modified: 1776000000001
+          isPrivate: false
+          description: ""
+          sortKey: -1.5
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
       - url: "{{BASE_URL}}/users/{{USER_ID}}"
         name: by-id
         meta:

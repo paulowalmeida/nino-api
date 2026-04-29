@@ -11,6 +11,7 @@ import { QueryFailedError } from 'typeorm'
 const PG_UNIQUE_VIOLATION = '23505'
 const PG_FOREIGN_KEY_VIOLATION = '23503'
 const PG_NOT_NULL_VIOLATION = '23502'
+const PG_INVALID_INPUT_SYNTAX = '22P02'
 
 @Injectable()
 export class ErrorService {
@@ -18,6 +19,7 @@ export class ErrorService {
     [PG_UNIQUE_VIOLATION]: (msg) => new ConflictException(msg || 'Unique constraint failed'),
     [PG_FOREIGN_KEY_VIOLATION]: (msg) => new BadRequestException(msg || 'Foreign key constraint failed'),
     [PG_NOT_NULL_VIOLATION]: (msg) => new BadRequestException(msg || 'Required field is missing'),
+    [PG_INVALID_INPUT_SYNTAX]: (msg) => new BadRequestException(msg || 'Invalid value format'),
   }
 
   handle(error: unknown, customMessage?: string): never {
