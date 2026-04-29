@@ -1,0 +1,278 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Onboarding
+meta:
+  id: wrk_onboarding
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Happy path de onboarding"
+collection:
+  - name: "1. admin / support"
+    meta:
+      id: fld_onboarding_admin
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Usuários sem empresa (ADMIN ou SUPPORT)"
+    children:
+      - url: "{{BASE_URL}}/auth/register"
+        name: "1. register"
+        meta:
+          id: req_onboarding_admin_register
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -1
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Paulo Admin\",\n  \"email\": \"admin@nino.com\",\n  \"password\": \"senha123\",\n  \"role\": \"ADMIN\"\n}"
+        headers:
+          - id: pair_onboarding_admin_register_h1
+            name: Content-Type
+            value: application/json
+        authentication: {}
+        scripts:
+          afterResponse: |
+            const data = await insomnia.response.json();
+            insomnia.environment.set("USER_ID", data.id);
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/auth/login"
+        name: "2. login"
+        meta:
+          id: req_onboarding_admin_login
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -2
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"email\": \"admin@nino.com\",\n  \"password\": \"senha123\"\n}"
+        headers:
+          - id: pair_onboarding_admin_login_h1
+            name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        scripts:
+          afterResponse: |
+            const data = await insomnia.response.json();
+            insomnia.environment.set("ACCESS_TOKEN", data.tokens.accessToken);
+            insomnia.environment.set("REFRESH_TOKEN", data.tokens.refreshToken);
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+  - name: "2. merchant"
+    meta:
+      id: fld_onboarding_merchant
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -2
+      description: "Usuário merchant com empresa e responsável"
+    children:
+      - url: "{{BASE_URL}}/auth/register"
+        name: "1. register"
+        meta:
+          id: req_onboarding_merchant_register
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -1
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"João Merchant\",\n  \"email\": \"merchant@nino.com\",\n  \"password\": \"senha123\",\n  \"role\": \"MERCHANT\"\n}"
+        headers:
+          - id: pair_onboarding_merchant_register_h1
+            name: Content-Type
+            value: application/json
+        authentication: {}
+        scripts:
+          afterResponse: |
+            const data = await insomnia.response.json();
+            insomnia.environment.set("USER_ID", data.id);
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/auth/login"
+        name: "2. login"
+        meta:
+          id: req_onboarding_merchant_login
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -2
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"email\": \"merchant@nino.com\",\n  \"password\": \"senha123\"\n}"
+        headers:
+          - id: pair_onboarding_merchant_login_h1
+            name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        scripts:
+          afterResponse: |
+            const data = await insomnia.response.json();
+            insomnia.environment.set("ACCESS_TOKEN", data.tokens.accessToken);
+            insomnia.environment.set("REFRESH_TOKEN", data.tokens.refreshToken);
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/companies"
+        name: "3. create company"
+        meta:
+          id: req_onboarding_merchant_company
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -3
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"companyName\": \"Restaurante do João\",\n  \"cnpj\": \"12345678000190\",\n  \"legalName\": \"João Restaurante LTDA\",\n  \"legalNature\": \"Sociedade Limitada\"\n}"
+        headers:
+          - id: pair_onboarding_merchant_company_h1
+            name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        scripts:
+          afterResponse: |
+            const data = await insomnia.response.json();
+            insomnia.environment.set("COMPANY_ID", data.id);
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/users/{{USER_ID}}"
+        name: "4. link company to user"
+        meta:
+          id: req_onboarding_merchant_link
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -4
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"companyId\": \"{{COMPANY_ID}}\"\n}"
+        headers:
+          - id: pair_onboarding_merchant_link_h1
+            name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/company-responsibles"
+        name: "5. create company responsible"
+        meta:
+          id: req_onboarding_merchant_responsible
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: ""
+          sortKey: -5
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"companyId\": \"{{COMPANY_ID}}\",\n  \"name\": \"João da Silva\",\n  \"cpf\": \"12345678900\",\n  \"email\": \"responsavel@nino.com\",\n  \"phone\": \"91999999999\"\n}"
+        headers:
+          - id: pair_onboarding_merchant_responsible_h1
+            name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_onboarding
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_onboarding
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_onboarding_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        USER_ID: ""
+        COMPANY_ID: ""

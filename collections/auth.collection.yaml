@@ -59,11 +59,15 @@ collection:
           - id: pair_login_h1
             name: Content-Type
             value: application/json
-        authentication: {}
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         scripts:
           afterResponse: |
             const data = await insomnia.response.json();
-            insomnia.environment.set("ACCESS_TOKEN", data.accessToken);
+            insomnia.environment.set("ACCESS_TOKEN", data.tokens.accessToken);
+            insomnia.environment.set("REFRESH_TOKEN", data.tokens.refreshToken);
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -108,7 +112,10 @@ collection:
           sortKey: -3
         method: POST
         headers: []
-        authentication: {}
+        authentication:
+          type: bearer
+          token: "{{REFRESH_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true

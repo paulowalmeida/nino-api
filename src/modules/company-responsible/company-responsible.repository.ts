@@ -58,8 +58,14 @@ export class CompanyResponsibleRepository {
 
   async create(dto: CreateCompanyResponsibleDto): Promise<CompanyResponsibleResponse> {
     try {
-      const saved = await this.repository.save(this.repository.create(dto))
-      return this.getById(saved.id)
+      await this.repository.save(this.repository.create(dto))
+      const found = await this.repository.findOne({
+        where: { companyId: dto.companyId },
+        relations: ['company'],
+      })
+      if (!found) throw new NotFoundException('Company responsible not found')
+      const { companyId: _, ...rest } = found
+      return rest
     } catch (error) {
       this.errorService.handle(error)
     }

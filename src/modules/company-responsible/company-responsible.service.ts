@@ -24,7 +24,9 @@ export class CompanyResponsibleService {
   async create(
     dto: CreateCompanyResponsibleDto,
   ): Promise<CompanyResponsibleResponse> {
-    return await this.repository.getByCpf(dto.cpf)
+    const existing = await this.repository.getByCpf(dto.cpf)
+    if (existing) return existing
+    return await this.repository.create(dto)
   }
 
   async update(

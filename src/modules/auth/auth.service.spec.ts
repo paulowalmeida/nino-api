@@ -35,6 +35,8 @@ describe('AuthService', () => {
           useValue: {
             create: jest.fn(),
             getByRefreshToken: jest.fn(),
+            findByRefreshToken: jest.fn(),
+            deleteAllByUserId: jest.fn(),
             delete: jest.fn(),
             update: jest.fn(),
           },
@@ -128,7 +130,7 @@ describe('AuthService', () => {
       .spyOn(tokenService, 'verifyRefreshToken')
       .mockResolvedValue({ sub: 'u1', role: 'r' })
     jest
-      .spyOn(sessionService, 'getByRefreshToken')
+      .spyOn(sessionService, 'findByRefreshToken')
       .mockResolvedValue({ id: 's1' } as any)
     jest
       .spyOn(tokenService, 'generateTokens')
@@ -137,5 +139,16 @@ describe('AuthService', () => {
     const result = await service.refresh('old-r')
     expect(result.accessToken).toBe('new-a')
     expect(sessionService.update).toHaveBeenCalled()
+  })
+
+  it('should revoke all sessions and throw when refresh token reuse is detected', async () => {
+    jest
+      .spyOn(tokenService, 'verifyRefreshToken')
+      .mockResolvedValue({ sub: 'u1', role: 'r' })
+    jest.spyOn(sessionService, 'findByRefreshToken').mockResolvedValue(null)
+
+    await expect(service.refresh('stolen-token')).rejects.toThrow(UnauthorizedException)
+    expect(sessionService.deleteAllByUserId).toHaveBeenCalledWith('u1')
+    expect(sessionService.update).not.toHaveBeenCalled()
   })
 })

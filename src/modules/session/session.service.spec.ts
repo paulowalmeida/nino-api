@@ -25,6 +25,8 @@ describe('SessionService', () => {
             getListByUserId: jest.fn().mockResolvedValue([mockSession]),
             getById: jest.fn().mockResolvedValue(mockSession),
             getByRefreshToken: jest.fn().mockResolvedValue(mockSession),
+            findByRefreshToken: jest.fn().mockResolvedValue(mockSession),
+            deleteAllByUserId: jest.fn().mockResolvedValue(undefined),
             update: jest.fn().mockResolvedValue(undefined),
             delete: jest.fn().mockResolvedValue(undefined),
           },
@@ -63,6 +65,17 @@ describe('SessionService', () => {
     const result = await service.getByRefreshToken('token')
     expect(repository.getByRefreshToken).toHaveBeenCalledWith('token')
     expect(result).toEqual(mockSession)
+  })
+
+  it('should find a session by refresh token', async () => {
+    const result = await service.findByRefreshToken('token')
+    expect(repository.findByRefreshToken).toHaveBeenCalledWith('token')
+    expect(result).toEqual(mockSession)
+  })
+
+  it('should delete all sessions by userId', async () => {
+    await service.deleteAllByUserId('user-id')
+    expect(repository.deleteAllByUserId).toHaveBeenCalledWith('user-id')
   })
 
   it('should update a session', async () => {

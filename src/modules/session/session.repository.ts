@@ -83,6 +83,18 @@ export class SessionRepository {
     }
   }
 
+  async findByRefreshToken(refreshToken: string): Promise<Session | null> {
+    return this.repository.findOneBy({ refreshToken })
+  }
+
+  async deleteAllByUserId(userId: string): Promise<void> {
+    try {
+      await this.repository.delete({ userId })
+    } catch (error) {
+      this.errorService.handle(error)
+    }
+  }
+
   async update(id: string, data: UpdateSessionDto): Promise<void> {
     try {
       const session = await this.repository.findOne({ where: { id } })

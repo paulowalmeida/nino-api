@@ -17,7 +17,7 @@ export class CreateCompanyResponsibleDto {
   @IsString()
   cpf: string
 
-  @IsPhoneNumber()
+  @IsPhoneNumber('BR')
   phone: string
 
   @IsEmail()

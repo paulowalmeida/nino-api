@@ -20,6 +20,7 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "company_name" varchar NOT NULL,
         "cnpj" varchar UNIQUE NOT NULL,
         "legal_name" varchar,
+        "legal_nature" varchar,
         "state_registration" varchar,
         "is_active" boolean DEFAULT true,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,

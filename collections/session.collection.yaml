@@ -79,7 +79,10 @@ collection:
         headers:
           - name: Content-Type
             value: application/json
-        authentication: {}
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
         settings:
           renderRequestBody: true
           encodeUrl: true
