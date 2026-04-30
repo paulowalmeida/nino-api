@@ -5,6 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  DeleteDateColumn,
   UpdateDateColumn,
 } from 'typeorm'
 
@@ -48,4 +49,7 @@ export class Plan {
 
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date
 }

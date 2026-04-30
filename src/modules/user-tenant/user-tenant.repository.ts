@@ -7,10 +7,14 @@ import { InjectRepository } from '@nestjs/typeorm'
 
 import { Repository } from 'typeorm'
 
-import { ErrorService } from '@shared/services/error/error.service'
 import { Credential } from '@credential/entities/credential.entity'
+import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { UserTenant } from '@user/entities/user-tenant.entity'
 import { CreateUserTenantDto } from './dtos/create-user-tenant.dto'
+import { UserTenantQueryDto } from './dtos/user-tenant-query.dto'
+import { UserTenantOrderBy } from './types/user-tenant-order-by.type'
+import { UserTenantPaginatedResponse } from './types/user-tenant-paginated-response.type'
 import { UserTenantResponse } from './types/user-tenant.response.type'
 
 @Injectable()
@@ -21,6 +25,7 @@ export class UserTenantRepository {
     @InjectRepository(Credential)
     private readonly credentialRepository: Repository<Credential>,
     private readonly errorService: ErrorService,
+    private readonly paginationService: PaginationService,
   ) {}
 
   private async fetchCredentials(userId: string) {
@@ -62,35 +67,53 @@ export class UserTenantRepository {
     }
   }
 
-  async getByUserId(userId: string): Promise<UserTenantResponse[]> {
+  async getByUserId(
+    userId: string,
+    query: UserTenantQueryDto,
+  ): Promise<UserTenantPaginatedResponse> {
     try {
-      const items = await this.repository.find({
+      const [items, total] = await this.repository.findAndCount({
         where: { userId },
+        order: {
+          [query.orderBy ?? UserTenantOrderBy.CREATED_AT]:
+            query.orderDir ?? 'ASC',
+        },
         relations: ['user', 'user.role'],
+        ...this.paginationService.getPaginationParams(query),
       })
-      return Promise.all(
+      const data = await Promise.all(
         items.map(async ({ userId: _, user, ...rest }) => ({
           ...rest,
           user: await this.mapUser(user),
         })),
       )
+      return this.paginationService.paginate(data, total, query)
     } catch (error) {
       this.errorService.handle(error)
     }
   }
 
-  async getByTenantId(tenantId: string): Promise<UserTenantResponse[]> {
+  async getByTenantId(
+    tenantId: string,
+    query: UserTenantQueryDto,
+  ): Promise<UserTenantPaginatedResponse> {
     try {
-      const items = await this.repository.find({
+      const [items, total] = await this.repository.findAndCount({
         where: { tenantId },
+        order: {
+          [query.orderBy ?? UserTenantOrderBy.CREATED_AT]:
+            query.orderDir ?? 'ASC',
+        },
         relations: ['user', 'user.role'],
+        ...this.paginationService.getPaginationParams(query),
       })
-      return Promise.all(
+      const data = await Promise.all(
         items.map(async ({ userId: _, user, ...rest }) => ({
           ...rest,
           user: await this.mapUser(user),
         })),
       )
+      return this.paginationService.paginate(data, total, query)
     } catch (error) {
       this.errorService.handle(error)
     }

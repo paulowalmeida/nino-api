@@ -47,7 +47,7 @@ export class UserRepository {
       const [users, total] = await this.repository.findAndCount({
         order: { [query.orderBy ?? UserOrderBy.NAME]: query.orderDir ?? 'ASC' },
         relations: ['role', 'company'],
-        ...this.paginationService.getOptions(query),
+        ...this.paginationService.getPaginationParams(query),
       })
       const data = await Promise.all(users.map((user) => this.toResponse(user)))
       return this.paginationService.paginate(data, total, query)
@@ -95,7 +95,7 @@ export class UserRepository {
   async delete(id: string): Promise<void> {
     try {
       await this.getById(id)
-      await this.repository.delete(id)
+      await this.repository.softDelete(id)
     } catch (error) {
       this.errorService.handle(error)
     }

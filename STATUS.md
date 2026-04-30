@@ -16,12 +16,13 @@
 | Rate limiting no login | `@Throttle` no `POST /auth/login`: 5 req/min (global: 10 req/min) |
 | Token reuse detection | `refresh` detecta token rotacionado reutilizado → revoga todas as sessões do usuário |
 | Sessions RBAC | `RolesGuard` + `@Roles` em todos os endpoints — POST/PATCH: ADMIN; GET/DELETE: ADMIN, SUPPORT |
+| Paginação | `PaginationService` com `page`, `limit`, `orderBy`, `orderDir` em todos os `getAll` |
+| Types isolados | Cada type/DTO em arquivo próprio; `XxxPaginatedResponse` por módulo |
+| Health check | `GET /health` com TypeORM ping via `@nestjs/terminus` |
 
 ## Pendente
 
 | Item | Prioridade | Detalhe |
 |---|---|---|
 | CORS + Helmet | Média | Sem nenhuma configuração visível |
-| Logging estruturado | Média | Só logger padrão do NestJS, sem rastreabilidade de requests |
-| Health check | Baixa | Sem endpoint `/health` |
-| Paginação | Baixa | Todos os `getAll` retornam tudo sem limite |
+| ~~Logging estruturado~~ | ~~Média~~ | Interceptor global loga método, rota, status e latência |

@@ -61,22 +61,26 @@ describe(UserTenantService.name, () => {
     await expect(service.create({ userId: 'user-uuid-1', tenantId: 'tenant-uuid-1' })).rejects.toThrow(ConflictException)
   })
 
-  it('getByUserId() should return list for a user', async () => {
-    mockRepository.getByUserId.mockResolvedValue([mockUserTenantResponse])
+  it('getByUserId() should return paginated list for a user', async () => {
+    const paginated = { data: [mockUserTenantResponse], pagination: { page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null } }
+    mockRepository.getByUserId.mockResolvedValue(paginated)
+    const query = { page: 1, size: 20 }
 
-    const result = await service.getByUserId('user-uuid-1')
+    const result = await service.getByUserId('user-uuid-1', query)
 
-    expect(result).toEqual([mockUserTenantResponse])
-    expect(repository.getByUserId).toHaveBeenCalledWith('user-uuid-1')
+    expect(result).toEqual(paginated)
+    expect(repository.getByUserId).toHaveBeenCalledWith('user-uuid-1', query)
   })
 
-  it('getByTenantId() should return list for a tenant', async () => {
-    mockRepository.getByTenantId.mockResolvedValue([mockUserTenantResponse])
+  it('getByTenantId() should return paginated list for a tenant', async () => {
+    const paginated = { data: [mockUserTenantResponse], pagination: { page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null } }
+    mockRepository.getByTenantId.mockResolvedValue(paginated)
+    const query = { page: 1, size: 20 }
 
-    const result = await service.getByTenantId('tenant-uuid-1')
+    const result = await service.getByTenantId('tenant-uuid-1', query)
 
-    expect(result).toEqual([mockUserTenantResponse])
-    expect(repository.getByTenantId).toHaveBeenCalledWith('tenant-uuid-1')
+    expect(result).toEqual(paginated)
+    expect(repository.getByTenantId).toHaveBeenCalledWith('tenant-uuid-1', query)
   })
 
   it('delete() should remove link and return message', async () => {

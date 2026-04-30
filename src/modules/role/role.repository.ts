@@ -79,7 +79,7 @@ export class RoleRepository {
   async delete(id: string): Promise<{ message: string }> {
     try {
       await this.getById(id)
-      await this.repository.delete(id)
+      await this.repository.softDelete(id)
       return { message: 'Role deleted successfully' }
     } catch (error) {
       this.errorService.handle(error)

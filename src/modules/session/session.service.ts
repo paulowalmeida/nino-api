@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common'
 
 import { Session } from './entities/session.entity'
 import { CreateSessionDto } from './dtos/create-session.dto'
+import { SessionQueryDto } from './dtos/session-query.dto'
 import { UpdateSessionDto } from './dtos/update-session.dto'
+import { SessionPaginatedResponse } from './types/session-paginated-response.type'
 import { SessionRepository } from './session.repository'
 import { SessionResponse } from './types/session.response.type'
 
@@ -14,8 +16,8 @@ export class SessionService {
     return this.sessionsRepository.create(createDto)
   }
 
-  async getListByUserId(userId: string): Promise<SessionResponse[]> {
-    return this.sessionsRepository.getListByUserId(userId)
+  async getListByUserId(userId: string, query: SessionQueryDto): Promise<SessionPaginatedResponse> {
+    return this.sessionsRepository.getListByUserId(userId, query)
   }
 
   async getById(id: string): Promise<SessionResponse> {

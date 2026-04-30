@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
+import { LoggingInterceptor } from '@shared/interceptors/logging.interceptor'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 import cookieParser from 'cookie-parser'
@@ -19,6 +20,7 @@ async function bootstrap() {
   )
 
   app.use(cookieParser())
+  app.useGlobalInterceptors(new LoggingInterceptor())
 
   const config = new DocumentBuilder()
     .setTitle('Nino API')

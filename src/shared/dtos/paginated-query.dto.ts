@@ -15,7 +15,7 @@ export class PaginatedQueryDto {
   @IsInt()
   @Min(1)
   @Max(100)
-  limit?: number = 20
+  size?: number = 20
 
   @IsOptional()
   @IsEnum(OrderDir)

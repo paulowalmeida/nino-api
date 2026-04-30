@@ -22,7 +22,7 @@ describe('SessionService', () => {
           provide: SessionRepository,
           useValue: {
             create: jest.fn().mockResolvedValue(mockSession),
-            getListByUserId: jest.fn().mockResolvedValue([mockSession]),
+            getListByUserId: jest.fn().mockResolvedValue({ data: [mockSession], pagination: { page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null } }),
             getById: jest.fn().mockResolvedValue(mockSession),
             getByRefreshToken: jest.fn().mockResolvedValue(mockSession),
             findByRefreshToken: jest.fn().mockResolvedValue(mockSession),
@@ -49,10 +49,11 @@ describe('SessionService', () => {
     expect(result).toEqual(mockSession)
   })
 
-  it('should get a list of sessions by user id', async () => {
-    const result = await service.getListByUserId('user-id')
-    expect(repository.getListByUserId).toHaveBeenCalledWith('user-id')
-    expect(result).toEqual([mockSession])
+  it('should get a list of sessions by user id with pagination', async () => {
+    const query = { page: 1, size: 20 }
+    const result = await service.getListByUserId('user-id', query)
+    expect(repository.getListByUserId).toHaveBeenCalledWith('user-id', query)
+    expect(result.data).toEqual([mockSession])
   })
 
   it('should get a session by id', async () => {

@@ -9,7 +9,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "name" varchar NOT NULL UNIQUE,
         "description" varchar NOT NULL,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -24,7 +25,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "state_registration" varchar,
         "is_active" boolean DEFAULT true,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -40,7 +42,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "locale" varchar,
         "timezone" varchar,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -59,7 +62,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "provider" varchar DEFAULT 'local',
         "provider_id" varchar,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -84,7 +88,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "name" varchar NOT NULL UNIQUE,
         "description" varchar,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -101,7 +106,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "max_orders" integer,
         "is_active" boolean DEFAULT true,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -112,7 +118,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "name" varchar NOT NULL UNIQUE,
         "description" varchar,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -137,7 +144,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "name" varchar NOT NULL UNIQUE,
         "description" varchar,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -165,23 +173,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "email" varchar,
         "phone" varchar,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
-      )
-    `)
-
-    // Create tenants table
-    await queryRunner.query(`
-      CREATE TABLE IF NOT EXISTS "public"."tenants" (
-        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-        "company_id" uuid NOT NULL REFERENCES "public"."companies"("id") ON DELETE CASCADE,
-        "slug" varchar UNIQUE NOT NULL,
-        "logo_url" varchar,
-        "favicon" varchar,
-        "primary_color" varchar,
-        "secondary_color" varchar,
-        "custom_domain" varchar UNIQUE,
-        "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -192,7 +185,26 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "name" varchar NOT NULL UNIQUE,
         "description" varchar,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
+      )
+    `)
+
+    // Create tenants table
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS "public"."tenants" (
+        "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        "company_id" uuid NOT NULL REFERENCES "public"."companies"("id") ON DELETE CASCADE,
+        "status_id" uuid NOT NULL REFERENCES "public"."tenant_statuses"("id"),
+        "slug" varchar UNIQUE NOT NULL,
+        "logo_url" varchar,
+        "favicon" varchar,
+        "primary_color" varchar,
+        "secondary_color" varchar,
+        "custom_domain" varchar UNIQUE,
+        "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 
@@ -203,7 +215,8 @@ export class InitialPublicSchema1714334000001 implements MigrationInterface {
         "name" varchar NOT NULL UNIQUE,
         "description" varchar,
         "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
-        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP
+        "updated_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+        "deleted_at" timestamp
       )
     `)
 

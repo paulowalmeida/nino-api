@@ -22,7 +22,7 @@ describe('CompanyService', () => {
   }
 
   const mockRepository = {
-    getAll: jest.fn(),
+    getAll: jest.fn().mockResolvedValue({ data: [], pagination: { page: 1, size: 20, total: 0, totalPages: 0, previousPage: null, nextPage: null } }),
     getById: jest.fn(),
     getByCnpj: jest.fn(),
     create: jest.fn(),
@@ -50,13 +50,14 @@ describe('CompanyService', () => {
     jest.clearAllMocks()
   })
 
-  it('getAll - deve retornar todas companies', async () => {
-    mockRepository.getAll.mockResolvedValue([mockCompany])
+  it('getAll - deve retornar companies paginadas', async () => {
+    const query = { page: 1, size: 20 }
+    mockRepository.getAll.mockResolvedValue({ data: [mockCompany], pagination: { page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null } })
 
-    const result = await service.getAll()
+    const result = await service.getAll(query)
 
-    expect(result).toEqual([mockCompany])
-    expect(repository.getAll).toHaveBeenCalled()
+    expect(result.data).toEqual([mockCompany])
+    expect(repository.getAll).toHaveBeenCalledWith(query)
   })
 
   it('getById - deve retornar company por id', async () => {

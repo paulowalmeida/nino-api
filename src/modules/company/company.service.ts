@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common'
 
 import { CompanyRepository } from './company.repository'
+import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
+import { CompanyQueryDto } from './dto/company-query.dto'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
 import { Company } from './entities/company.entity'
@@ -9,8 +11,8 @@ import { Company } from './entities/company.entity'
 export class CompanyService {
   constructor(private readonly repo: CompanyRepository) {}
 
-  async getAll(): Promise<Company[]> {
-    return await this.repo.getAll()
+  async getAll(query: CompanyQueryDto): Promise<CompanyPaginatedResponse> {
+    return await this.repo.getAll(query)
   }
 
   async getById(id: string): Promise<Company> {

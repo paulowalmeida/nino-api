@@ -9,7 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "fuser -k 3000/tcp ; nest start --watch",
+    "start:dev": "fuser -k 3000/tcp; nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -25,7 +25,8 @@
     "docker:up-d": "docker compose up -d",
     "docker:up": "docker compose up",
     "docker:down-d": "docker compose down -d",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "reset": "npm run docker:down-d && npm run docker:up-d && npm run typeorm:migration:run && npm run seed"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -35,6 +36,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.7",
+    "@nestjs/terminus": "^11.1.1",
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.1",
     "bcrypt": "^6.0.0",
