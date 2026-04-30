@@ -82,7 +82,7 @@ export class PlanRepository {
   async delete(id: number): Promise<void> {
     try {
       await this.getById(id)
-      await this.repository.delete(id)
+      await this.repository.softDelete(id)
     } catch (error) {
       this.errorService.handle(error)
     }

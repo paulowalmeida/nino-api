@@ -7,10 +7,14 @@ import { InjectRepository } from '@nestjs/typeorm'
 
 import { Repository } from 'typeorm'
 
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { ErrorService } from '@shared/services/error/error.service'
+import { CompanyQueryDto } from './dto/company-query.dto'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
 import { Company } from './entities/company.entity'
+import { CompanyOrderBy } from './types/company-order-by.type'
+import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
 
 @Injectable()
 export class CompanyRepository {
@@ -18,11 +22,16 @@ export class CompanyRepository {
     @InjectRepository(Company)
     private readonly repository: Repository<Company>,
     private readonly errorService: ErrorService,
+    private readonly paginationService: PaginationService,
   ) {}
 
-  async getAll(): Promise<Company[]> {
+  async getAll(query: CompanyQueryDto): Promise<CompanyPaginatedResponse> {
     try {
-      return await this.repository.find({ order: { companyName: 'ASC' } })
+      const [data, total] = await this.repository.findAndCount({
+        order: { [query.orderBy ?? CompanyOrderBy.COMPANY_NAME]: query.orderDir ?? 'ASC' },
+        ...this.paginationService.getPaginationParams(query),
+      })
+      return this.paginationService.paginate(data, total, query)
     } catch (error) {
       this.errorService.handle(error)
     }
@@ -79,7 +88,7 @@ export class CompanyRepository {
   async delete(id: string): Promise<{ message: string }> {
     try {
       await this.getById(id)
-      await this.repository.delete(id)
+      await this.repository.softDelete(id)
       return { message: 'Company deleted successfully' }
     } catch (error) {
       this.errorService.handle(error)

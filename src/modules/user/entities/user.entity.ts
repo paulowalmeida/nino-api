@@ -1,6 +1,7 @@
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -43,6 +44,9 @@ export class User {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date
 
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt: Date
+
   @ManyToOne(() => Role)
   @JoinColumn({ name: 'role_id' })
   role: Role
@@ -50,5 +54,4 @@ export class User {
   @ManyToOne(() => Company)
   @JoinColumn({ name: 'company_id' })
   company: Company
-
 }

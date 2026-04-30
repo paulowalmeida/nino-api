@@ -34,6 +34,7 @@ import { UserTenant } from '@user/entities/user-tenant.entity'
 import { User } from '@user/entities/user.entity'
 import { UserModule } from '@user/user.module'
 import { AppService } from './app.service'
+import { HealthModule } from './modules/health/health.module'
 import { UserTenantModule } from './modules/user-tenant/user-tenant.module'
 
 @Module({
@@ -85,6 +86,7 @@ import { UserTenantModule } from './modules/user-tenant/user-tenant.module'
     TenantStatusModule,
     UserModule,
     UserTenantModule,
+    HealthModule,
     ThrottlerModule.forRoot([
       {
         ttl: 60000,

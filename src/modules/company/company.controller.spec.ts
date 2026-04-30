@@ -20,7 +20,7 @@ describe('CompanyController', () => {
   }
 
   const mockService = {
-    getAll: jest.fn(),
+    getAll: jest.fn().mockResolvedValue({ data: [mockCompany], pagination: { page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null } }),
     getById: jest.fn(),
     getByCnpj: jest.fn(),
     create: jest.fn(),
@@ -46,13 +46,13 @@ describe('CompanyController', () => {
     jest.clearAllMocks()
   })
 
-  it('getAll - deve retornar array de companies', async () => {
-    mockService.getAll.mockResolvedValue([mockCompany])
+  it('getAll - deve retornar companies paginadas', async () => {
+    const query = { page: 1, size: 20 }
 
-    const result = await controller.getAll()
+    const result = await controller.getAll(query as any)
 
-    expect(result).toEqual([mockCompany])
-    expect(service.getAll).toHaveBeenCalled()
+    expect(result.data).toEqual([mockCompany])
+    expect(service.getAll).toHaveBeenCalledWith(query)
   })
 
   it('getById - deve retornar company por id', async () => {

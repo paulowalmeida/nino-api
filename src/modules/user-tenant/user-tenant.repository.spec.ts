@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 
 import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { Credential } from '@credential/entities/credential.entity'
 import { UserTenant } from '@user/entities/user-tenant.entity'
 import { UserTenantRepository } from './user-tenant.repository'
@@ -32,6 +33,7 @@ describe(UserTenantRepository.name, () => {
     findOneBy: jest.fn(),
     findOne: jest.fn(),
     find: jest.fn(),
+    findAndCount: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
     delete: jest.fn(),
@@ -47,6 +49,7 @@ describe(UserTenantRepository.name, () => {
         { provide: getRepositoryToken(UserTenant), useValue: mockRepository },
         { provide: getRepositoryToken(Credential), useValue: mockCredentialRepository },
         { provide: ErrorService, useValue: mockErrorService },
+        PaginationService,
       ],
     }).compile()
 
@@ -103,41 +106,43 @@ describe(UserTenantRepository.name, () => {
   })
 
   describe('getByUserId()', () => {
-    it('should return UserTenantResponse[] for a user', async () => {
-      mockRepository.find.mockResolvedValue([mockUserTenant])
+    it('should return paginated UserTenantResponse for a user', async () => {
+      mockRepository.findAndCount.mockResolvedValue([[mockUserTenant], 1])
 
-      const result = await repository.getByUserId('user-uuid-1')
+      const result = await repository.getByUserId('user-uuid-1', { page: 1, size: 20 })
 
-      expect(result).toHaveLength(1)
-      expect(result[0].user.role).toEqual({ name: 'OWNER' })
-      expect((result[0] as any).userId).toBeUndefined()
+      expect(result.data).toHaveLength(1)
+      expect(result.data[0].user.role).toEqual({ name: 'OWNER' })
+      expect((result.data[0] as any).userId).toBeUndefined()
+      expect(result.pagination).toMatchObject({ page: 1, size: 20, total: 1 })
     })
 
     it('should call errorService.handle on error', async () => {
       const error = new Error('DB error')
-      mockRepository.find.mockRejectedValue(error)
+      mockRepository.findAndCount.mockRejectedValue(error)
 
-      await repository.getByUserId('user-uuid-1')
+      await repository.getByUserId('user-uuid-1', {})
 
       expect(mockErrorService.handle).toHaveBeenCalledWith(error)
     })
   })
 
   describe('getByTenantId()', () => {
-    it('should return UserTenantResponse[] for a tenant', async () => {
-      mockRepository.find.mockResolvedValue([mockUserTenant])
+    it('should return paginated UserTenantResponse for a tenant', async () => {
+      mockRepository.findAndCount.mockResolvedValue([[mockUserTenant], 1])
 
-      const result = await repository.getByTenantId('tenant-uuid-1')
+      const result = await repository.getByTenantId('tenant-uuid-1', { page: 1, size: 20 })
 
-      expect(result).toHaveLength(1)
-      expect(result[0].tenantId).toBe('tenant-uuid-1')
+      expect(result.data).toHaveLength(1)
+      expect(result.data[0].tenantId).toBe('tenant-uuid-1')
+      expect(result.pagination).toMatchObject({ total: 1 })
     })
 
     it('should call errorService.handle on error', async () => {
       const error = new Error('DB error')
-      mockRepository.find.mockRejectedValue(error)
+      mockRepository.findAndCount.mockRejectedValue(error)
 
-      await repository.getByTenantId('tenant-uuid-1')
+      await repository.getByTenantId('tenant-uuid-1', {})
 
       expect(mockErrorService.handle).toHaveBeenCalledWith(error)
     })

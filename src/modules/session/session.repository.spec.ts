@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 
 import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { Credential } from '@credential/entities/credential.entity'
 import { Session } from './entities/session.entity'
 import { SessionRepository } from './session.repository'
@@ -22,6 +23,7 @@ describe('SessionRepository', () => {
 
   const mockRepository = {
     find: jest.fn(),
+    findAndCount: jest.fn(),
     findOne: jest.fn(),
     findOneBy: jest.fn(),
     create: jest.fn(),
@@ -40,6 +42,7 @@ describe('SessionRepository', () => {
         { provide: getRepositoryToken(Session), useValue: mockRepository },
         { provide: getRepositoryToken(Credential), useValue: mockCredentialRepository },
         { provide: ErrorService, useValue: mockErrorService },
+        PaginationService,
       ],
     }).compile()
 
@@ -75,22 +78,23 @@ describe('SessionRepository', () => {
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
-  it('should get sessions by userId', async () => {
-    mockRepository.find.mockResolvedValue([mockSession])
+  it('should get sessions by userId with pagination', async () => {
+    mockRepository.findAndCount.mockResolvedValue([[mockSession], 1])
 
-    const result = await repository.getListByUserId('user-id')
+    const result = await repository.getListByUserId('user-id', { page: 1, size: 20 })
 
-    expect(result).toHaveLength(1)
-    expect(result[0].id).toBe('session-id')
-    expect((result[0] as any).refreshToken).toBeUndefined()
-    expect(result[0].user.credentials).toEqual([])
+    expect(result.data).toHaveLength(1)
+    expect(result.data[0].id).toBe('session-id')
+    expect((result.data[0] as any).refreshToken).toBeUndefined()
+    expect(result.data[0].user.credentials).toEqual([])
+    expect(result.pagination).toMatchObject({ page: 1, size: 20, total: 1 })
   })
 
   it('should call errorService.handle when getListByUserId throws', async () => {
     const error = new Error('db error')
-    mockRepository.find.mockRejectedValue(error)
+    mockRepository.findAndCount.mockRejectedValue(error)
 
-    await repository.getListByUserId('user-id')
+    await repository.getListByUserId('user-id', {})
 
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })

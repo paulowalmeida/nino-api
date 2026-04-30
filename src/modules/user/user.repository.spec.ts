@@ -68,10 +68,10 @@ describe('UserRepository', () => {
   it('should get all users with pagination', async () => {
     mockRepository.findAndCount.mockResolvedValue([[mockUser], 1])
 
-    const result = await repository.getAll({ page: 1, limit: 20 })
+    const result = await repository.getAll({ page: 1, size: 20 })
 
     expect(result.data).toEqual([mockUserResponse])
-    expect(result.pagination).toEqual({ page: 1, limit: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null })
+    expect(result.pagination).toEqual({ page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null })
     expect(mockRepository.findAndCount).toHaveBeenCalledWith({
       order: { name: 'ASC' },
       relations: ['role', 'company'],

@@ -6,17 +6,17 @@ import { PaginationMeta } from '@shared/types/pagination-meta.type'
 
 @Injectable()
 export class PaginationService {
-  getOptions(query: PaginatedQueryDto): { skip: number; take: number } {
-    const { page = 1, limit = 20 } = query
-    return { skip: (page - 1) * limit, take: limit }
+  getPaginationParams(query: PaginatedQueryDto): { skip: number; take: number } {
+    const { page = 1, size = 20 } = query
+    return { skip: (page - 1) * size, take: size }
   }
 
   build(total: number, query: PaginatedQueryDto): PaginationMeta {
-    const { page = 1, limit = 20 } = query
-    const totalPages = Math.ceil(total / limit)
+    const { page = 1, size = 20 } = query
+    const totalPages = Math.ceil(total / size)
     return {
       page,
-      limit,
+      size,
       total,
       totalPages,
       previousPage: page > 1 ? page - 1 : null,

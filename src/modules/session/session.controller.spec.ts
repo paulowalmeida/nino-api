@@ -22,7 +22,7 @@ describe('SessionController', () => {
           provide: SessionService,
           useValue: {
             create: jest.fn().mockResolvedValue(mockSession),
-            getListByUserId: jest.fn().mockResolvedValue([mockSession]),
+            getListByUserId: jest.fn().mockResolvedValue({ data: [mockSession], pagination: { page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null } }),
             getById: jest.fn().mockResolvedValue(mockSession),
             update: jest.fn().mockResolvedValue(undefined),
             delete: jest.fn().mockResolvedValue(undefined),
@@ -46,10 +46,11 @@ describe('SessionController', () => {
     expect(result).toEqual(mockSession)
   })
 
-  it('should get a list of sessions by user id', async () => {
-    const result = await controller.getListByUserId('user-id')
-    expect(service.getListByUserId).toHaveBeenCalledWith('user-id')
-    expect(result).toEqual([mockSession])
+  it('should get a list of sessions by user id with pagination', async () => {
+    const query = { page: 1, size: 20 }
+    const result = await controller.getListByUserId('user-id', query as any)
+    expect(service.getListByUserId).toHaveBeenCalledWith('user-id', query)
+    expect(result.data).toEqual([mockSession])
   })
 
   it('should get a session by id', async () => {

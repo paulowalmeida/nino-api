@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 
 import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { CompanyRepository } from './company.repository'
 import { Company } from './entities/company.entity'
 
@@ -23,6 +24,7 @@ describe('CompanyRepository', () => {
 
   const mockRepository = {
     find: jest.fn(),
+    findAndCount: jest.fn(),
     findOneBy: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
@@ -37,6 +39,7 @@ describe('CompanyRepository', () => {
         CompanyRepository,
         { provide: getRepositoryToken(Company), useValue: mockRepository },
         { provide: ErrorService, useValue: mockErrorService },
+        PaginationService,
       ],
     }).compile()
 
@@ -47,22 +50,25 @@ describe('CompanyRepository', () => {
     jest.clearAllMocks()
   })
 
-  it('getAll - deve retornar array de companies', async () => {
-    mockRepository.find.mockResolvedValue([mockCompany])
+  it('getAll - deve retornar companies paginadas', async () => {
+    mockRepository.findAndCount.mockResolvedValue([[mockCompany], 1])
 
-    const result = await repository.getAll()
+    const result = await repository.getAll({ page: 1, size: 20 })
 
-    expect(result).toEqual([mockCompany])
-    expect(mockRepository.find).toHaveBeenCalledWith({
+    expect(result.data).toEqual([mockCompany])
+    expect(result.pagination).toMatchObject({ page: 1, size: 20, total: 1, totalPages: 1 })
+    expect(mockRepository.findAndCount).toHaveBeenCalledWith({
       order: { companyName: 'ASC' },
+      skip: 0,
+      take: 20,
     })
   })
 
   it('getAll - deve chamar errorService.handle em erro', async () => {
     const error = new Error('DB error')
-    mockRepository.find.mockRejectedValue(error)
+    mockRepository.findAndCount.mockRejectedValue(error)
 
-    await repository.getAll()
+    await repository.getAll({})
 
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })

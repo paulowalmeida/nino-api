@@ -2,11 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { ErrorService } from '@shared/services/error/error.service'
 import { Credential } from '@credential/entities/credential.entity'
 import { CreateSessionDto } from './dtos/create-session.dto'
+import { SessionQueryDto } from './dtos/session-query.dto'
 import { UpdateSessionDto } from './dtos/update-session.dto'
 import { Session } from './entities/session.entity'
+import { SessionPaginatedResponse } from './types/session-paginated-response.type'
+import { SessionOrderBy } from './types/session-order-by.type'
 import { SessionResponse } from './types/session.response.type'
 
 @Injectable()
@@ -17,6 +21,7 @@ export class SessionRepository {
     @InjectRepository(Credential)
     private readonly credentialRepository: Repository<Credential>,
     private readonly errorService: ErrorService,
+    private readonly paginationService: PaginationService,
   ) {}
 
   private async fetchCredentials(userId: string) {
@@ -33,13 +38,15 @@ export class SessionRepository {
     }
   }
 
-  async getListByUserId(userId: string): Promise<SessionResponse[]> {
+  async getListByUserId(userId: string, query: SessionQueryDto): Promise<SessionPaginatedResponse> {
     try {
-      const items = await this.repository.find({
+      const [items, total] = await this.repository.findAndCount({
         where: { userId },
+        order: { [query.orderBy ?? SessionOrderBy.CREATED_AT]: query.orderDir ?? 'ASC' },
         relations: ['user', 'user.role'],
+        ...this.paginationService.getPaginationParams(query),
       })
-      return Promise.all(
+      const data = await Promise.all(
         items.map(async ({ refreshToken: _, ...rest }) => ({
           ...rest,
           user: {
@@ -48,6 +55,7 @@ export class SessionRepository {
           },
         })),
       )
+      return this.paginationService.paginate(data, total, query)
     } catch (error) {
       this.errorService.handle(error)
     }

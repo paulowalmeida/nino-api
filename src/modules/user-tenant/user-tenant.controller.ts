@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 
@@ -13,6 +14,8 @@ import { Role } from '@shared/enums/role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 import { CreateUserTenantDto } from './dtos/create-user-tenant.dto'
+import { UserTenantQueryDto } from './dtos/user-tenant-query.dto'
+import { UserTenantPaginatedResponse } from './types/user-tenant-paginated-response.type'
 import { UserTenantResponse } from './types/user-tenant.response.type'
 import { UserTenantService } from './user-tenant.service'
 
@@ -31,16 +34,18 @@ export class UserTenantController {
   @Roles(Role.ADMIN, Role.SUPPORT, Role.MERCHANT)
   async getByUserId(
     @Param('userId') userId: string,
-  ): Promise<UserTenantResponse[]> {
-    return this.service.getByUserId(userId)
+    @Query() query: UserTenantQueryDto,
+  ): Promise<UserTenantPaginatedResponse> {
+    return this.service.getByUserId(userId, query)
   }
 
   @Get('tenant/:tenantId')
   @Roles(Role.ADMIN, Role.SUPPORT, Role.MERCHANT)
   async getByTenantId(
     @Param('tenantId') tenantId: string,
-  ): Promise<UserTenantResponse[]> {
-    return this.service.getByTenantId(tenantId)
+    @Query() query: UserTenantQueryDto,
+  ): Promise<UserTenantPaginatedResponse> {
+    return this.service.getByTenantId(tenantId, query)
   }
 
   @Delete(':userId/:tenantId')

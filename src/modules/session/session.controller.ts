@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 
@@ -14,9 +15,11 @@ import { Role } from '@shared/enums/role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 import { CreateSessionDto } from './dtos/create-session.dto'
+import { SessionQueryDto } from './dtos/session-query.dto'
 import { UpdateSessionDto } from './dtos/update-session.dto'
 import { Session } from './entities/session.entity'
 import { SessionService } from './session.service'
+import { SessionPaginatedResponse } from './types/session-paginated-response.type'
 import { SessionResponse } from './types/session.response.type'
 
 @Controller('sessions')
@@ -34,8 +37,9 @@ export class SessionController {
   @Roles(Role.ADMIN, Role.SUPPORT)
   async getListByUserId(
     @Param('userId') userId: string,
-  ): Promise<SessionResponse[]> {
-    return await this.sessionsService.getListByUserId(userId)
+    @Query() query: SessionQueryDto,
+  ): Promise<SessionPaginatedResponse> {
+    return await this.sessionsService.getListByUserId(userId, query)
   }
 
   @Get(':id')

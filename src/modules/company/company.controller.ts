@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 
@@ -15,9 +16,11 @@ import { Role } from '@shared/enums/role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 import { CompanyService } from './company.service'
+import { CompanyQueryDto } from './dto/company-query.dto'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
 import { Company } from './entities/company.entity'
+import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
 
 @Controller('companies')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,8 +29,8 @@ export class CompanyController {
 
   @Get()
   @Roles(Role.ADMIN, Role.SUPPORT)
-  getAll(): Promise<Company[]> {
-    return this.service.getAll()
+  getAll(@Query() query: CompanyQueryDto): Promise<CompanyPaginatedResponse> {
+    return this.service.getAll(query)
   }
 
   @Get(':id')
