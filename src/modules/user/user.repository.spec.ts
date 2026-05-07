@@ -1,44 +1,69 @@
 import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
 
-import { Credential } from '@credential/entities/credential.entity'
-import { User } from '@user/entities/user.entity'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { UserRepository } from './user.repository'
 
-describe('UserRepository', () => {
+describe(UserRepository.name, () => {
   let repository: UserRepository
 
-  const mockUser = { id: 'user-id', name: 'John Doe', roleId: 'role-id', companyId: 'company-id' }
-  const mockUserResponse = { ...mockUser, credentials: [] }
-
-  const mockRepository = {
-    find: jest.fn(),
-    findOne: jest.fn(),
-    findAndCount: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-    delete: jest.fn(),
+  const mockUser = {
+    id: 'user-id',
+    name: 'John Doe',
+    globalRoleId: 'role-id',
+    isActive: true,
+    lastLoginAt: null,
+    locale: null,
+    timezone: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    globalRole: { id: 'role-id', name: 'ADMIN' },
+    credentials: [],
   }
 
-  const mockCredentialRepository = { find: jest.fn() }
+  const mockUserWithCred = {
+    ...mockUser,
+    credentials: [
+      {
+        id: 'cred-id',
+        email: 'test@test.com',
+        provider: 'local',
+        providerCode: null,
+        password: 'hashed',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      },
+    ],
+  }
+
+  const mockPrisma = {
+    user: {
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      count: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
+  }
+
   const mockErrorService = { handle: jest.fn() }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserRepository,
-        { provide: getRepositoryToken(User), useValue: mockRepository },
-        { provide: getRepositoryToken(Credential), useValue: mockCredentialRepository },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: ErrorService, useValue: mockErrorService },
         PaginationService,
       ],
     }).compile()
 
     repository = module.get<UserRepository>(UserRepository)
-    mockCredentialRepository.find.mockResolvedValue([])
+    mockPrisma.user.count.mockResolvedValue(0)
   })
 
   afterEach(() => {
@@ -46,125 +71,117 @@ describe('UserRepository', () => {
   })
 
   it('should create a user successfully', async () => {
-    mockRepository.create.mockReturnValue(mockUser)
-    mockRepository.save.mockResolvedValue(mockUser)
-
-    const result = await repository.create({ name: 'John Doe', roleId: 'role-id' } as any)
-
+    mockPrisma.user.create.mockResolvedValue(mockUser)
+    const result = await repository.create({
+      name: 'John Doe',
+      globalRoleId: 'role-id',
+    } as any)
     expect(result).toEqual(mockUser)
-    expect(mockRepository.save).toHaveBeenCalled()
+    expect(mockPrisma.user.create).toHaveBeenCalled()
   })
 
   it('should call errorService.handle when create throws', async () => {
     const error = new Error('db error')
-    mockRepository.create.mockReturnValue({})
-    mockRepository.save.mockRejectedValue(error)
-
-    await repository.create({ name: 'John Doe', roleId: 'role-id' } as any)
-
+    mockPrisma.user.create.mockRejectedValue(error)
+    await repository.create({ name: 'John Doe', globalRoleId: 'role-id' } as any)
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('should get all users with pagination', async () => {
-    mockRepository.findAndCount.mockResolvedValue([[mockUser], 1])
-
+    mockPrisma.user.findMany.mockResolvedValue([mockUser])
+    mockPrisma.user.count.mockResolvedValue(1)
     const result = await repository.getAll({ page: 1, size: 20 })
-
-    expect(result.data).toEqual([mockUserResponse])
-    expect(result.pagination).toEqual({ page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null })
-    expect(mockRepository.findAndCount).toHaveBeenCalledWith({
-      order: { name: 'ASC' },
-      relations: ['role', 'company'],
-      skip: 0,
-      take: 20,
-    })
+    expect(result.data).toHaveLength(1)
+    expect(result.pagination.total).toBe(1)
   })
 
   it('should call errorService.handle when getAll throws', async () => {
     const error = new Error('db error')
-    mockRepository.findAndCount.mockRejectedValue(error)
-
+    mockPrisma.user.findMany.mockRejectedValue(error)
     await repository.getAll({})
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('should get a user by id', async () => {
-    mockRepository.findOne.mockResolvedValue(mockUser)
-
+    mockPrisma.user.findFirst.mockResolvedValue(mockUser)
     const result = await repository.getById('user-id')
-
-    expect(result).toEqual(mockUserResponse)
-    expect(mockRepository.findOne).toHaveBeenCalledWith({
-      where: { id: 'user-id' },
-      relations: ['role', 'company'],
-    })
+    expect(result.id).toBe('user-id')
+    expect((result as any).deletedAt).toBeUndefined()
   })
 
   it('should call errorService.handle with NotFoundException when getById finds nothing', async () => {
-    mockRepository.findOne.mockResolvedValue(null)
-
+    mockPrisma.user.findFirst.mockResolvedValue(null)
     await repository.getById('user-id')
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
+    expect(mockErrorService.handle).toHaveBeenCalledWith(
+      expect.any(NotFoundException),
+    )
   })
 
   it('should get users by companyId', async () => {
-    mockRepository.find.mockResolvedValue([mockUser])
-
+    mockPrisma.user.findMany.mockResolvedValue([mockUser])
     const result = await repository.getByCompanyId('company-id')
+    expect(result).toHaveLength(1)
+  })
 
-    expect(result).toEqual([mockUserResponse])
-    expect(mockRepository.find).toHaveBeenCalledWith({
-      where: { companyId: 'company-id' },
-      relations: ['role', 'company'],
+  it('should update a user successfully', async () => {
+    mockPrisma.user.findFirst.mockResolvedValue(mockUser)
+    mockPrisma.user.update.mockResolvedValue(mockUser)
+    await repository.update('user-id', { name: 'Jane Doe' })
+    expect(mockPrisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-id' },
+      data: { name: 'Jane Doe' },
     })
+  })
+
+  it('should soft delete a user', async () => {
+    mockPrisma.user.findFirst.mockResolvedValue(mockUser)
+    mockPrisma.user.update.mockResolvedValue({
+      ...mockUser,
+      deletedAt: new Date(),
+    })
+    await repository.delete('user-id')
+    expect(mockPrisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-id' },
+      data: { deletedAt: expect.any(Date) },
+    })
+  })
+
+  it('should map credentials fields in toResponse', async () => {
+    mockPrisma.user.findFirst.mockResolvedValue(mockUserWithCred)
+    const result = await repository.getById('user-id')
+    expect(result.credentials[0]).not.toHaveProperty('password')
+    expect(result.credentials[0]).not.toHaveProperty('deletedAt')
+    expect(result.credentials[0].email).toBe('test@test.com')
+  })
+
+  it('should call errorService.handle with NotFoundException when update finds nothing', async () => {
+    mockPrisma.user.findFirst.mockResolvedValue(null)
+    await repository.update('user-id', { name: 'Jane' })
+    expect(mockErrorService.handle).toHaveBeenCalledWith(
+      expect.any(NotFoundException),
+    )
+  })
+
+  it('should call errorService.handle when update prisma.update throws', async () => {
+    const error = new Error('db error')
+    mockPrisma.user.findFirst.mockResolvedValue(mockUser)
+    mockPrisma.user.update.mockRejectedValue(error)
+    await repository.update('user-id', { name: 'Jane' })
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  })
+
+  it('should call errorService.handle when delete prisma.update throws', async () => {
+    const error = new Error('db error')
+    mockPrisma.user.findFirst.mockResolvedValue(mockUser)
+    mockPrisma.user.update.mockRejectedValue(error)
+    await repository.delete('user-id')
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('should call errorService.handle when getByCompanyId throws', async () => {
     const error = new Error('db error')
-    mockRepository.find.mockRejectedValue(error)
-
+    mockPrisma.user.findMany.mockRejectedValue(error)
     await repository.getByCompanyId('company-id')
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
-  })
-
-  it('should update a user successfully', async () => {
-    mockRepository.findOne.mockResolvedValue(mockUser)
-    mockRepository.save.mockResolvedValue(undefined)
-
-    await repository.update('user-id', { name: 'Jane Doe' })
-
-    expect(mockRepository.save).toHaveBeenCalled()
-  })
-
-  it('should call errorService.handle when update throws', async () => {
-    const error = new Error('db error')
-    mockRepository.findOne.mockResolvedValue(mockUser)
-    mockRepository.save.mockRejectedValue(error)
-
-    await repository.update('user-id', { name: 'Jane Doe' })
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
-  })
-
-  it('should delete a user successfully', async () => {
-    mockRepository.findOne.mockResolvedValue(mockUser)
-    mockRepository.delete.mockResolvedValue(undefined)
-
-    await repository.delete('user-id')
-
-    expect(mockRepository.delete).toHaveBeenCalledWith('user-id')
-  })
-
-  it('should call errorService.handle when delete throws', async () => {
-    const error = new Error('db error')
-    mockRepository.findOne.mockResolvedValue(mockUser)
-    mockRepository.delete.mockRejectedValue(error)
-
-    await repository.delete('user-id')
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 })

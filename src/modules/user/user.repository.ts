@@ -1,56 +1,69 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+
+import { User } from '@prisma/client'
 
 import { ErrorService } from '@shared/services/error/error.service'
-import { PaginationService } from '@shared/services/pagination/pagination.service'
-import { Credential } from '@credential/entities/credential.entity'
-import { CredentialInfo } from '@credential/types/credential-info.type'
-import { User } from '@user/entities/user.entity'
-import { UserPaginatedResponse } from '@user/types/user-paginated-response.type'
-import { UserResponse } from '@user/types/user-response.type'
+import {
+  PaginationService,
+} from '@shared/services/pagination/pagination.service'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UpdateUserDto } from './dtos/update-user.dto'
-import { UserOrderBy } from './types/user-order-by.type'
 import { UserQueryDto } from './dtos/user-query.dto'
+import { UserFull } from './types/user-full.type'
+import { UserOrderBy } from './types/user-order-by.type'
+import { UserPaginatedResponse } from './types/user-paginated-response.type'
+import { UserResponse } from './types/user-response.type'
 
 @Injectable()
 export class UserRepository {
   constructor(
-    @InjectRepository(User)
-    private readonly repository: Repository<User>,
-    @InjectRepository(Credential)
-    private readonly credentialRepository: Repository<Credential>,
+    private readonly prisma: PrismaService,
     private readonly errorService: ErrorService,
     private readonly paginationService: PaginationService,
   ) {}
 
+  private toResponse(user: UserFull): UserResponse {
+    const {
+      deletedAt: _,
+      globalRoleId: _r,
+      globalRole: role,
+      credentials: rawCredentials,
+      ...rest
+    } = user
+    const credentials = rawCredentials.map(
+      ({ password: _p, deletedAt: _d, ...c }) => c,
+    )
+    return { ...rest, role, credentials }
+  }
+
   async create(data: CreateUserDto): Promise<User> {
     try {
-      return await this.repository.save(this.repository.create(data))
+      return await this.prisma.user.create({ data })
     } catch (error) {
       this.errorService.handle(error)
     }
   }
 
-  private async fetchCredentials(userId: string): Promise<CredentialInfo[]> {
-    const items = await this.credentialRepository.find({ where: { userId } })
-    return items.map(({ password: _, ...c }) => c)
-  }
-
-  private async toResponse(user: User): Promise<UserResponse> {
-    return { ...user, credentials: await this.fetchCredentials(user.id) }
-  }
-
   async getAll(query: UserQueryDto): Promise<UserPaginatedResponse> {
     try {
-      const [users, total] = await this.repository.findAndCount({
-        order: { [query.orderBy ?? UserOrderBy.NAME]: query.orderDir ?? 'ASC' },
-        relations: ['role', 'company'],
-        ...this.paginationService.getPaginationParams(query),
-      })
-      const data = await Promise.all(users.map((user) => this.toResponse(user)))
-      return this.paginationService.paginate(data, total, query)
+      const params = this.paginationService.getPaginationParams(query)
+      const orderBy = query.orderBy ?? UserOrderBy.NAME
+      const [users, total] = await Promise.all([
+        this.prisma.user.findMany({
+          where: { deletedAt: null },
+          orderBy: { [orderBy]: query.orderDir?.toLowerCase() ?? 'asc' },
+          include: { globalRole: true, credentials: true },
+          skip: params.skip,
+          take: params.take,
+        }),
+        this.prisma.user.count({ where: { deletedAt: null } }),
+      ])
+      return this.paginationService.paginate(
+        users.map((u) => this.toResponse(u)),
+        total,
+        query,
+      )
     } catch (error) {
       this.errorService.handle(error)
     }
@@ -58,9 +71,9 @@ export class UserRepository {
 
   async getById(id: string): Promise<UserResponse> {
     try {
-      const user = await this.repository.findOne({
-        where: { id },
-        relations: ['role', 'company'],
+      const user = await this.prisma.user.findFirst({
+        where: { id, deletedAt: null },
+        include: { globalRole: true, credentials: true },
       })
       if (!user) throw new NotFoundException('User not found')
       return this.toResponse(user)
@@ -71,11 +84,14 @@ export class UserRepository {
 
   async getByCompanyId(companyId: string): Promise<UserResponse[]> {
     try {
-      const users = await this.repository.find({
-        where: { companyId },
-        relations: ['role', 'company'],
+      const users = await this.prisma.user.findMany({
+        where: {
+          userTenants: { some: { tenant: { companyId } } },
+          deletedAt: null,
+        },
+        include: { globalRole: true, credentials: true },
       })
-      return Promise.all(users.map((user) => this.toResponse(user)))
+      return users.map((u) => this.toResponse(u))
     } catch (error) {
       this.errorService.handle(error)
     }
@@ -83,10 +99,11 @@ export class UserRepository {
 
   async update(id: string, data: UpdateUserDto): Promise<void> {
     try {
-      const user = await this.repository.findOne({ where: { id } })
-      if (!user) throw new NotFoundException('User not found')
-      Object.assign(user, data)
-      await this.repository.save(user)
+      const exists = await this.prisma.user.findFirst({
+        where: { id, deletedAt: null },
+      })
+      if (!exists) throw new NotFoundException('User not found')
+      await this.prisma.user.update({ where: { id }, data })
     } catch (error) {
       this.errorService.handle(error)
     }
@@ -95,7 +112,10 @@ export class UserRepository {
   async delete(id: string): Promise<void> {
     try {
       await this.getById(id)
-      await this.repository.softDelete(id)
+      await this.prisma.user.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      })
     } catch (error) {
       this.errorService.handle(error)
     }

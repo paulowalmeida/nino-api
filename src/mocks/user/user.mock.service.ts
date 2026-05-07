@@ -31,7 +31,7 @@ export class UserMockService {
     return {
       email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${id}@${this.pick(DOMAINS)}`,
       password: 'Senha123*',
-      roleId: 1,
+      globalRoleId: 1,
       companyName: `${this.pick(CORP_PREFIX)} ${this.pick(CORP_SUFFIX)} ${id}`,
       cnpj: CnpjMockService.generateFakeCnpj(),
       isActive: true,

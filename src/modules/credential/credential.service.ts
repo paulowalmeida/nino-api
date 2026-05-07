@@ -33,7 +33,6 @@ export class CredentialsService {
     return await this.credentialsRepository.getByEmail(email)
   }
 
-
   async getByEmailWithPassword(
     email: string,
   ): Promise<CredentialRepositoryType> {

@@ -25,5 +25,5 @@ export class CreateCredentialDto {
 
   @IsOptional()
   @IsString()
-  providerId?: string
+  providerCode?: string
 }

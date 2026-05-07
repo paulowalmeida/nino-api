@@ -1,9 +1,11 @@
 import { ConfigService } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { UserTokenData } from '@user/types/user-token.data.type'
+import { RefreshRequest } from './types/refresh-request.type'
 import { JwtRefreshStrategy } from './jwt-refresh.strategy'
 
-describe('JwtRefreshStrategy', () => {
+describe(JwtRefreshStrategy.name, () => {
   let strategy: JwtRefreshStrategy
 
   beforeEach(async () => {
@@ -20,18 +22,24 @@ describe('JwtRefreshStrategy', () => {
     strategy = module.get<JwtRefreshStrategy>(JwtRefreshStrategy)
   })
 
+  afterEach(() => jest.clearAllMocks())
+
   it('should throw when JWT_REFRESH_SECRET is not set', () => {
-    expect(
-      () =>
-        new JwtRefreshStrategy({
-          get: jest.fn().mockReturnValue(undefined),
-        } as any),
-    ).toThrow("JWT_REFRESH_SECRET don't be defined in the environment variables.")
+    const config: Pick<ConfigService, 'get'> = {
+      get: jest.fn().mockReturnValue(undefined),
+    }
+
+    expect(() => new JwtRefreshStrategy(config)).toThrow(
+      "JWT_REFRESH_SECRET don't be defined in the environment variables.",
+    )
   })
 
   it('should validate and return payload with hashedRefreshToken', async () => {
-    const req = { headers: { authorization: 'Bearer my-token' }, user: undefined } as any
-    const payload = { sub: 'u1', role: 'admin' } as any
+    const req: RefreshRequest = {
+      headers: { authorization: 'Bearer my-token' },
+      user: undefined,
+    }
+    const payload: UserTokenData = { sub: 'u1', role: 'admin' }
 
     const result = await strategy.validate(req, payload)
 
@@ -40,8 +48,8 @@ describe('JwtRefreshStrategy', () => {
   })
 
   it('should use empty string when authorization header is absent', async () => {
-    const req = { headers: {}, user: undefined } as any
-    const payload = { sub: 'u1', role: 'admin' } as any
+    const req: RefreshRequest = { headers: {}, user: undefined }
+    const payload: UserTokenData = { sub: 'u1', role: 'admin' }
 
     const result = await strategy.validate(req, payload)
 

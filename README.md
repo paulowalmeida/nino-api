@@ -94,21 +94,17 @@ As regras de suspensão são rigorosas para garantir a saúde financeira do SaaS
 ## 2. 🏗️ Arquitetura Geral
 A arquitetura do Nino é desenhada para suportar um modelo SaaS B2B Multi-Tenant com garantia absoluta de não vazamento de dados entre clientes. Para isso, adotamos uma estrutura de isolamento físico a nível de banco de dados, orquestrada por padrões de projeto estritos no back-end.
 
-### 2.1 Estratégia Multi-Tenant Absoluta (Schema-per-Tenant)
-O coração arquitetural do Nino. Abandonamos o uso de IDs compartilhados (`tenantId` em tabelas únicas) para dados sensíveis em favor de schemas independentes no PostgreSQL. Se o código falhar, o banco de dados fisicamente impede que um restaurante veja a venda de outro.
+### 2.1 Estratégia Multi-Tenant (Row-Level Isolation)
+O isolamento de dados entre restaurantes é garantido por **row-level isolation**: todas as entidades operacionais carregam um `tenantId` como chave estrangeira, e toda query é filtrada por ele na camada de repositório. O banco de dados é um schema `public` único.
 
-#### 2.1.1 A Divisão de Schemas
-O ecossistema divide as tabelas em dois universos:
-- **Schema Central (`public`):** O cérebro do SaaS. Gerencia quem são os clientes e os acessos.
-  - *Entidades Residentes:* `Company` (O cliente pagante), `CompanyResponsible` (O dono), `Plan` (Catálogo de preços), `User` (Operadores globais ou locais), `AuthCredential` (Segurança), `Session` (Controle de dispositivos), `Role` (Permissões) e domínios estáticos (Status, Notificações).
-- **Schemas Dinâmicos (`tenant_<slug>` ou `tenant_<id>`):** O motor operacional de cada restaurante. Estes schemas são criados programaticamente durante o Onboarding de uma nova `Company`.
-  - *Entidades Residentes:* `Tenant` (A vitrine whitelabel da unidade), `Product`, `Category`, `Order`, `Customer` (O consumidor final que pede a comida).
+#### 2.1.1 Organização das Entidades
+- **Entidades de plataforma (SaaS):** `Company`, `CompanyResponsible`, `Plan`, `Subscription`, `User`, `Credential`, `Session`, `GlobalRole`, `TenantRole` e domínios estáticos.
+- **Entidades operacionais (por tenant):** `Tenant`, `Product`, `ProductCategory`, `ProductModifier`, `Order`, `Customer`, `CustomerAddress`, `CustomerTenant` — todas filtradas por `tenantId`.
 
-#### 2.1.2 O Motor de Roteamento Dinâmico (Tenant Injection)
-Para que a API saiba de onde ler ou gravar dados sem precisar de dezoito bancos de dados rodando, usamos injeção de contexto em tempo de execução:
-1. Toda requisição para rotas operacionais (ex: criar produto, listar pedidos) exige a identificação do Tenant alvo (via Header `X-Tenant-ID` no app do restaurante, ou subdomínio na visão do cliente final).
-2. Um `Middleware` ou `Interceptor` do NestJS captura esse identificador e valida sua existência no schema `public`.
-3. O sistema injeta o comando `SET search_path TO tenant_<id>` diretamente na transação do **TypeORM** antes da execução da regra de negócio, forçando o PostgreSQL a rotear a query para a gaveta certa.
+#### 2.1.2 Roteamento de Contexto
+1. Rotas operacionais exigem identificação do Tenant alvo (Header `X-Tenant-ID` ou subdomínio).
+2. Um Guard/Interceptor do NestJS extrai e valida o identificador.
+3. O `tenantId` é injetado no contexto da requisição e repassado ao repositório, que aplica o filtro em todas as queries.
 ---
 
 ### 2.2 Padrão de Camadas Estrito (Strict 3-Tier Layering)
@@ -119,10 +115,10 @@ A separação de responsabilidades é inegociável. Nenhuma regra de negócio de
 - **Regra:** Proibido o uso de IF/ELSE para lógicas de negócio. Só delega para o Service e devolve a resposta.
 #### 2.2.2 **Service Layer (`*.service.ts`)**: 
 - **Única função:** O coração da aplicação. Executa cálculos, regras financeiras, orquestra fluxos complexos (ex: Onboarding cria 4 entidades diferentes).
-- **Regra:** Nunca importa decoradores do TypeORM. Depende exclusivamente dos Repositories, o que permite criar Mocks perfeitos para os testes unitários.
+- **Regra:** Nunca importa o Prisma Client diretamente. Depende exclusivamente dos Repositories, o que permite criar Mocks perfeitos para os testes unitários.
 #### 2.2.3   **Repository Layer (`*.repository.ts`)**: 
 - **Única função:** A ponte de infraestrutura com o banco de dados. 
-- É o único lugar do código autorizado a usar `@InjectRepository()` e construir `QueryBuilders`.
+- É o único lugar do código autorizado a usar o `PrismaService` e construir queries Prisma.
 - **Tratamento de Erros:** Captura códigos de erro nativos do Postgres (ex: violação de Unique Key `23505`) e traduz para exceções HTTP do NestJS (ex: `ConflictException`), blindando o Service.
 ---
 
@@ -132,7 +128,7 @@ O projeto utiliza **Feature Modules** (Modularização por Domínio), facilitand
 - **`/src`**: Raiz da aplicação.
     - **`/auth`, `/company`, `/user`**: Módulos do nível B2B (operam no schema `public`).
     - **`/shared`**: O núcleo de utilidades globais.
-        - **`/shared/database`**: Configurações do TypeORM, instâncias de `DataSource` e serviços de erro genéricos.
+        - **`/shared/database`**: PrismaService e configurações base de conexão.
         - **`/shared/middlewares`**: A lógica de captura e injeção do contexto do Tenant.
         - Guardiões, Validadores de CNPJ/CPF e Serviços de Criptografia de Senha.
 - **`/migrations`**: Arquivos TypeScript auto-gerados ou manuais contendo o DDL (Data Definition Language) do banco.
@@ -143,7 +139,7 @@ Configurações fixadas no `AppModule` e `main.ts` que afetam globalmente o trá
 - **Pipes de Validação Rigorosos:** Remoção passiva de campos extras (whitelist) e bloqueio ativo (forbidNonWhitelisted).
 
 ## 3. 🧰 Stack Tecnológica Oficial
-Para suportar a arquitetura acima, especialmente o requisito crítico de Schema-per-Tenant e injeção dinâmica em tempo real, a stack do Nino foi definida com as seguintes tecnologias e dependências:
+Para suportar a arquitetura acima, a stack do Nino foi definida com as seguintes tecnologias e dependências:
 
 ### 3.1 Motor e Linguagem
 - **Linguagem:** TypeScript v5.7 (Tipagem estrita obrigatória, evitando `any` a todo custo).
@@ -153,8 +149,8 @@ Para suportar a arquitetura acima, especialmente o requisito crítico de Schema-
 
 ### 3.2 Persistência de Dados e ORM
 - **Banco de Dados:** PostgreSQL v16 (Ambiente de desenvolvimento provisionado via Docker & Docker Compose).
-- **ORM Principal:** TypeORM (`typeorm`, `@nestjs/typeorm`).
-  - *Motivo da migração (Antigo Prisma):* O TypeORM suporta nativamente a manipulação dinâmica de schemas no Postgres e execução de lógicas customizadas por requisição (via QueryRunners e EntityManagers). O Prisma ORM é engessado e não suporta DDL dinâmico em tempo de execução sem severas gambiarras arquiteturais.
+- **ORM Principal:** Prisma ORM (`prisma`, `@prisma/client`).
+  - *Motivo:* Com a adoção de row-level isolation (em vez de schema-per-tenant), o Prisma passa a ser a escolha ideal — type safety completo gerado a partir do schema, migrações declarativas e client zero-overhead.
 - **Driver Nativo:** `pg` (Cliente PostgreSQL puramente escrito em JS).
 
 ### 3.3 Autenticação, Segurança e Acesso
@@ -177,8 +173,8 @@ Para suportar a arquitetura acima, especialmente o requisito crítico de Schema-
 | Camada / Responsabilidade | Tecnologia Base | Descrição e Função no Ecossistema Nino |
 | :--- | :--- | :--- |
 | **Engine / Core** | NestJS v11 + TypeScript | Framework principal operando como um monolito modular RESTful. Fornece a base de injeção de dependências (IoC), roteamento e arquitetura em camadas. |
-| **Persistência Relacional** | PostgreSQL v16 | Banco de dados central. Adota o modelo de `Schema-per-Tenant` para isolamento físico de dados entre os restaurantes, garantindo segurança extrema. |
-| **Object-Relational Mapping** | TypeORM | ORM escolhido por sua flexibilidade na injeção dinâmica de *schemas* em tempo de execução via `search_path`, viabilizando a arquitetura Multi-Tenant sem gambiarras. |
+| **Persistência Relacional** | PostgreSQL v16 | Banco de dados central. Adota row-level isolation via `tenantId` FK em schema `public` único. Isolamento garantido na camada de repositório. |
+| **Object-Relational Mapping** | Prisma ORM | ORM com type safety gerado a partir do schema declarativo. Migrações versionadas e client zero-overhead. |
 | **Segurança e Autenticação** | Passport.js + JWT + bcrypt | O motor de acesso. `bcrypt` realiza o *hash* das senhas. O JWT (JSON Web Token) emite *Access Tokens* de vida curta, enquanto um sistema customizado com `Passport` valida os *Refresh Tokens* persistidos no banco. |
 | **Sanitização na Borda** | class-validator + class-transformer | Barreira de entrada HTTP. Valida os DTOs (Data Transfer Objects) e rejeita propriedades não mapeadas (*forbidNonWhitelisted*), protegendo a API de injeções de *payload*. |
 | **Proteção de Rede** | @nestjs/throttler | Sistema de *Rate Limiting* (limitador de requisições) configurado globalmente para evitar ataques de negação de serviço (DDoS) e força bruta em endpoints sensíveis (ex: login). |
@@ -204,8 +200,8 @@ Para clareza dos agentes de IA e programadores, os seguintes componentes **não*
 
 ### Banco de Dados & ORM
 
-- **PostgreSQL** (v16) — Banco relacional com suporte a Schema-per-Tenant para isolamento físico de dados
-- **TypeORM** (v0.3.28) — ORM escolhido pela flexibilidade com schemas dinâmicos e QueryRunners nativos
+- **PostgreSQL** (v16) — Banco relacional com row-level isolation via `tenantId`
+- **Prisma ORM** — ORM com type safety gerado a partir do schema declarativo e migrações versionadas
 - **`pg`** — Driver nativo PostgreSQL para Node.js
 
 ### Autenticação & Segurança
@@ -296,7 +292,7 @@ nino-api/
 │   │   ├── company.module.ts
 │   │   ├── company.controller.ts        # CRUD de Empresas e controle de ativação
 │   │   ├── company.service.ts           # Regras de onboarding e verificação de conflitos (CNPJ)
-│   │   ├── company.repository.ts        # Interação estrita com o schema `public` via TypeORM
+│   │   ├── company.repository.ts        # Queries via PrismaService
 │   │   ├── dto/                         # create-company.dto, update-company.dto
 │   │   └── types/                       # company.type
 │   │
@@ -369,8 +365,8 @@ nino-api/
 │   │   └── data/                        # user.data.mock.ts
 │   │
 │   └── shared/                          # 🛠️ Core Transversal (Recursos Globais)
-│       ├── database/                    # [TypeORM] Conexões, DataSources e Configurações base
-│       ├── middlewares/                 # [TypeORM] Interceptor para injetar o `search_path` (Tenant)
+│       ├── database/                    # PrismaService e configurações base
+│       ├── middlewares/                 # Interceptor para resolver e injetar o tenantId
 │       ├── guards/                      # jwt-auth.guard.ts (Proteção global de rotas)
 │       ├── strategies/                  # jwt-auth.strategy.ts (Validação de Access Token)
 │       ├── validators/                  # cnpj.validator.ts (Custom class-validator decorators)
@@ -381,7 +377,7 @@ nino-api/
 │           ├── token/                   # token.service.ts (Wrapper do JwtService)
 │           └── helpers/cnpj/            # Lógica de formatação de CNPJ
 │
-├── migrations/                          # 📜 [Substitui prisma/] DDLs e TypeORM Migrations 
+├── prisma/                              # 📜 Schema declarativo e migrations Prisma
 │   ├── 1710000000000-InitialPublic.ts   # Migrações globais do schema B2B
 │   └── tenants/                         # Migrações dinâmicas para instanciar novos clientes
 │
@@ -399,7 +395,7 @@ nino-api/
 ├── Infraestrutura e Configurações       ⚙️ Raiz do Projeto
 │   ├── docker-compose.yml               Provisionamento do PostgreSQL v16
 │   ├── .env / .env.example             Chaves JWT, Database URIs e Secrets
-│   ├── package.json                    Scripts e dependências TypeORM/NestJS
+│   ├── package.json                    Scripts e dependências NestJS/Prisma
 │   ├── tsconfig.json / tsconfig.build.json
 │   ├── eslint.config.mjs              Regras estritas de Linting
 │   ├── .prettierrc                      Formatação visual de código
@@ -410,7 +406,7 @@ nino-api/
 
 ## 6. 🗄️ Topologia do Banco de Dados e Entidades
 
-Com a migração para TypeORM para suportar o isolamento físico Multi-Tenant, a modelagem de dados passa a ser definida por classes TypeScript (`Entities`). Abaixo está o detalhamento de cada entidade do sistema, seu propósito de negócio e como elas se relacionam na arquitetura de schemas separados.
+A modelagem de dados é definida no `prisma/schema.prisma`. Abaixo está o detalhamento de cada entidade do sistema, seu propósito de negócio e como elas se relacionam.
 
 *(Nota: Colunas de infraestrutura padrão como `id`, `description`, `createdAt` e `updatedAt` são omitidas desta documentação por já estarem padronizadas em todas as entidades nas camadas base do código).*
 
@@ -454,28 +450,20 @@ Estas tabelas definem as regras de estado e permissões do sistema.
 - **`Tenant`**: A vitrine operacional (A "Loja" em si).
   - *Campos Visuais/Identidade:* `slug` (Unique), `logoUrl`, `favicon`, `primaryColor`, `secondaryColor`.
   - *Configuração de Rede:* `customDomain` (Unique, Nullable).
-  - *Arquitetura:* Fica no schema global (`public`) para que o middleware do NestJS possa ler o `customDomain` ou `slug` da requisição HTTP inicial e saber para qual schema dinâmico ele deve injetar o `search_path`.
+  - *Arquitetura:* Reside no schema `public`. O middleware lê o `customDomain` ou `slug` da requisição HTTP para resolver o `tenantId` antes de qualquer operação.
 - **`Subscription`**: O contrato vigente.
   - *Campos de Negócio:* `startedAt`, `expiresAt`.
   - *Relacionamentos:* Amarração 1:1 com `Company`. Liga-se a um `Plan` e a um `SubscriptionStatus`.
 
 ---
 
-### 6.2 Schemas Dinâmicos Operacionais (`tenant_<id>`)
-Este é o universo isolado do TypeORM. Os schemas são criados via código (Data Definition Language Dinâmico) durante a ativação de um novo `Tenant`. **Nenhuma tabela abaixo se mistura com dados de outros restaurantes.**
+### 6.2 Entidades Operacionais (isoladas por `tenantId`)
+Todas as entidades abaixo residem no schema `public` mas são sempre filtradas por `tenantId` na camada de repositório. **Nenhuma query retorna dados de outro Tenant.**
 
-- **`Product`**: A base comercial da loja.
-  - *Campos:* `name`, `price`, `promotionalPrice`, `description`, `imageUrl`, `isActive`.
-- **`Category`**: A estrutura de vitrine.
-  - *Campos:* `name`, `sortOrder` (define a posição no front-end do restaurante).
-- **`Customer`**: O cliente do restaurante.
-  - *Campos:* `name`, `whatsapp`, `email`. 
-  - *Isolamento:* Fica trancado no schema do Tenant. A lanchonete A não tem acesso aos clientes da lanchonete B.
-- **`Order`**: O registro da transação.
-  - *Campos:* `totalAmount`, `status` (preparando, a caminho, entregue), `deliveryAddress`.
-  - *Rastreio:* Vinculado ao `Customer`.
-- **`OrderItem`**: A quebra do pedido.
-  - *Campos:* Quantidade, preço congelado no momento da compra (evita que a mudança de preço do `Product` altere o histórico financeiro do `Order`), observações ("sem cebola").
+- **`Product`** / **`ProductCategory`** / **`ProductModifier`**: O catálogo da loja, incluindo opcionais (ex: tamanho, borda).
+- **`Customer`** / **`CustomerAddress`** / **`CustomerTenant`**: O consumidor final e seus endereços. `CustomerTenant` registra o vínculo com cada loja visitada (e pontos de fidelidade).
+- **`Order`** / **`OrderItem`** / **`OrderItemModifier`**: O pedido e seus itens. O `unitPrice` é congelado no momento da compra para preservar o histórico financeiro.
+- **`Payment`** / **`OrderStatus`** / **`OrderStatusHistory`**: Ciclo de vida financeiro e rastreio de status do pedido.
 
 ---
 ## 7. 🔐 Segurança, Autenticação e Autorização
@@ -781,10 +769,10 @@ Este tópico cataloga cada endpoint funcional encontrado nos controladores do pr
 
 ### 1. **Repository Pattern**
 
-Camada de abstração entre Service e TypeORM. **Tratamento de null e erros centralizados no repository.**
+Camada de abstração entre Service e Prisma. **Tratamento de null e erros centralizados no repository.**
 
 ```typescript
-// ✅ Repository — trata erros TypeORM + null
+// ✅ Repository — trata erros Prisma + null
 async getById(id: string): Promise<Role> {
   try {
     const found = await this.repository.findOneBy({ id })
@@ -808,7 +796,7 @@ async getById(@Param('id') id: string): Promise<Role> {
 
 ### 2. **ErrorService — Centralização de Erros**
 
-Mapeia códigos de erro PostgreSQL para exceções NestJS via `QueryFailedError` do TypeORM. Erros `HttpException` são relançados diretamente sem transformação.
+Mapeia códigos de erro PostgreSQL para exceções NestJS via `PrismaClientKnownRequestError`. Erros `HttpException` são relançados diretamente sem transformação.
 
 ```typescript
 // Suportados:
@@ -824,11 +812,22 @@ try {
 }
 ```
 
-### 3. **Entidades TypeORM com Decoradores**
+### 3. **Tipos gerados pelo Prisma**
 
-Tipos derivados diretamente das classes Entity via decoradores TypeORM. O ORM garante sincronização automática entre código e banco.
+Tipos derivados diretamente do `prisma/schema.prisma` via `prisma generate`. O client é sempre sincronizado com o schema declarativo.
 
 ```typescript
+// Gerado automaticamente pelo Prisma Client
+import { Role } from '@prisma/client'
+
+// Role já possui: id, name, description, createdAt, updatedAt, deletedAt
+const role: Role = await this.prisma.globalRole.findUniqueOrThrow({
+  where: { id },
+})
+```
+
+```typescript
+// Exemplo equivalente da estrutura antiga (TypeORM):
 @Entity()
 export class Role {
   @PrimaryGeneratedColumn('uuid')
@@ -897,18 +896,14 @@ async login(...) { ... }
 
 ### 8. **Middleware e Interceptors para Tenant**
 
-A cada requisição, identifica o restaurante (via JWT) e injeta o schema correto no TypeORM.
+A cada requisição, resolve o `tenantId` (via Header `X-Tenant-ID`, subdomínio ou JWT) e injeta no contexto da requisição para uso nos repositórios.
 
 ```typescript
-// Interceptor que seta search_path antes de executar queries
 export class TenantInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest()
-    const tenantId = request.user?.tenantId // Extraído do JWT
-
-    // Via QueryRunner do TypeORM:
-    // SET search_path TO tenant_<tenantId>
-    
+    const tenantId = request.headers['x-tenant-id'] ?? request.user?.tenantId
+    request.tenantId = tenantId
     return next.handle()
   }
 }

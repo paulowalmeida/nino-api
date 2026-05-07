@@ -17,15 +17,15 @@ export class PlanService {
     return this.planRepository.getAll()
   }
 
-  async getById(id: number): Promise<PlanResponse> {
+  async getById(id: string): Promise<PlanResponse> {
     return this.planRepository.getById(id)
   }
 
-  async update(id: number, updateDto: UpdatePlanDto): Promise<void> {
+  async update(id: string, updateDto: UpdatePlanDto): Promise<void> {
     return this.planRepository.update(id, updateDto)
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     return this.planRepository.delete(id)
   }
 }

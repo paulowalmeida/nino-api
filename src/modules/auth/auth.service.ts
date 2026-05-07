@@ -1,13 +1,17 @@
+import { createHash } from 'crypto'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 
 import { CredentialsService } from '@credential/credential.service'
-import { RoleService } from '@role/role.service'
+import { GlobalRoleService } from '@role/global/global-role.service'
 import { SessionService } from '@session/session.service'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'
 import { UserService } from '@user/user.service'
+import { UserResponse } from '@user/types/user-response.type'
 import { LoginRequestDto } from './dtos/login-request.dto'
 import { RegisterRequestDto } from './dtos/register-request.dto'
+import { LoginResponse } from './types/login-response.type'
+import { Tokens } from './types/tokens.type'
 
 @Injectable()
 export class AuthService {
@@ -17,13 +21,20 @@ export class AuthService {
     private readonly sessionService: SessionService,
     private readonly passwordService: PasswordService,
     private readonly tokenService: TokenService,
-    private readonly roleService: RoleService,
+    private readonly roleService: GlobalRoleService,
   ) {}
 
-  async login(dto: LoginRequestDto, ipAddress?: string, userAgent?: string) {
-    const credential = await this.credentialsService.getByEmailWithPassword(
-      dto.email,
-    )
+  private hashToken(token: string): string {
+    return createHash('sha256').update(token).digest('hex')
+  }
+
+  async login(
+    dto: LoginRequestDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<LoginResponse> {
+    const credential =
+      await this.credentialsService.getByEmailWithPassword(dto.email)
 
     if (!credential.password) {
       throw new UnauthorizedException('Invalid credentials')
@@ -44,7 +55,7 @@ export class AuthService {
     })
     await this.sessionService.create({
       userId: user.id,
-      refreshToken: tokens.refreshToken,
+      refreshToken: this.hashToken(tokens.refreshToken),
       ipAddress,
       userAgent,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -53,15 +64,15 @@ export class AuthService {
     return { user, tokens }
   }
 
-  async me(userId: string) {
+  async me(userId: string): Promise<UserResponse> {
     return await this.userService.getById(userId)
   }
 
-  async register(dto: RegisterRequestDto) {
-    const role = await this.roleService.getByName(dto.role)
+  async register(dto: RegisterRequestDto): Promise<UserResponse> {
+    const role = await this.roleService.getByName(dto.globalRole)
     const user = await this.userService.create({
       name: dto.name,
-      roleId: role.id,
+      globalRoleId: role.id,
     })
 
     await this.credentialsService.create({
@@ -74,13 +85,21 @@ export class AuthService {
   }
 
   async logout(refreshToken: string): Promise<void> {
-    const session = await this.sessionService.getByRefreshToken(refreshToken)
+    const session = await this.sessionService.getByRefreshToken(
+      this.hashToken(refreshToken),
+    )
     await this.sessionService.delete(session.id)
   }
 
-  async refresh(refreshToken: string, ipAddress?: string, userAgent?: string) {
+  async refresh(
+    refreshToken: string,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<Tokens> {
     const payload = await this.tokenService.verifyRefreshToken(refreshToken)
-    const session = await this.sessionService.findByRefreshToken(refreshToken)
+    const hashedToken = this.hashToken(refreshToken)
+    const session =
+      await this.sessionService.findByRefreshToken(hashedToken)
 
     if (!session) {
       await this.sessionService.deleteAllByUserId(payload.sub)
@@ -92,7 +111,7 @@ export class AuthService {
       role: payload.role,
     })
     await this.sessionService.update(session.id, {
-      refreshToken: tokens.refreshToken,
+      refreshToken: this.hashToken(tokens.refreshToken),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     })
 

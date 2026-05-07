@@ -1,65 +1,110 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
+import { RolesGuard } from '@shared/guards/roles.guard'
+import { CreatePlanDto } from './dtos/create-plan.dto'
+import { UpdatePlanDto } from './dtos/update-plan.dto'
 import { PlanController } from './plan.controller'
 import { PlanService } from './plan.service'
 
-describe('PlanController', () => {
+describe(PlanController.name, () => {
   let controller: PlanController
   let service: PlanService
 
-  const mockPlan = { id: 1, name: 'Pro', slug: 'pro' }
+  const mockPlan = {
+    id: 'uuid-1',
+    name: 'Pro',
+    slug: 'pro',
+    price: 99.9,
+    maxTenants: 5,
+    maxProducts: 100,
+    maxOrders: 500,
+    hasPrioritySupport: false,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    type: { name: 'BASIC' },
+  }
+
+  const mockService = {
+    create: jest.fn(),
+    getAll: jest.fn(),
+    getById: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  }
 
   beforeEach(async () => {
+    jest.clearAllMocks()
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PlanController],
-      providers: [
-        {
-          provide: PlanService,
-          useValue: {
-            create: jest.fn().mockResolvedValue(mockPlan),
-            getAll: jest.fn().mockResolvedValue([mockPlan]),
-            getById: jest.fn().mockResolvedValue(mockPlan),
-            update: jest.fn().mockResolvedValue(undefined),
-            delete: jest.fn().mockResolvedValue(undefined),
-          },
-        },
-      ],
-    }).compile()
+      providers: [{ provide: PlanService, useValue: mockService }],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile()
 
     controller = module.get<PlanController>(PlanController)
     service = module.get<PlanService>(PlanService)
   })
 
-  it('should create a plan', async () => {
-    const dto = { name: 'Pro' } as any
+  it('create() should create a plan', async () => {
+    const dto: CreatePlanDto = {
+      name: 'Pro',
+      slug: 'pro',
+      typeId: 'uuid-type-1',
+      price: 99.9,
+      maxTenants: 5,
+      maxProducts: 100,
+      maxOrders: 500,
+    }
+    mockService.create.mockResolvedValue(mockPlan)
+
     const result = await controller.create(dto)
+
+    expect(result).toEqual(mockPlan)
     expect(service.create).toHaveBeenCalledWith(dto)
-    expect(result).toEqual(mockPlan)
   })
 
-  it('should find all plans', async () => {
+  it('getAll() should return all plans', async () => {
+    mockService.getAll.mockResolvedValue([mockPlan])
+
     const result = await controller.getAll()
-    expect(service.getAll).toHaveBeenCalled()
+
     expect(result).toEqual([mockPlan])
+    expect(service.getAll).toHaveBeenCalled()
   })
 
-  it('should find a plan by id', async () => {
-    const result = await controller.getById(1)
-    expect(service.getById).toHaveBeenCalledWith(1)
+  it('getById() should return a plan by id', async () => {
+    mockService.getById.mockResolvedValue(mockPlan)
+
+    const result = await controller.getById('uuid-1')
+
+    expect(result).toEqual(mockPlan)
+    expect(service.getById).toHaveBeenCalledWith('uuid-1')
+  })
+
+  it('update() should update a plan and return the updated entity', async () => {
+    const dto: UpdatePlanDto = { name: 'New Pro' }
+    mockService.update.mockResolvedValue(undefined)
+    mockService.getById.mockResolvedValue(mockPlan)
+
+    const result = await controller.update('uuid-1', dto)
+
+    expect(service.update).toHaveBeenCalledWith('uuid-1', dto)
+    expect(service.getById).toHaveBeenCalledWith('uuid-1')
     expect(result).toEqual(mockPlan)
   })
 
-  it('should update a plan and return the updated entity', async () => {
-    const dto = { name: 'New Pro' }
-    const result = await controller.update(1, dto)
-    expect(service.update).toHaveBeenCalledWith(1, dto)
-    expect(service.getById).toHaveBeenCalledWith(1)
-    expect(result).toEqual(mockPlan)
-  })
+  it('delete() should delete a plan and return a success message', async () => {
+    mockService.delete.mockResolvedValue(undefined)
 
-  it('should delete a plan and return a success message', async () => {
-    const result = await controller.delete(1)
-    expect(service.delete).toHaveBeenCalledWith(1)
+    const result = await controller.delete('uuid-1')
+
+    expect(service.delete).toHaveBeenCalledWith('uuid-1')
     expect(result).toEqual({ message: 'plan deleted successfully' })
   })
 })

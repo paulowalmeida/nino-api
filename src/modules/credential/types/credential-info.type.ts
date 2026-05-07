@@ -1,9 +1,9 @@
 export type CredentialInfo = {
   id: string
   userId: string
-  email: string
+  email: string | null
   provider: string
-  providerId: string | null
+  providerCode: string | null
   createdAt: Date
   updatedAt: Date
 }

@@ -22,7 +22,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
           sortKey: -1
         method: GET
         headers: []
@@ -46,7 +46,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
           sortKey: -2
         method: GET
         headers: []
@@ -70,12 +70,12 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN"
           sortKey: -3
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"name\": \"Profissional\",\n  \"price\": 197,\n  \"planTypeId\": \"{{PLAN_TYPE_ID}}\"\n}"
+          text: "{\n  \"name\": \"Profissional\",\n  \"slug\": \"profissional\",\n  \"typeId\": \"{{PLAN_TYPE_ID}}\",\n  \"price\": 197,\n  \"maxTenants\": 1,\n  \"maxProducts\": 100,\n  \"maxOrders\": 500\n}"
         headers:
           - name: Content-Type
             value: application/json
@@ -99,7 +99,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN"
           sortKey: -4
         method: PATCH
         body:
@@ -128,7 +128,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN"
           sortKey: -5
         method: DELETE
         headers: []

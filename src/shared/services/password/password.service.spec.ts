@@ -48,6 +48,8 @@ describe('PasswordService', () => {
 
   it('should throw UnauthorizedException when password is invalid', async () => {
     ;(bcrypt.compare as jest.Mock).mockResolvedValue(false)
-    await expect(service.validate('wrong', 'hash')).rejects.toThrow(UnauthorizedException)
+    await expect(service.validate('wrong', 'hash')).rejects.toThrow(
+      UnauthorizedException,
+    )
   })
 })

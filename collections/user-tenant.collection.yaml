@@ -22,7 +22,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT"
           sortKey: -1
         method: POST
         headers:
@@ -37,7 +37,8 @@ collection:
           text: |
             {
               "userId": "{{USER_ID}}",
-              "tenantId": "{{TENANT_ID}}"
+              "tenantId": "{{TENANT_ID}}",
+              "tenantRoleId": "{{TENANT_ROLE_ID}}"
             }
         settings:
           renderRequestBody: true
@@ -55,10 +56,23 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
           sortKey: -2
         method: GET
         headers: []
+        params:
+          - name: page
+            value: "1"
+            disabled: true
+          - name: size
+            value: "20"
+            disabled: true
+          - name: orderDir
+            value: "ASC"
+            disabled: true
+          - name: orderBy
+            value: "createdAt"
+            disabled: true
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
@@ -79,10 +93,23 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
           sortKey: -3
         method: GET
         headers: []
+        params:
+          - name: page
+            value: "1"
+            disabled: true
+          - name: size
+            value: "20"
+            disabled: true
+          - name: orderDir
+            value: "ASC"
+            disabled: true
+          - name: orderBy
+            value: "createdAt"
+            disabled: true
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
@@ -103,7 +130,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT"
           sortKey: -4
         method: DELETE
         headers: []
@@ -147,3 +174,4 @@ environments:
         ACCESS_TOKEN: ""
         USER_ID: ""
         TENANT_ID: ""
+        TENANT_ROLE_ID: ""

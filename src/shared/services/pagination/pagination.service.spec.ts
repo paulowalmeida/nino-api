@@ -15,7 +15,10 @@ describe('PaginationService', () => {
 
   describe('getOptions', () => {
     it('should calculate skip and take from page and limit', () => {
-      expect(service.getPaginationParams({ page: 2, size: 10 })).toEqual({ skip: 10, take: 10 })
+      expect(service.getPaginationParams({ page: 2, size: 10 })).toEqual({
+        skip: 10,
+        take: 10,
+      })
     })
 
     it('should default to page 1 and limit 20', () => {

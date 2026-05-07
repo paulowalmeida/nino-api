@@ -22,7 +22,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT"
           sortKey: -1
         method: GET
         headers: []
@@ -39,14 +39,14 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/company-responsibles/id/{{USER_ID}}"
+      - url: "{{BASE_URL}}/company-responsibles/id/{{RESPONSIBLE_ID}}"
         name: by-id
         meta:
           id: req_company_responsible_get
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT"
           sortKey: -2
         method: GET
         headers: []
@@ -63,14 +63,14 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/company-responsibles/doc/{{USER_ID}}"
+      - url: "{{BASE_URL}}/company-responsibles/doc/{{RESPONSIBLE_ID}}"
         name: by-doc
         meta:
           id: req_company_responsible_get_doc
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT"
           sortKey: -3
         method: GET
         headers: []
@@ -94,12 +94,12 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT"
           sortKey: -4
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"userId\": \"{{USER_ID}}\",\n  \"cpf\": \"000.000.000-00\",\n  \"phone\": \"91999999999\"\n}"
+          text: "{\n  \"name\": \"João da Silva\",\n  \"cpf\": \"12345678900\",\n  \"phone\": \"91999999999\",\n  \"email\": \"responsavel@nino.com\"\n}"
         headers:
           - name: Content-Type
             value: application/json
@@ -116,14 +116,14 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/company-responsibles/{{USER_ID}}"
+      - url: "{{BASE_URL}}/company-responsibles/{{RESPONSIBLE_ID}}"
         name: update
         meta:
           id: req_company_responsible_update
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT"
           sortKey: -5
         method: PUT
         body:
@@ -145,14 +145,14 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/company-responsibles/{{USER_ID}}"
+      - url: "{{BASE_URL}}/company-responsibles/{{RESPONSIBLE_ID}}"
         name: delete
         meta:
           id: req_company_responsible_delete
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT"
           sortKey: -6
         method: DELETE
         headers: []
@@ -193,4 +193,4 @@ environments:
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
-        USER_ID: ""
+        RESPONSIBLE_ID: ""

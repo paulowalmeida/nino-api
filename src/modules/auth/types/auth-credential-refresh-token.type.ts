@@ -1,3 +1,6 @@
-import { Credential } from '@credential/entities/credential.entity'
+import { Credential } from '@prisma/client'
 
-export type AuthCredentialRefreshToken = Pick<Credential, 'id' | 'userId' | 'email'>
+export type AuthCredentialRefreshToken = Pick<
+  Credential,
+  'id' | 'userId' | 'email'
+>

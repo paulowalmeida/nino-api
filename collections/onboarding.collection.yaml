@@ -27,7 +27,7 @@ collection:
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"name\": \"Paulo Admin\",\n  \"email\": \"admin@nino.com\",\n  \"password\": \"senha123\",\n  \"role\": \"ADMIN\"\n}"
+          text: "{\n  \"name\": \"Paulo Admin\",\n  \"email\": \"admin@nino.com\",\n  \"password\": \"senha123\",\n  \"globalRole\": \"ADMIN\"\n}"
         headers:
           - id: pair_onboarding_admin_register_h1
             name: Content-Type
@@ -101,7 +101,7 @@ collection:
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"name\": \"João Merchant\",\n  \"email\": \"merchant@nino.com\",\n  \"password\": \"senha123\",\n  \"role\": \"MERCHANT\"\n}"
+          text: "{\n  \"name\": \"João Merchant\",\n  \"email\": \"merchant@nino.com\",\n  \"password\": \"senha123\",\n  \"globalRole\": \"MERCHANT\"\n}"
         headers:
           - id: pair_onboarding_merchant_register_h1
             name: Content-Type
@@ -167,7 +167,7 @@ collection:
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"companyName\": \"Restaurante do João\",\n  \"cnpj\": \"12345678000190\",\n  \"legalName\": \"João Restaurante LTDA\",\n  \"legalNature\": \"Sociedade Limitada\"\n}"
+          text: "{\n  \"name\": \"Restaurante do João\",\n  \"cnpj\": \"12345678000190\",\n  \"ownerId\": \"{{USER_ID}}\",\n  \"responsibleId\": \"{{RESPONSIBLE_ID}}\",\n  \"legalName\": \"João Restaurante LTDA\",\n  \"legalNature\": \"Sociedade Limitada\"\n}"
         headers:
           - id: pair_onboarding_merchant_company_h1
             name: Content-Type
@@ -276,3 +276,4 @@ environments:
         ACCESS_TOKEN: ""
         USER_ID: ""
         COMPANY_ID: ""
+        RESPONSIBLE_ID: ""

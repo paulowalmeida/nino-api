@@ -6,7 +6,10 @@ import { PaginationMeta } from '@shared/types/pagination-meta.type'
 
 @Injectable()
 export class PaginationService {
-  getPaginationParams(query: PaginatedQueryDto): { skip: number; take: number } {
+  getPaginationParams(query: PaginatedQueryDto): {
+    skip: number
+    take: number
+  } {
     const { page = 1, size = 20 } = query
     return { skip: (page - 1) * size, take: size }
   }
@@ -24,7 +27,11 @@ export class PaginationService {
     }
   }
 
-  paginate<T>(data: T[], total: number, query: PaginatedQueryDto): PaginatedResponse<T> {
+  paginate<T>(
+    data: T[],
+    total: number,
+    query: PaginatedQueryDto,
+  ): PaginatedResponse<T> {
     return { data, pagination: this.build(total, query) }
   }
 }

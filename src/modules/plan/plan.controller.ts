@@ -4,14 +4,13 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common'
 
 import { Roles } from '@shared/decorators/roles.decorator'
-import { Role } from '@shared/enums/role.enum'
+import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 import { CreatePlanDto } from './dtos/create-plan.dto'
@@ -25,27 +24,27 @@ export class PlanController {
   constructor(private readonly planService: PlanService) {}
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(GlobalRole.ADMIN)
   async create(@Body() createDto: CreatePlanDto): Promise<PlanResponse> {
     return await this.planService.create(createDto)
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.SUPPORT, Role.MERCHANT)
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   async getAll(): Promise<PlanResponse[]> {
     return await this.planService.getAll()
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.SUPPORT, Role.MERCHANT)
-  async getById(@Param('id', ParseIntPipe) id: number): Promise<PlanResponse> {
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
+  async getById(@Param('id') id: string): Promise<PlanResponse> {
     return await this.planService.getById(id)
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(GlobalRole.ADMIN)
   async update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Body() updateDto: UpdatePlanDto,
   ): Promise<PlanResponse> {
     await this.planService.update(id, updateDto)
@@ -53,10 +52,8 @@ export class PlanController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
-  async delete(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ message: string }> {
+  @Roles(GlobalRole.ADMIN)
+  async delete(@Param('id') id: string): Promise<{ message: string }> {
     await this.planService.delete(id)
     return { message: 'plan deleted successfully' }
   }

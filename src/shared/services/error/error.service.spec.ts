@@ -5,14 +5,16 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { QueryFailedError } from 'typeorm'
+
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client.js'
 
 import { ErrorService } from './error.service'
 
-const makeQueryFailedError = (pgCode: string): QueryFailedError => {
-  const error = new QueryFailedError('SELECT 1', [], new Error('db error'))
-  ;(error as any).driverError = { code: pgCode }
-  return error
+const makePrismaError = (code: string): PrismaClientKnownRequestError => {
+  return new PrismaClientKnownRequestError('db error', {
+    code,
+    clientVersion: '7.0.0',
+  })
 }
 
 describe(ErrorService.name, () => {
@@ -46,64 +48,50 @@ describe(ErrorService.name, () => {
     })
   })
 
-  describe('QueryFailedError — PostgreSQL codes', () => {
-    it('should throw ConflictException for unique violation (23505)', () => {
-      const error = makeQueryFailedError('23505')
+  describe('PrismaClientKnownRequestError codes', () => {
+    it('should throw ConflictException for P2002 (unique constraint)', () => {
+      const error = makePrismaError('P2002')
       expect(() => service.handle(error)).toThrow(ConflictException)
       expect(() => service.handle(error)).toThrow('Unique constraint failed')
     })
 
-    it('should throw BadRequestException for foreign key violation (23503)', () => {
-      const error = makeQueryFailedError('23503')
+    it('should throw BadRequestException for P2003 (foreign key constraint)', () => {
+      const error = makePrismaError('P2003')
       expect(() => service.handle(error)).toThrow(BadRequestException)
-      expect(() => service.handle(error)).toThrow('Foreign key constraint failed')
-    })
-
-    it('should throw BadRequestException for not null violation (23502)', () => {
-      const error = makeQueryFailedError('23502')
-      expect(() => service.handle(error)).toThrow(BadRequestException)
-      expect(() => service.handle(error)).toThrow('Required field is missing')
-    })
-
-    it('should use customMessage when provided for unique violation', () => {
-      const error = makeQueryFailedError('23505')
-      expect(() => service.handle(error, 'Email already taken')).toThrow('Email already taken')
-    })
-
-    it('should use customMessage when provided for foreign key violation', () => {
-      const error = makeQueryFailedError('23503')
-      expect(() => service.handle(error, 'Referenced record does not exist')).toThrow(
-        'Referenced record does not exist',
+      expect(() => service.handle(error)).toThrow(
+        'Foreign key constraint failed',
       )
     })
 
-    it('should rethrow QueryFailedError for unknown pg codes', () => {
-      const error = makeQueryFailedError('99999')
-      expect(() => service.handle(error)).toThrow(error)
-    })
-
-    it('should rethrow QueryFailedError when driverError has no code', () => {
-      const error = new QueryFailedError('SELECT 1', [], new Error('db error'))
-      ;(error as any).driverError = {}
-      expect(() => service.handle(error)).toThrow(error)
-    })
-  })
-
-  describe('Generic Error with "not found" message', () => {
-    it('should throw NotFoundException for error containing "not found"', () => {
-      const error = new Error('record not found in database')
+    it('should throw NotFoundException for P2025 (record not found)', () => {
+      const error = makePrismaError('P2025')
       expect(() => service.handle(error)).toThrow(NotFoundException)
-      expect(() => service.handle(error)).toThrow('record not found in database')
+      expect(() => service.handle(error)).toThrow('Record not found')
     })
 
-    it('should use customMessage when provided', () => {
-      const error = new Error('record not found')
-      expect(() => service.handle(error, 'User not found')).toThrow('User not found')
+    it('should throw BadRequestException for P2014 (required relation missing)', () => {
+      const error = makePrismaError('P2014')
+      expect(() => service.handle(error)).toThrow(BadRequestException)
+      expect(() => service.handle(error)).toThrow('Required relation missing')
     })
 
-    it('should be case-sensitive — not match "Not Found" uppercase', () => {
-      const error = new Error('Not Found')
-      expect(() => service.handle(error)).not.toThrow(NotFoundException)
+    it('should use customMessage when provided for P2002', () => {
+      const error = makePrismaError('P2002')
+      expect(() => service.handle(error, 'Email already taken')).toThrow(
+        'Email already taken',
+      )
+    })
+
+    it('should use customMessage when provided for P2003', () => {
+      const error = makePrismaError('P2003')
+      expect(() =>
+        service.handle(error, 'Referenced record does not exist'),
+      ).toThrow('Referenced record does not exist')
+    })
+
+    it('should rethrow PrismaClientKnownRequestError for unknown codes', () => {
+      const error = makePrismaError('P9999')
+      expect(() => service.handle(error)).toThrow(error)
     })
   })
 

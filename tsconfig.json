@@ -26,20 +26,21 @@
     "paths": {
       "@auth/*": ["src/modules/auth/*"],
       "@company/*": ["src/modules/company/*"],
-      "@company-responsible/*": ["src/modules/company-responsible/*"],
+      "@company-responsible/*": ["src/modules/company/modules/responsible/*"],
       "@credential/*": ["src/modules/credential/*"],
-      "@invoice-status/*": ["src/modules/invoice-status/*"],
+      "@invoice-status/*": ["src/modules/invoice/modules/status/*"],
+      "@health/*": ["src/modules/health/*"],
       "@mocks/*": ["src/mocks/*"],
-      "@notification-type/*": ["src/modules/notification-type/*"],
+      "@notification-type/*": ["src/modules/notification/modules/type/*"],
       "@plan/*": ["src/modules/plan/*"],
-      "@plan-type/*": ["src/modules/plan-type/*"],
+      "@plan-type/*": ["src/modules/plan/modules/type/*"],
       "@role/*": ["src/modules/role/*"],
       "@session/*": ["src/modules/session/*"],
       "@shared/*": ["src/shared/*"],
-      "@subscription-status/*": ["src/modules/subscription-status/*"],
-      "@tenant-status/*": ["src/modules/tenant-status/*"],
+      "@subscription-status/*": ["src/modules/subscription/modules/status/*"],
+      "@tenant-status/*": ["src/modules/tenant/modules/status/*"],
       "@user/*": ["src/modules/user/*"],
-      "@user-tenant/*": ["src/modules/user-tenant/*"],
+      "@user-tenant/*": ["src/modules/user/modules/tenant/*"],
     }
   }
 }

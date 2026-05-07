@@ -1,4 +1,6 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator'
+import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator'
+
+import { GlobalRole } from '@shared/enums/global-role.enum'
 
 export class RegisterRequestDto {
   @IsString()
@@ -14,7 +16,6 @@ export class RegisterRequestDto {
   @MinLength(6)
   password: string
 
-  @IsString()
-  @IsNotEmpty()
-  role: string
+  @IsEnum(GlobalRole)
+  globalRole: GlobalRole
 }

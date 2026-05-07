@@ -1,0 +1,854 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Auth & User ---
+
+model GlobalRole {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  users User[] // 1 GlobalRole -> N Users
+
+  @@map("global_roles")
+}
+
+model TenantRole {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  userTenants UserTenant[] // 1 TenantRole -> N UserTenants
+  invites     Invite[] // 1 TenantRole -> N Invites
+
+  @@map("tenant_roles")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  phone        String?
+  globalRoleId String    @map("global_role_id")
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  locale       String?
+  timezone     String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  // FK -> PK
+  globalRole GlobalRole @relation(fields: [globalRoleId], references: [id])
+
+  // Bindings
+  ownedCompanies Company[]      @relation("Owner") // 1 User -> N OwnedCompanies
+  credentials    Credential[] // 1 User -> N UserCredentials 
+  sessions       Session[] // 1 User -> N UserSessions 
+  userTenants    UserTenant[] // 1 User -> N UserTenants
+  customer       Customer? // 1 User -> 1 Customers
+  orders         Order[]        @relation("Courier") // 1 User -> N Orders (como entregador)
+  sentInvites    Invite[]       @relation("InvitedBy") // 1 User -> N Invites enviados
+  notifications  Notification[] // 1 User -> N Notifications
+
+  @@map("users")
+}
+
+model Credential {
+  id                         String    @id @default(uuid())
+  userId                     String    @map("user_id")
+  email                      String?   @unique
+  password                   String?
+  providerCode               String    @unique @map("provider_code")
+  provider                   String    @default("local")
+  emailVerifiedAt            DateTime? @map("email_verified_at")
+  resetTokenHash             String?   @unique @map("reset_token_hash")
+  resetTokenExpiresAt        DateTime? @map("reset_token_expires_at")
+  emailVerificationTokenHash String?   @unique @map("email_verification_token_hash")
+  emailVerificationExpiresAt DateTime? @map("email_verification_expires_at")
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
+  deletedAt                  DateTime? @map("deleted_at")
+
+  // FK -> PK
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("credentials")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  refreshToken String   @unique @map("refresh_token")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // FK -> PK
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// --- Company ---
+model BusinessCategory {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  companyBusinessCategory CompanyBusinessCategory[] // N CompanyBusinessCategory -> N Company
+
+  @@map("business_categories")
+}
+
+model Company {
+  id                String    @id @default(uuid())
+  name              String
+  cnpj              String    @unique
+  legalName         String?   @map("legal_name")
+  legalNature       String?   @map("legal_nature")
+  stateRegistration String?   @map("state_registration")
+  ownerId           String    @map("owner_id")
+  responsibleId     String    @map("responsible_id")
+  zipCode           String?   @map("zip_code")
+  street            String?
+  number            String?
+  complement        String?
+  neighborhood      String?
+  city              String?
+  state             String?
+  country           String?   @default("BR")
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  // FK -> PK
+  owner       User               @relation("Owner", fields: [ownerId], references: [id])
+  responsible CompanyResponsible @relation(fields: [responsibleId], references: [id])
+
+  // Bindings
+  tenants                 Tenant[] // 1 Company -> N Tenants
+  subscription            Subscription[] // 1 Company -> N Subscription
+  companyBusinessCategory CompanyBusinessCategory[] // N Company -> N CompanyCategoryType
+
+  @@map("companies")
+}
+
+model CompanyResponsible {
+  id        String    @id @default(uuid())
+  name      String
+  cpf       String    @unique
+  email     String
+  phone     String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Bindings
+  companies Company[] // 1 Responsible -> N Companies
+
+  @@map("company_responsibles")
+}
+
+model CompanyBusinessCategory {
+  businessCategoryId String    @map("type_id")
+  companyId          String    @map("company_id")
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // FK -> PK
+  businessCategory BusinessCategory @relation(fields: [businessCategoryId], references: [id])
+  company          Company          @relation(fields: [companyId], references: [id])
+
+  // Unique Constraint to avoid duplicate entries
+  @@id([businessCategoryId, companyId])
+  @@map("company_business_categories")
+}
+
+// -- Tenant --
+
+model Tenant {
+  id             String    @id @default(uuid())
+  customName     String?
+  slug           String    @unique
+  logoUrl        String?   @map("logo_url")
+  favicon        String?
+  primaryColor   String?   @map("primary_color")
+  secondaryColor String?   @map("secondary_color")
+  customDomain   String?   @unique @map("custom_domain")
+  companyId      String    @map("company_id")
+  statusId       String    @map("status_id")
+  typeId         String    @map("type_id")
+  timezone       String    @default("America/Sao_Paulo")
+  zipCode        String    @map("zip_code")
+  street         String
+  number         String
+  complement     String?
+  neighborhood   String
+  city           String
+  state          String
+  country        String    @default("BR")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // FK -> PK
+  company      Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tenantStatus TenantStatus @relation(fields: [statusId], references: [id])
+  tenantype    TenantType   @relation(fields: [typeId], references: [id])
+
+  // Bindings
+  userTenants     UserTenant[] // 1 Tenant -> N UserTenants
+  tenantPhones    TenantPhone[] // 1 Tenant -> N TenantPhones
+  customerTenants CustomerTenant[] // 1 Tenant -> N CustomerTenants
+  products        Product[] // 1 Tenant -> N Products
+  orders          Order[] // 1 Tenant -> N Orders
+  productCategory ProductCategory[] // 1 Tenant -> N ProductCategories
+  openingHours    OpeningHours[] // 1 Tenant -> N OpeningHours 
+  modifiers       ProductModifier[] // 1 Tenant -> N ProductModifiers
+  settings        TenantSettings? // 1 Tenant -> 1 TenantSettings
+  invites         Invite[] // 1 Tenant -> N Invites
+  paymentMethods  TenantPaymentMethod[] // 1 Tenant -> N TenantPaymentMethods
+
+  @@map("tenants")
+}
+
+model TenantPhone {
+  id        String    @id @default(uuid())
+  phone     String
+  tenantId  String    @map("tenant_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // FK -> PK
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@map("tenant_phones")
+}
+
+model TenantStatus {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  tenants Tenant[] // 1 TenantStatus -> N Tenants
+
+  @@map("tenant_statuses")
+}
+
+model TenantType {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  tenants Tenant[] // 1 TenantType -> N Tenants
+
+  @@map("tenant_types")
+}
+
+model TenantSettings {
+  id                    String   @id @default(uuid())
+  tenantId              String   @unique @map("tenant_id")
+  requireAccount        Boolean  @default(false) @map("require_account")
+  requireCpf            Boolean  @default(false) @map("require_cpf")
+  allowGuestOrder       Boolean  @default(true) @map("allow_guest_order")
+  deliveryFee           Decimal  @default(0) @map("delivery_fee") @db.Decimal(10, 2)
+  minOrderAmount        Decimal  @default(0) @map("min_order_amount") @db.Decimal(10, 2)
+  deliveryRadius        Int      @default(0) @map("delivery_radius")
+  isDeliveryEnabled     Boolean  @default(true) @map("is_delivery_enabled")
+  isPickupEnabled       Boolean  @default(false) @map("is_pickup_enabled")
+  loyaltyEnabled        Boolean  @default(false) @map("loyalty_enabled")
+  loyaltyPointsPerOrder Int      @default(0) @map("loyalty_points_per_order")
+  loyaltyPointValue     Decimal  @default(0) @map("loyalty_point_value") @db.Decimal(10, 4) // valor monetário de 1 ponto (ex: 0.05 = R$0,05)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  // FK -> PK
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_settings")
+}
+
+model OpeningHours {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  dayOfWeek Int      @map("day_of_week")
+  openTime  String   @map("open_time")
+  closeTime String   @map("close_time")
+  isOpen    Boolean  @default(true) @map("is_open")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // FK -> PK
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, dayOfWeek])
+  @@map("opening_hours")
+}
+
+// -- Team ---
+
+model UserTenant {
+  userId       String    @map("user_id")
+  tenantId     String    @map("tenant_id")
+  tenantRoleId String    @map("tenant_role_id")
+  isCurrent    Boolean   @default(false)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  // FK -> PK
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantRole TenantRole @relation(fields: [tenantRoleId], references: [id])
+
+  // Unique Constraint to avoid duplicate entries
+  @@id([userId, tenantId])
+  @@map("user_tenants")
+}
+
+model Invite {
+  id           String    @id @default(uuid())
+  token        String    @unique
+  email        String
+  tenantId     String    @map("tenant_id")
+  tenantRoleId String    @map("tenant_role_id")
+  invitedById  String    @map("invited_by_id")
+  expiresAt    DateTime  @map("expires_at")
+  usedAt       DateTime? @map("used_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  // FK -> PK
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenantRole TenantRole @relation(fields: [tenantRoleId], references: [id])
+  invitedBy  User       @relation("InvitedBy", fields: [invitedById], references: [id])
+
+  @@unique([email, tenantId])
+  @@map("invites")
+}
+
+// --- Catalog ---
+
+model ProductCategory {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  position    Int       @default(0)
+  tenantId    String    @map("tenant_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // FK -> PK
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Bindings
+  products Product[]
+
+  @@unique([name, tenantId])
+  @@map("product_categories")
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal   @db.Decimal(10, 2)
+  position    Int       @default(0)
+  categoryId  String    @map("category_id")
+  tenantId    String    @map("tenant_id")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // FK -> PK
+  category ProductCategory @relation(fields: [categoryId], references: [id])
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Bindings
+  orderItems OrderItem[] // 1 Product -> N OrderItem
+  images     ProductImage[] // 1 Product -> N Image
+  modifiers  ProductModifierMap[] // 1 Product -> N ProductProductModifier
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        String    @id @default(uuid())
+  productId String    @map("product_id")
+  url       String
+  isPrimary Boolean   @default(false) @map("is_primary")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // FK -> PK
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model ProductModifier {
+  id            String    @id @default(uuid())
+  tenantId      String    @map("tenant_id")
+  name          String
+  description   String?
+  isRequired    Boolean   @default(false) @map("is_required")
+  maxSelections Int       @default(1) @map("max_selections")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // FK -> PK
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Bindings
+  options          ProductModifierOption[]
+  productsModifier ProductModifierMap[]
+
+  @@map("product_modifiers")
+}
+
+model ProductModifierOption {
+  id         String    @id @default(uuid())
+  modifierId String    @map("modifier_id")
+  name       String
+  price      Decimal   @db.Decimal(10, 2)
+  isActive   Boolean   @default(true) @map("is_active")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  // FK -> PK
+  modifier ProductModifier @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+
+  // Bindings
+  orderItemModifiers OrderItemModifier[]
+
+  @@map("product_modifier_options")
+}
+
+model ProductModifierMap {
+  productId  String   @map("product_id")
+  modifierId String   @map("modifier_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // FK -> PK
+  product  Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  modifier ProductModifier @relation(fields: [modifierId], references: [id], onDelete: Cascade)
+
+  // Unique Constraint to avoid duplicate entries
+  @@id([productId, modifierId])
+  @@map("product_product_modifiers")
+}
+
+// --- Orders ---
+
+model Order {
+  id                  String    @id @default(uuid())
+  tenantId            String    @map("tenant_id")
+  customerId          String?   @map("customer_id")
+  statusId            String    @map("status_id")
+  courierId           String?   @map("courier_id") // User com role courier
+  deliveryAddressId   String?   @map("delivery_address_id")
+  isDelivery          Boolean   @default(true) @map("is_delivery")
+  notes               String?
+  subtotal            Decimal   @db.Decimal(10, 2)
+  deliveryFee         Decimal   @default(0) @map("delivery_fee") @db.Decimal(10, 2)
+  totalAmount         Decimal   @map("total_amount") @db.Decimal(10, 2)
+  guestName           String?   @map("guest_name")
+  guestPhone          String?   @map("guest_phone")
+  guestEmail          String?   @map("guest_email")
+  guestCpf            String?   @map("guest_cpf")
+  estimatedDeliveryAt DateTime? @map("estimated_delivery_at")
+  guestZipCode        String?   @map("guest_zip_code")
+  guestStreet         String?   @map("guest_street")
+  guestNumber         String?   @map("guest_number")
+  guestComplement     String?   @map("guest_complement")
+  guestNeighborhood   String?   @map("guest_neighborhood")
+  guestCity           String?   @map("guest_city")
+  guestState          String?   @map("guest_state")
+  loyaltyPointsUsed   Int       @default(0) @map("loyalty_points_used")
+  loyaltyDiscount     Decimal   @default(0) @map("loyalty_discount") @db.Decimal(10, 2)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  // FK -> PK
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  status          OrderStatus      @relation(fields: [statusId], references: [id])
+  courier         User?            @relation("Courier", fields: [courierId], references: [id])
+  deliveryAddress CustomerAddress? @relation(fields: [deliveryAddressId], references: [id])
+
+  // Bindings
+  items         OrderItem[]
+  payment       Payment?
+  statusHistory OrderStatusHistory[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String   @map("order_id")
+  productId String   @map("product_id")
+  quantity  Int
+  unitPrice Decimal  @map("unit_price") @db.Decimal(10, 2)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // FK -> PK
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  // Bindings
+  modifiers OrderItemModifier[] // 1 OrderItem -> N OrderItemModifiers
+
+  @@map("order_items")
+}
+
+model OrderItemModifier {
+  id          String   @id @default(uuid())
+  orderItemId String   @map("order_item_id")
+  optionId    String   @map("option_id")
+  quantity    Int      @default(1)
+  unitPrice   Decimal  @map("unit_price") @db.Decimal(10, 2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // FK -> PK
+  orderItem OrderItem             @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  option    ProductModifierOption @relation(fields: [optionId], references: [id])
+
+  @@map("order_item_modifiers")
+}
+
+model OrderStatus {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Bindings
+  orders        Order[]
+  statusHistory OrderStatusHistory[]
+
+  @@map("order_statuses")
+}
+
+model OrderStatusHistory {
+  id        String   @id @default(uuid())
+  orderId   String   @map("order_id")
+  statusId  String   @map("status_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // FK -> PK
+  order  Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status OrderStatus @relation(fields: [statusId], references: [id])
+
+  @@map("order_status_history")
+}
+
+// --- Customer ---
+
+model Customer {
+  id        String    @id @default(uuid())
+  userId    String    @unique @map("user_id")
+  cpf       String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // FK -> PK
+  user User @relation(fields: [userId], references: [id])
+
+  // Binding
+  address         CustomerAddress[] // 1 User -> N Addresses
+  customerTenants CustomerTenant[] // 1 Customer -> N CustomerTenants
+  orders          Order[]
+
+  @@map("customers")
+}
+
+model CustomerAddress {
+  id           String    @id @default(uuid())
+  zipCode      String    @map("zip_code")
+  street       String
+  number       String
+  complement   String?
+  neighborhood String
+  city         String
+  state        String
+  isPrimary    Boolean?  @map("is_primary") // true = principal; null = não principal (trick: NULL != NULL no unique do PG)
+  country      String    @default("BR")
+  customerId   String    @map("customer_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  // FK -> PK
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  // Bindings
+  order Order[]
+
+  @@unique([customerId, isPrimary]) // garante 1 endereço principal por cliente
+  @@map("customer_addresses")
+}
+
+model CustomerTenant {
+  customerId    String    @map("customer_id")
+  tenantId      String    @map("tenant_id")
+  loyaltyPoints Int       @default(0)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  // FK -> PK
+  customer Customer @relation(fields: [customerId], references: [id])
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+
+  // Unique Constraint to avoid duplicate entries
+  @@id([customerId, tenantId])
+  @@map("customer_tenants")
+}
+
+// --- Billing ---
+
+model PlanType {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  plans Plan[] // 1 PlanType -> N Plans 
+
+  @@map("plan_types")
+}
+
+model Plan {
+  id                 String    @id @default(uuid())
+  name               String    @unique
+  slug               String    @unique
+  typeId             String    @map("type_id")
+  price              Decimal   @db.Decimal(10, 2)
+  maxTenants         Int?      @map("max_tenants") // null = ilimitado
+  maxProducts        Int?      @map("max_products") // null = ilimitado
+  maxOrders          Int?      @map("max_orders") // null = ilimitado
+  hasPrioritySupport Boolean   @default(false) @map("has_priority_support")
+  isActive           Boolean   @default(true) @map("is_active")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // FK -> PK 
+  type PlanType @relation(fields: [typeId], references: [id])
+
+  // Bindings
+  subscriptions Subscription[] // 1 Plan: N Subscriptions
+
+  @@map("plans")
+}
+
+model Subscription {
+  id                   String    @id @default(uuid())
+  companyId            String    @map("company_id")
+  planId               String    @map("plan_id")
+  subscriptionStatusId String    @map("subscription_status_id")
+  isActive             Boolean?  @map("is_active") // true = ativa; null = inativa/expirada (trick: NULL != NULL no unique do PG)
+  startedAt            DateTime  @default(now()) @map("started_at")
+  trialEndsAt          DateTime? @map("trial_ends_at")
+  expiresAt            DateTime? @map("expires_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at")
+
+  // FK -> PK
+  company            Company            @relation(fields: [companyId], references: [id])
+  plan               Plan               @relation(fields: [planId], references: [id])
+  subscriptionStatus SubscriptionStatus @relation(fields: [subscriptionStatusId], references: [id])
+
+  // Bindings
+  invoices Invoice[] // 1 Subscription: N Invoices
+
+  @@unique([companyId, isActive]) // garante 1 assinatura ativa por empresa
+  @@map("subscriptions")
+}
+
+model SubscriptionStatus {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  subscriptions Subscription[] // 1 SubscriptionStatus: N Subscriptions 
+
+  @@map("subscription_statuses")
+}
+
+model Invoice {
+  id              String    @id @default(uuid())
+  subscriptionId  String    @map("subscription_id")
+  invoiceStatusId String    @map("invoice_status_id")
+  amount          Decimal   @db.Decimal(10, 2)
+  dueDate         DateTime  @map("due_date")
+  paidAt          DateTime? @map("paid_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // FK -> PK 
+  subscription  Subscription  @relation(fields: [subscriptionId], references: [id])
+  invoiceStatus InvoiceStatus @relation(fields: [invoiceStatusId], references: [id])
+
+  @@map("invoices")
+}
+
+model InvoiceStatus {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  invoices Invoice[] // 1 InvoiceStatus: N Invoices 
+
+  @@map("invoice_statuses")
+}
+
+// --- Payments ---
+
+model Payment {
+  id                   String    @id @default(uuid())
+  orderId              String    @unique @map("order_id")
+  statusId             String    @map("status_id")
+  methodId             String    @map("method_id")
+  amount               Decimal   @db.Decimal(10, 2)
+  gatewayTransactionId String?   @map("gateway_transaction_id")
+  failureReason        String?   @map("failure_reason")
+  paidAt               DateTime? @map("paid_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  // FK -> PK
+  order  Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status PaymentStatus @relation(fields: [statusId], references: [id])
+  method PaymentMethod @relation(fields: [methodId], references: [id])
+
+  @@map("payments")
+}
+
+model PaymentStatus {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Bindings
+  payments Payment[]
+
+  @@map("payment_statuses")
+}
+
+model PaymentMethod {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  payments             Payment[]
+  tenantPaymentMethods TenantPaymentMethod[]
+
+  @@map("payment_methods")
+}
+
+model TenantPaymentMethod {
+  tenantId  String   @map("tenant_id")
+  methodId  String   @map("method_id")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // FK -> PK
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  method PaymentMethod @relation(fields: [methodId], references: [id])
+
+  @@id([tenantId, methodId])
+  @@map("tenant_payment_methods")
+}
+
+// --- Notifications ---
+
+model NotificationType {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Bindings
+  notifications Notification[]
+
+  @@map("notification_types")
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  typeId    String    @map("type_id")
+  title     String
+  body      String
+  data      Json?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  // FK -> PK
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type NotificationType @relation(fields: [typeId], references: [id])
+
+  @@map("notifications")
+}

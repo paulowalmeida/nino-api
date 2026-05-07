@@ -22,12 +22,12 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN"
           sortKey: -1
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"name\": \"Paulo\",\n  \"roleId\": \"{{ROLE_ID}}\",\n  \"companyId\": \"{{COMPANY_ID}}\"\n}"
+          text: "{\n  \"name\": \"Paulo\",\n  \"globalRoleId\": \"{{GLOBAL_ROLE_ID}}\"\n}"
         headers:
           - id: pair_user_create_h1
             name: Content-Type
@@ -52,10 +52,23 @@ collection:
           created: 1776000000001
           modified: 1776000000001
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT"
           sortKey: -1.5
         method: GET
         headers: []
+        params:
+          - name: page
+            value: "1"
+            disabled: true
+          - name: size
+            value: "20"
+            disabled: true
+          - name: orderDir
+            value: "ASC"
+            disabled: true
+          - name: orderBy
+            value: "name"
+            disabled: true
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
@@ -76,7 +89,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
           sortKey: -2
         method: GET
         headers: []
@@ -100,7 +113,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
           sortKey: -3
         method: GET
         headers: []
@@ -124,7 +137,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
           sortKey: -4
         method: PATCH
         body:
@@ -154,7 +167,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: ADMIN"
           sortKey: -5
         method: DELETE
         headers: []
@@ -197,5 +210,4 @@ environments:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
         USER_ID: ""
-        ROLE_ID: ""
-        COMPANY_ID: ""
+        GLOBAL_ROLE_ID: ""

@@ -3,48 +3,48 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { InjectRepository } from '@nestjs/typeorm'
 
-import { Repository } from 'typeorm'
+import { Plan, PlanType } from '@prisma/client'
 
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { ErrorService } from '@shared/services/error/error.service'
 import { CreatePlanDto } from './dtos/create-plan.dto'
 import { UpdatePlanDto } from './dtos/update-plan.dto'
-import { Plan } from './entities/plan.entity'
 import { PlanResponse } from './types/plan.response.type'
 
 @Injectable()
 export class PlanRepository {
   constructor(
-    @InjectRepository(Plan)
-    private readonly repository: Repository<Plan>,
+    private readonly prisma: PrismaService,
     private readonly errorService: ErrorService,
   ) {}
 
+  private toResponse(plan: Plan & { type: PlanType }): PlanResponse {
+    const { typeId: _, deletedAt: __, type, ...rest } = plan
+    return { ...rest, type: { name: type.name } }
+  }
+
   async getAll(): Promise<PlanResponse[]> {
     try {
-      const plans = await this.repository.find({
-        order: { name: 'ASC' },
-        relations: ['type'],
+      const plans = await this.prisma.plan.findMany({
+        where: { deletedAt: null },
+        orderBy: { name: 'asc' },
+        include: { type: true },
       })
-      return plans.map(({ typeId: _, type, ...rest }) => ({
-        ...rest,
-        type: { name: type.name },
-      }))
+      return plans.map((p) => this.toResponse(p))
     } catch (error) {
       this.errorService.handle(error)
     }
   }
 
-  async getById(id: number): Promise<PlanResponse> {
+  async getById(id: string): Promise<PlanResponse> {
     try {
-      const found = await this.repository.findOne({
-        where: { id },
-        relations: ['type'],
+      const found = await this.prisma.plan.findFirst({
+        where: { id, deletedAt: null },
+        include: { type: true },
       })
       if (!found) throw new NotFoundException('Plan not found')
-      const { typeId: _, type, ...rest } = found
-      return { ...rest, type: { name: type.name } }
+      return this.toResponse(found)
     } catch (error) {
       this.errorService.handle(error)
     }
@@ -52,37 +52,42 @@ export class PlanRepository {
 
   async create(data: CreatePlanDto): Promise<PlanResponse> {
     try {
-      const exists = await this.repository.findOneBy({ slug: data.slug })
+      const exists = await this.prisma.plan.findFirst({
+        where: { slug: data.slug, deletedAt: null },
+      })
       if (exists) throw new ConflictException('Slug already exists')
-
-      const saved = await this.repository.save(this.repository.create(data))
-      return this.getById(saved.id)
+      const saved = await this.prisma.plan.create({
+        data,
+        include: { type: true },
+      })
+      return this.toResponse(saved)
     } catch (error) {
       this.errorService.handle(error)
     }
   }
 
-  async update(id: number, data: UpdatePlanDto): Promise<void> {
+  async update(id: string, data: UpdatePlanDto): Promise<void> {
     try {
-      const plan = await this.repository.findOne({ where: { id } })
-      if (!plan) throw new NotFoundException('Plan not found')
-
+      const plan = await this.getById(id)
       if (data.slug && data.slug !== plan.slug) {
-        const exists = await this.repository.findOneBy({ slug: data.slug })
+        const exists = await this.prisma.plan.findFirst({
+          where: { slug: data.slug, deletedAt: null },
+        })
         if (exists) throw new ConflictException('Slug already exists')
       }
-
-      Object.assign(plan, data)
-      await this.repository.save(plan)
+      await this.prisma.plan.update({ where: { id }, data })
     } catch (error) {
       this.errorService.handle(error)
     }
   }
 
-  async delete(id: number): Promise<void> {
+  async delete(id: string): Promise<void> {
     try {
       await this.getById(id)
-      await this.repository.softDelete(id)
+      await this.prisma.plan.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      })
     } catch (error) {
       this.errorService.handle(error)
     }

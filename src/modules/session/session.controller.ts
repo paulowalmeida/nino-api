@@ -10,16 +10,19 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Session } from '@prisma/client'
+
 import { Roles } from '@shared/decorators/roles.decorator'
-import { Role } from '@shared/enums/role.enum'
+import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 import { CreateSessionDto } from './dtos/create-session.dto'
 import { SessionQueryDto } from './dtos/session-query.dto'
 import { UpdateSessionDto } from './dtos/update-session.dto'
-import { Session } from './entities/session.entity'
 import { SessionService } from './session.service'
-import { SessionPaginatedResponse } from './types/session-paginated-response.type'
+import {
+  SessionPaginatedResponse,
+} from './types/session-paginated-response.type'
 import { SessionResponse } from './types/session.response.type'
 
 @Controller('sessions')
@@ -28,13 +31,15 @@ export class SessionController {
   constructor(private readonly sessionsService: SessionService) {}
 
   @Post()
-  @Roles(Role.ADMIN)
-  async create(@Body() createDto: CreateSessionDto): Promise<Session> {
+  @Roles(GlobalRole.ADMIN)
+  async create(
+    @Body() createDto: CreateSessionDto,
+  ): Promise<Session> {
     return await this.sessionsService.create(createDto)
   }
 
   @Get('list-by-user-id/:userId')
-  @Roles(Role.ADMIN, Role.SUPPORT)
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
   async getListByUserId(
     @Param('userId') userId: string,
     @Query() query: SessionQueryDto,
@@ -43,13 +48,13 @@ export class SessionController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.SUPPORT)
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
   async getById(@Param('id') id: string): Promise<SessionResponse> {
     return await this.sessionsService.getById(id)
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN)
+  @Roles(GlobalRole.ADMIN)
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateSessionDto,
@@ -59,7 +64,7 @@ export class SessionController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.SUPPORT)
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
   async delete(@Param('id') id: string): Promise<{ message: string }> {
     await this.sessionsService.delete(id)
     return { message: 'session deleted successfully' }

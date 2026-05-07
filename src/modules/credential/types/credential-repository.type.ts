@@ -1,5 +1,3 @@
-import { Credential } from '@credential/entities/credential.entity'
+import { Credential } from '@prisma/client'
 
-export type CredentialRepositoryType = Omit<Credential, 'password'> & {
-  password: string
-}
+export type CredentialRepositoryType = Credential

@@ -44,19 +44,19 @@ describe('PlanService', () => {
   })
 
   it('should find a plan by id', async () => {
-    const result = await service.getById(1)
-    expect(repository.getById).toHaveBeenCalledWith(1)
+    const result = await service.getById('1')
+    expect(repository.getById).toHaveBeenCalledWith('1')
     expect(result).toEqual(mockPlan)
   })
 
   it('should update a plan', async () => {
     const dto = { name: 'New Pro' }
-    await service.update(1, dto)
-    expect(repository.update).toHaveBeenCalledWith(1, dto)
+    await service.update('1', dto)
+    expect(repository.update).toHaveBeenCalledWith('1', dto)
   })
 
   it('should delete a plan', async () => {
-    await service.delete(1)
-    expect(repository.delete).toHaveBeenCalledWith(1)
+    await service.delete('1')
+    expect(repository.delete).toHaveBeenCalledWith('1')
   })
 })
