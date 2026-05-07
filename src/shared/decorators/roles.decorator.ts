@@ -1,6 +1,8 @@
 import { SetMetadata } from '@nestjs/common'
 
-import { Role } from '@shared/enums/role.enum'
+import { GlobalRole } from '@shared/enums/global-role.enum'
+import { TenantRole } from '@shared/enums/tenant-role.enum'
 
 export const ROLES_KEY = 'roles'
-export const Roles = (...roles: Role[]) => SetMetadata(ROLES_KEY, roles)
+export const Roles = (...roles: (GlobalRole | TenantRole)[]) =>
+  SetMetadata(ROLES_KEY, roles)

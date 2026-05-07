@@ -1,18 +1,34 @@
 import { Controller, Get } from '@nestjs/common'
+import {
+  HealthCheck,
+  HealthCheckError,
+  HealthCheckService,
+  HealthIndicatorResult,
+} from '@nestjs/terminus'
 import { SkipThrottle } from '@nestjs/throttler'
-import { HealthCheck, HealthCheckService, TypeOrmHealthIndicator } from '@nestjs/terminus'
+
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 
 @SkipThrottle()
 @Controller('health')
 export class HealthController {
   constructor(
     private health: HealthCheckService,
-    private db: TypeOrmHealthIndicator,
+    private prisma: PrismaService,
   ) {}
 
   @Get()
   @HealthCheck()
   check() {
-    return this.health.check([() => this.db.pingCheck('database')])
+    return this.health.check([() => this.pingDatabase()])
+  }
+
+  private async pingDatabase(): Promise<HealthIndicatorResult> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`
+      return { database: { status: 'up' } }
+    } catch (error) {
+      throw new HealthCheckError('database', { database: { status: 'down' } })
+    }
   }
 }

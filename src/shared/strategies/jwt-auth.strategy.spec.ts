@@ -1,6 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common'
-import { Test, TestingModule } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
+import { Test, TestingModule } from '@nestjs/testing'
 
 import { UserRepository } from '@user/user.repository'
 import { JwtAuthStrategy } from './jwt-auth.strategy'
@@ -52,6 +52,8 @@ describe('JwtAuthStrategy', () => {
     const payload = { sub: 'u1', role: 'admin' } as any
     jest.spyOn(userRepository, 'getById').mockResolvedValue(null as any)
 
-    await expect(strategy.validate({} as any, payload)).rejects.toThrow(UnauthorizedException)
+    await expect(strategy.validate({} as any, payload)).rejects.toThrow(
+      UnauthorizedException,
+    )
   })
 })

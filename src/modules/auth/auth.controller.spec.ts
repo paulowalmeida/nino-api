@@ -1,14 +1,16 @@
 import { UnauthorizedException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
-import { AuthService } from './auth.service'
+import { GlobalRole } from '@shared/enums/global-role.enum'
+import type { AuthRequest } from '@shared/types/auth-request.type'
 import { AuthController } from './auth.controller'
+import { AuthService } from './auth.service'
 
-describe('AuthController', () => {
+describe(AuthController.name, () => {
   let controller: AuthController
   let service: AuthService
 
-  const mockUser = { id: 'u1', roleId: 'r1' }
+  const mockUser = { id: 'u1', globalRoleId: 'r1' }
   const mockTokens = { accessToken: 'access-token', refreshToken: 'refresh-token' }
 
   const mockReq = () => ({
@@ -23,6 +25,7 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: {
+            me: jest.fn(),
             login: jest.fn(),
             register: jest.fn(),
             refresh: jest.fn(),
@@ -34,6 +37,16 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController)
     service = module.get<AuthService>(AuthService)
+  })
+
+  it('should return current user data', async () => {
+    jest.spyOn(service, 'me').mockResolvedValue(mockUser as any)
+    const req = { user: { sub: 'u1' } } as AuthRequest
+
+    const result = await controller.me(req)
+
+    expect(service.me).toHaveBeenCalledWith('u1')
+    expect(result).toEqual(mockUser)
   })
 
   it('should login and return user + tokens', async () => {
@@ -48,7 +61,7 @@ describe('AuthController', () => {
 
   it('should register and return the created user', async () => {
     jest.spyOn(service, 'register').mockResolvedValue(mockUser as any)
-    const dto = { name: 'N', email: 'a@a.com', password: '123', role: 'ADMIN' }
+    const dto = { name: 'N', email: 'a@a.com', password: '123', globalRole: GlobalRole.ADMIN }
 
     const result = await controller.register(dto)
 

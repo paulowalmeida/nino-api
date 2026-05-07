@@ -33,6 +33,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document)
 
   await app.listen(process.env.PORT ?? 3000)
-  console.log(`Nino API is running on port ${process.env.PORT ?? 3000} 🐱🐱!!`)
+  const port = process.env.PORT ?? 3000
+  console.log(`Nino API is running on port ${port} 🐱🐱!!`)
 }
 bootstrap()

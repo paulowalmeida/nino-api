@@ -1,9 +1,7 @@
-import { Session } from '@session/entities/session.entity'
+import { Session } from '@prisma/client'
+
 import { UserResponse } from '@user/types/user-response.type'
 
-export type SessionResponse = Omit<
-  Session,
-  'userId' | 'refreshToken' | 'user'
-> & {
+export type SessionResponse = Omit<Session, 'userId' | 'refreshToken'> & {
   user: UserResponse
 }

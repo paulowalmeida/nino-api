@@ -1,5 +1,5 @@
-import { Plan } from '@plan/entities/plan.entity'
+import { Plan, PlanType } from '@prisma/client'
 
-export type PlanResponse = Omit<Plan, 'typeId' | 'type'> & {
-  type: { name: string }
+export type PlanResponse = Omit<Plan, 'typeId' | 'deletedAt'> & {
+  type: Pick<PlanType, 'name'>
 }

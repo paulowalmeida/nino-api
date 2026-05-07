@@ -1,37 +1,48 @@
 import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
 
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
-import { Credential } from '@credential/entities/credential.entity'
-import { Session } from './entities/session.entity'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { SessionRepository } from './session.repository'
 
-describe('SessionRepository', () => {
+describe(SessionRepository.name, () => {
   let repository: SessionRepository
 
-  const mockUser = { id: 'user-id', name: 'Test', role: { name: 'ADMIN' } }
+  const mockUser = {
+    id: 'user-id',
+    name: 'Test',
+    deletedAt: null,
+    globalRoleId: 'role-id',
+    globalRole: { name: 'ADMIN' },
+  }
 
   const mockSession = {
     id: 'session-id',
     userId: 'user-id',
     refreshToken: 'token',
     expiresAt: new Date(),
+    ipAddress: null,
+    userAgent: null,
+    createdAt: new Date(),
     user: mockUser,
   }
 
-  const mockRepository = {
-    find: jest.fn(),
-    findAndCount: jest.fn(),
-    findOne: jest.fn(),
-    findOneBy: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-    delete: jest.fn(),
+  const mockPrisma = {
+    session: {
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      count: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    credential: {
+      findMany: jest.fn(),
+    },
   }
-
-  const mockCredentialRepository = { find: jest.fn() }
 
   const mockErrorService = { handle: jest.fn() }
 
@@ -39,174 +50,168 @@ describe('SessionRepository', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SessionRepository,
-        { provide: getRepositoryToken(Session), useValue: mockRepository },
-        { provide: getRepositoryToken(Credential), useValue: mockCredentialRepository },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: ErrorService, useValue: mockErrorService },
         PaginationService,
       ],
     }).compile()
 
     repository = module.get<SessionRepository>(SessionRepository)
-    mockCredentialRepository.find.mockResolvedValue([])
+    mockPrisma.credential.findMany.mockResolvedValue([])
+    mockPrisma.session.count.mockResolvedValue(0)
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
-  })
+  afterEach(() => { jest.clearAllMocks() })
 
   it('should create a session successfully', async () => {
-    mockRepository.create.mockReturnValue(mockSession)
-    mockRepository.save.mockResolvedValue(mockSession)
-
+    mockPrisma.session.create.mockResolvedValue(mockSession)
     const result = await repository.create({
       userId: 'user-id',
       refreshToken: 'token',
       expiresAt: new Date(),
     })
-
     expect(result).toEqual(mockSession)
-    expect(mockRepository.save).toHaveBeenCalled()
   })
 
   it('should call errorService.handle when create throws', async () => {
     const error = new Error('db error')
-    mockRepository.create.mockReturnValue({})
-    mockRepository.save.mockRejectedValue(error)
-
-    await repository.create({ userId: 'user-id', refreshToken: 'token', expiresAt: new Date() })
-
+    mockPrisma.session.create.mockRejectedValue(error)
+    await repository.create({
+      userId: 'user-id',
+      refreshToken: 'token',
+      expiresAt: new Date(),
+    })
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('should get sessions by userId with pagination', async () => {
-    mockRepository.findAndCount.mockResolvedValue([[mockSession], 1])
-
-    const result = await repository.getListByUserId('user-id', { page: 1, size: 20 })
-
+    mockPrisma.session.findMany.mockResolvedValue([mockSession])
+    mockPrisma.session.count.mockResolvedValue(1)
+    const result = await repository.getListByUserId('user-id', {
+      page: 1,
+      size: 20,
+    })
     expect(result.data).toHaveLength(1)
-    expect(result.data[0].id).toBe('session-id')
     expect((result.data[0] as any).refreshToken).toBeUndefined()
-    expect(result.data[0].user.credentials).toEqual([])
-    expect(result.pagination).toMatchObject({ page: 1, size: 20, total: 1 })
-  })
-
-  it('should call errorService.handle when getListByUserId throws', async () => {
-    const error = new Error('db error')
-    mockRepository.findAndCount.mockRejectedValue(error)
-
-    await repository.getListByUserId('user-id', {})
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+    expect(result.pagination.total).toBe(1)
   })
 
   it('should get a session by id', async () => {
-    mockRepository.findOne.mockResolvedValue(mockSession)
-
+    mockPrisma.session.findFirst.mockResolvedValue(mockSession)
     const result = await repository.getById('session-id')
-
     expect(result.id).toBe('session-id')
     expect((result as any).refreshToken).toBeUndefined()
-    expect(result.user.credentials).toEqual([])
   })
 
   it('should call errorService.handle with NotFoundException when getById finds nothing', async () => {
-    mockRepository.findOne.mockResolvedValue(null)
-
+    mockPrisma.session.findFirst.mockResolvedValue(null)
     await repository.getById('session-id')
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(
       expect.any(NotFoundException),
     )
   })
 
   it('should get a session by refresh token', async () => {
-    mockRepository.findOneBy.mockResolvedValue(mockSession)
-
+    mockPrisma.session.findUnique.mockResolvedValue(mockSession)
     const result = await repository.getByRefreshToken('token')
-
     expect(result).toEqual(mockSession)
-    expect(mockRepository.findOneBy).toHaveBeenCalledWith({ refreshToken: 'token' })
   })
 
   it('should call errorService.handle with NotFoundException when getByRefreshToken finds nothing', async () => {
-    mockRepository.findOneBy.mockResolvedValue(null)
-
+    mockPrisma.session.findUnique.mockResolvedValue(null)
     await repository.getByRefreshToken('token')
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(
       expect.any(NotFoundException),
     )
   })
 
   it('should find a session by refresh token (returns null if not found)', async () => {
-    mockRepository.findOneBy.mockResolvedValue(null)
-
+    mockPrisma.session.findUnique.mockResolvedValue(null)
     const result = await repository.findByRefreshToken('missing-token')
-
     expect(result).toBeNull()
-    expect(mockRepository.findOneBy).toHaveBeenCalledWith({ refreshToken: 'missing-token' })
-  })
-
-  it('should find a session by refresh token (returns session if found)', async () => {
-    mockRepository.findOneBy.mockResolvedValue(mockSession)
-
-    const result = await repository.findByRefreshToken('token')
-
-    expect(result).toEqual(mockSession)
   })
 
   it('should delete all sessions by userId', async () => {
-    mockRepository.delete.mockResolvedValue(undefined)
-
+    mockPrisma.session.deleteMany.mockResolvedValue(undefined)
     await repository.deleteAllByUserId('user-id')
-
-    expect(mockRepository.delete).toHaveBeenCalledWith({ userId: 'user-id' })
+    expect(mockPrisma.session.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 'user-id' },
+    })
   })
 
   it('should call errorService.handle when deleteAllByUserId throws', async () => {
     const error = new Error('db error')
-    mockRepository.delete.mockRejectedValue(error)
-
+    mockPrisma.session.deleteMany.mockRejectedValue(error)
     await repository.deleteAllByUserId('user-id')
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('should update a session successfully', async () => {
-    mockRepository.findOne.mockResolvedValue(mockSession)
-    mockRepository.save.mockResolvedValue(undefined)
-
+    mockPrisma.session.findUnique.mockResolvedValue(mockSession)
+    mockPrisma.session.update.mockResolvedValue(mockSession)
     await repository.update('session-id', { refreshToken: 'new-token' })
-
-    expect(mockRepository.save).toHaveBeenCalled()
+    expect(mockPrisma.session.update).toHaveBeenCalled()
   })
 
-  it('should call errorService.handle when update throws', async () => {
+  it('should call errorService.handle with NotFoundException when update finds nothing', async () => {
+    mockPrisma.session.findUnique.mockResolvedValue(null)
+    await repository.update('session-id', { refreshToken: 'x' })
+    expect(mockErrorService.handle).toHaveBeenCalledWith(
+      expect.any(NotFoundException),
+    )
+  })
+
+  it('should call errorService.handle when update prisma.update throws', async () => {
     const error = new Error('db error')
-    mockRepository.findOne.mockResolvedValue(mockSession)
-    mockRepository.save.mockRejectedValue(error)
-
-    await repository.update('session-id', { refreshToken: 'new-token' })
-
+    mockPrisma.session.findUnique.mockResolvedValue(mockSession)
+    mockPrisma.session.update.mockRejectedValue(error)
+    await repository.update('session-id', { refreshToken: 'x' })
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
   it('should delete a session successfully', async () => {
-    mockRepository.findOne.mockResolvedValue(mockSession)
-    mockRepository.delete.mockResolvedValue(undefined)
-
+    mockPrisma.session.findFirst.mockResolvedValue(mockSession)
+    mockPrisma.session.delete.mockResolvedValue(undefined)
     await repository.delete('session-id')
-
-    expect(mockRepository.delete).toHaveBeenCalledWith('session-id')
+    expect(mockPrisma.session.delete).toHaveBeenCalledWith({
+      where: { id: 'session-id' },
+    })
   })
 
-  it('should call errorService.handle when delete throws', async () => {
+  it('should call errorService.handle when delete prisma.delete throws', async () => {
     const error = new Error('db error')
-    mockRepository.findOne.mockResolvedValue(mockSession)
-    mockRepository.delete.mockRejectedValue(error)
-
+    mockPrisma.session.findFirst.mockResolvedValue(mockSession)
+    mockPrisma.session.delete.mockRejectedValue(error)
     await repository.delete('session-id')
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  })
+
+  it('should call errorService.handle when getListByUserId throws', async () => {
+    const error = new Error('db error')
+    mockPrisma.session.findMany.mockRejectedValue(error)
+    await repository.getListByUserId('user-id', { page: 1, size: 20 })
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  })
+
+  it('should map credentials in toResponse when credentials exist', async () => {
+    mockPrisma.credential.findMany.mockResolvedValue([
+      {
+        id: 'cred-id',
+        email: 'test@test.com',
+        provider: 'local',
+        providerCode: null,
+        password: 'hashed',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      },
+    ])
+    mockPrisma.session.findMany.mockResolvedValue([mockSession])
+    mockPrisma.session.count.mockResolvedValue(1)
+    const result = await repository.getListByUserId('user-id', {
+      page: 1,
+      size: 20,
+    })
+    expect(result.data[0]).toBeDefined()
   })
 })

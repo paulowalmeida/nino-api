@@ -1,0 +1,8 @@
+export enum GlobalRole {
+  ADMIN = 'ADMIN',
+  SUPPORT = 'SUPPORT',
+  MERCHANT = 'MERCHANT',
+  CUSTOMER = 'CUSTOMER',
+  COURIER = 'COURIER',
+  GUEST = 'GUEST',
+}

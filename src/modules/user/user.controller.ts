@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common'
 
 import { Roles } from '@shared/decorators/roles.decorator'
-import { Role } from '@shared/enums/role.enum'
+import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 import { CreateUserDto } from './dtos/create-user.dto'
@@ -27,25 +27,25 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  @Roles(Role.ADMIN)
+  @Roles(GlobalRole.ADMIN)
   async create(@Body() createDto: CreateUserDto): Promise<UserResponse> {
     return await this.userService.create(createDto)
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.SUPPORT)
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
   async getAll(@Query() query: UserQueryDto): Promise<UserPaginatedResponse> {
     return await this.userService.getAll(query)
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.SUPPORT, Role.MERCHANT)
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   async getById(@Param('id') id: string): Promise<UserResponse> {
     return await this.userService.getById(id)
   }
 
   @Get('company/:companyId')
-  @Roles(Role.ADMIN, Role.SUPPORT, Role.MERCHANT)
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   async getByCompanyId(
     @Param('companyId') companyId: string,
   ): Promise<UserResponse[]> {
@@ -53,7 +53,7 @@ export class UserController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.SUPPORT, Role.MERCHANT)
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   async update(
     @Param('id') id: string,
     @Body() updateDto: UpdateUserDto,
@@ -63,7 +63,7 @@ export class UserController {
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN)
+  @Roles(GlobalRole.ADMIN)
   async delete(@Param('id') id: string): Promise<{ message: string }> {
     await this.userService.delete(id)
     return { message: 'user deleted successfully' }

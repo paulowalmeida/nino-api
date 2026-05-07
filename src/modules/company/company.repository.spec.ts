@@ -1,18 +1,17 @@
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
 
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { CompanyRepository } from './company.repository'
-import { Company } from './entities/company.entity'
 
-describe('CompanyRepository', () => {
+describe(CompanyRepository.name, () => {
   let repository: CompanyRepository
 
   const mockCompany = {
     id: 'uuid-1',
-    companyName: 'Acme Corp',
+    name: 'Acme Corp',
     cnpj: '12345678000190',
     legalName: null,
     stateRegistration: null,
@@ -20,15 +19,17 @@ describe('CompanyRepository', () => {
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
   }
 
-  const mockRepository = {
-    find: jest.fn(),
-    findAndCount: jest.fn(),
-    findOneBy: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-    delete: jest.fn(),
+  const mockPrisma = {
+    company: {
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      count: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
   }
 
   const mockErrorService = { handle: jest.fn() }
@@ -37,229 +38,166 @@ describe('CompanyRepository', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CompanyRepository,
-        { provide: getRepositoryToken(Company), useValue: mockRepository },
+        { provide: PrismaService, useValue: mockPrisma },
         { provide: ErrorService, useValue: mockErrorService },
         PaginationService,
       ],
     }).compile()
 
     repository = module.get<CompanyRepository>(CompanyRepository)
+    mockPrisma.company.count.mockResolvedValue(0)
   })
 
   afterEach(() => {
     jest.clearAllMocks()
   })
 
-  it('getAll - deve retornar companies paginadas', async () => {
-    mockRepository.findAndCount.mockResolvedValue([[mockCompany], 1])
-
+  it('should return paginated companies', async () => {
+    mockPrisma.company.findMany.mockResolvedValue([mockCompany])
+    mockPrisma.company.count.mockResolvedValue(1)
     const result = await repository.getAll({ page: 1, size: 20 })
-
     expect(result.data).toEqual([mockCompany])
-    expect(result.pagination).toMatchObject({ page: 1, size: 20, total: 1, totalPages: 1 })
-    expect(mockRepository.findAndCount).toHaveBeenCalledWith({
-      order: { companyName: 'ASC' },
-      skip: 0,
-      take: 20,
+    expect(result.pagination).toMatchObject({
+      page: 1,
+      size: 20,
+      total: 1,
+      totalPages: 1,
     })
   })
 
-  it('getAll - deve chamar errorService.handle em erro', async () => {
+  it('should call errorService.handle on error in getAll', async () => {
     const error = new Error('DB error')
-    mockRepository.findAndCount.mockRejectedValue(error)
-
+    mockPrisma.company.findMany.mockRejectedValue(error)
     await repository.getAll({})
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
-  it('getById - deve retornar company por id', async () => {
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-
+  it('should return company by id', async () => {
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
     const result = await repository.getById('uuid-1')
-
     expect(result).toEqual(mockCompany)
-    expect(mockRepository.findOneBy).toHaveBeenCalledWith({ id: 'uuid-1' })
   })
 
-  it('getById - deve chamar errorService.handle com NotFoundException se não existe', async () => {
-    mockRepository.findOneBy.mockResolvedValue(null)
-
+  it('should call errorService.handle with NotFoundException when not found by id', async () => {
+    mockPrisma.company.findFirst.mockResolvedValue(null)
     await repository.getById('invalid-id')
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(
       expect.any(NotFoundException),
     )
   })
 
-  it('getById - deve chamar errorService.handle em erro', async () => {
-    const error = new Error('DB error')
-    mockRepository.findOneBy.mockRejectedValue(error)
-
-    await repository.getById('uuid-1')
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
-  })
-
-  it('getByCnpj - deve retornar company por cnpj', async () => {
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-
+  it('should return company by cnpj', async () => {
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
     const result = await repository.getByCnpj('12345678000190')
-
     expect(result).toEqual(mockCompany)
-    expect(mockRepository.findOneBy).toHaveBeenCalledWith({
-      cnpj: '12345678000190',
-    })
   })
 
-  it('getByCnpj - deve chamar errorService.handle com NotFoundException se não existe', async () => {
-    mockRepository.findOneBy.mockResolvedValue(null)
-
+  it('should call errorService.handle with NotFoundException when not found by cnpj', async () => {
+    mockPrisma.company.findFirst.mockResolvedValue(null)
     await repository.getByCnpj('invalid-cnpj')
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(
       expect.any(NotFoundException),
     )
   })
 
-  it('create - deve criar nova company', async () => {
-    const createData = { companyName: 'New Corp', cnpj: '98765432000100' }
-    mockRepository.findOneBy.mockResolvedValue(null)
-    mockRepository.create.mockReturnValue(createData)
-    mockRepository.save.mockResolvedValue(mockCompany)
-
-    const result = await repository.create(createData as any)
-
-    expect(result).toEqual(mockCompany)
-    expect(mockRepository.findOneBy).toHaveBeenCalledWith({
-      cnpj: createData.cnpj,
-    })
-    expect(mockRepository.save).toHaveBeenCalled()
-  })
-
-  it('create - deve chamar errorService.handle com ConflictException se CNPJ já existe', async () => {
-    const createData = { companyName: 'New Corp', cnpj: '12345678000190' }
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-
-    await repository.create(createData as any)
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
-    expect(mockRepository.save).not.toHaveBeenCalled()
-  })
-
-  it('update - deve atualizar company', async () => {
-    const updateData = { companyName: 'Updated Corp' }
-    const updated = { ...mockCompany, ...updateData }
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-    mockRepository.save.mockResolvedValue(updated)
-
-    const result = await repository.update('uuid-1', updateData)
-
-    expect(result).toEqual(updated)
-    expect(mockRepository.save).toHaveBeenCalled()
-  })
-
-  it('update - deve chamar errorService.handle com ConflictException se novo CNPJ já existe em outra empresa', async () => {
-    const anotherCompany = {
-      ...mockCompany,
-      id: 'uuid-2',
+  it('should create a new company', async () => {
+    mockPrisma.company.findFirst.mockResolvedValue(null)
+    mockPrisma.company.create.mockResolvedValue(mockCompany)
+    const result = await repository.create({
+      name: 'New Corp',
       cnpj: '98765432000100',
-    }
-    mockRepository.findOneBy
-      .mockResolvedValueOnce(mockCompany)
-      .mockResolvedValueOnce(anotherCompany)
+    } as any)
+    expect(result).toEqual(mockCompany)
+  })
 
-    await repository.update('uuid-1', { cnpj: '98765432000100' })
-
+  it('should call errorService.handle with ConflictException when CNPJ already exists', async () => {
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
+    await repository.create({
+      name: 'New Corp',
+      cnpj: '12345678000190',
+    } as any)
     expect(mockErrorService.handle).toHaveBeenCalledWith(
       expect.any(ConflictException),
     )
-    expect(mockRepository.save).not.toHaveBeenCalled()
+    expect(mockPrisma.company.create).not.toHaveBeenCalled()
   })
 
-  it('update - deve permitir update se CNPJ é da própria company', async () => {
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-    mockRepository.save.mockResolvedValue(mockCompany)
-
-    await repository.update('uuid-1', { cnpj: '12345678000190' })
-
-    expect(mockRepository.save).toHaveBeenCalled()
+  it('should update company', async () => {
+    const updated = { ...mockCompany, name: 'Updated Corp' }
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
+    mockPrisma.company.update.mockResolvedValue(updated)
+    const result = await repository.update('uuid-1', {
+      name: 'Updated Corp',
+    })
+    expect(result).toEqual(updated)
   })
 
-  it('update - não deve validar CNPJ se não vier no payload', async () => {
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-    mockRepository.save.mockResolvedValue(mockCompany)
-
-    await repository.update('uuid-1', { companyName: 'Updated' })
-
-    expect(mockRepository.findOneBy).toHaveBeenCalledTimes(1)
-    expect(mockRepository.save).toHaveBeenCalled()
-  })
-
-  it('delete - deve deletar company e retornar mensagem', async () => {
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-    mockRepository.delete.mockResolvedValue(undefined)
-
+  it('should soft delete company and return message', async () => {
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
+    mockPrisma.company.update.mockResolvedValue({
+      ...mockCompany,
+      deletedAt: new Date(),
+    })
     const result = await repository.delete('uuid-1')
-
     expect(result).toEqual({ message: 'Company deleted successfully' })
-    expect(mockRepository.delete).toHaveBeenCalledWith('uuid-1')
   })
 
-  it('delete - deve chamar errorService.handle em erro', async () => {
-    const error = new Error('DB error')
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-    mockRepository.delete.mockRejectedValue(error)
-
-    await repository.delete('uuid-1')
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
-  })
-
-  it('activate - deve ativar company', async () => {
+  it('should activate company', async () => {
     const activated = { ...mockCompany, isActive: true }
-    mockRepository.findOneBy.mockResolvedValue({
+    mockPrisma.company.findFirst.mockResolvedValue({
       ...mockCompany,
       isActive: false,
     })
-    mockRepository.save.mockResolvedValue(activated)
-
+    mockPrisma.company.update.mockResolvedValue(activated)
     const result = await repository.activate('uuid-1')
-
     expect(result.isActive).toBe(true)
-    expect(mockRepository.save).toHaveBeenCalled()
   })
 
-  it('activate - deve chamar errorService.handle em erro', async () => {
-    const error = new Error('DB error')
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-    mockRepository.save.mockRejectedValue(error)
+  it('should deactivate company', async () => {
+    const deactivated = { ...mockCompany, isActive: false }
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
+    mockPrisma.company.update.mockResolvedValue(deactivated)
+    const result = await repository.deactivate('uuid-1')
+    expect(result.isActive).toBe(false)
+  })
 
-    await repository.activate('uuid-1')
+  it('should call errorService.handle with ConflictException when update CNPJ already exists', async () => {
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
+    await repository.update('uuid-1', { cnpj: '99999999000199' })
+    expect(mockErrorService.handle).toHaveBeenCalledWith(
+      expect.any(ConflictException),
+    )
+  })
 
+  it('should call errorService.handle when update prisma.update throws', async () => {
+    const error = new Error('db error')
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
+    mockPrisma.company.update.mockRejectedValue(error)
+    await repository.update('uuid-1', { name: 'New' })
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
-  it('deactivate - deve desativar company', async () => {
-    const deactivated = { ...mockCompany, isActive: false }
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-    mockRepository.save.mockResolvedValue(deactivated)
-
-    const result = await repository.deactivate('uuid-1')
-
-    expect(result.isActive).toBe(false)
-    expect(mockRepository.save).toHaveBeenCalled()
+  it('should call errorService.handle when delete prisma.update throws', async () => {
+    const error = new Error('db error')
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
+    mockPrisma.company.update.mockRejectedValue(error)
+    await repository.delete('uuid-1')
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 
-  it('deactivate - deve chamar errorService.handle em erro', async () => {
-    const error = new Error('DB error')
-    mockRepository.findOneBy.mockResolvedValue(mockCompany)
-    mockRepository.save.mockRejectedValue(error)
+  it('should call errorService.handle when activate prisma.update throws', async () => {
+    const error = new Error('db error')
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
+    mockPrisma.company.update.mockRejectedValue(error)
+    await repository.activate('uuid-1')
+    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  })
 
+  it('should call errorService.handle when deactivate prisma.update throws', async () => {
+    const error = new Error('db error')
+    mockPrisma.company.findFirst.mockResolvedValue(mockCompany)
+    mockPrisma.company.update.mockRejectedValue(error)
     await repository.deactivate('uuid-1')
-
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
   })
 })

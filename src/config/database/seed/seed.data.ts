@@ -1,25 +1,26 @@
+import { GlobalRole } from '@shared/enums/global-role.enum'
 import { InvoiceStatus } from '@shared/enums/invoice-status.enum'
 import { NotificationType } from '@shared/enums/notification-type.enum'
 import { PlanType } from '@shared/enums/plan-type.enum'
 import { Plan } from '@shared/enums/plan.enum'
-import { Role } from '@shared/enums/role.enum'
 import { SubscriptionStatus } from '@shared/enums/subscription-status.enum'
+import { TenantRole } from '@shared/enums/tenant-role.enum'
 import { TenantStatus } from '@shared/enums/tenant-status.enum'
 
-export const planTypes = [
-  { name: PlanType.MONTHLY, description: 'Plano Mensal' },
-  { name: PlanType.YEARLY, description: 'Plano Anual' },
+export const globalRoles = [
+  { name: GlobalRole.ADMIN, description: 'Dono da Plataforma' },
+  { name: GlobalRole.SUPPORT, description: 'Suporte Técnico' },
+  { name: GlobalRole.MERCHANT, description: 'Dono do Restaurante' },
+  { name: GlobalRole.CUSTOMER, description: 'Cliente Final' },
+  { name: GlobalRole.COURIER, description: 'Entregador' },
+  { name: GlobalRole.GUEST, description: 'Usuário Convidado' },
 ]
 
-export const roles = [
-  { name: Role.UNRECOGNIZED, description: 'UNRECOGNIZED' },
-  { name: Role.UNSPECIFIED, description: 'PROFILE_ROLE_UNSPECIFIED' },
-  { name: Role.ADMIN, description: 'Dono da Plataforma' },
-  { name: Role.SUPPORT, description: 'Suporte Técnico' },
-  { name: Role.MERCHANT, description: 'Dono do Restaurante' },
-  { name: Role.CUSTOMER, description: 'Cliente Final' },
-  { name: Role.COURIER, description: 'Entregador' },
-  { name: Role.GUEST, description: 'Usuário Convidado' },
+export const tenantRoles = [
+  { name: TenantRole.OWNER, description: 'Proprietário da unidade' },
+  { name: TenantRole.MANAGER, description: 'Gerente' },
+  { name: TenantRole.CASHIER, description: 'Operador de caixa' },
+  { name: TenantRole.STAFF, description: 'Funcionário' },
 ]
 
 export const tenantStatuses = [
@@ -52,38 +53,48 @@ export const notificationTypes = [
   { name: NotificationType.USER, description: 'Usuário' },
 ]
 
-// typeId é resolvido em runtime pelo seed runner após upsert de planTypes
+export const planTypes = [
+  { name: PlanType.MONTHLY, description: 'Plano Mensal' },
+  { name: PlanType.YEARLY, description: 'Plano Anual' },
+]
+
+// typeId resolvido em runtime após upsert de planTypes
+// maxOrders: null = ilimitado
 export const plans = [
   {
     name: 'Starter',
     slug: Plan.STARTER,
-    price: 89.9,
+    price: 97,
     maxTenants: 1,
     maxProducts: 50,
-    maxOrders: 300,
+    maxOrders: 200,
+    hasPrioritySupport: false,
   },
   {
     name: 'Pro',
     slug: Plan.PRO,
-    price: 149.9,
-    maxTenants: 1,
+    price: 197,
+    maxTenants: 3,
     maxProducts: 200,
-    maxOrders: 1000,
+    maxOrders: null,
+    hasPrioritySupport: true,
   },
   {
     name: 'Business',
     slug: Plan.BUSINESS,
-    price: 249.9,
-    maxTenants: 3,
+    price: 297,
+    maxTenants: 10,
     maxProducts: 500,
-    maxOrders: 5000,
+    maxOrders: null,
+    hasPrioritySupport: true,
   },
   {
     name: 'Rede',
     slug: Plan.REDE,
     price: 0,
-    maxTenants: 999,
-    maxProducts: 999,
-    maxOrders: 999,
+    maxTenants: null,
+    maxProducts: null,
+    maxOrders: null,
+    hasPrioritySupport: true,
   },
 ]

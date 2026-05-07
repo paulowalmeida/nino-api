@@ -1,10 +1,7 @@
-import { Company } from '@company/entities/company.entity'
+import { GlobalRole, User } from '@prisma/client'
 import { CredentialInfo } from '@credential/types/credential-info.type'
-import { Role } from '@role/entities/role.entity'
-import { User } from '@user/entities/user.entity'
 
-export type UserResponse = User & {
-  role: Role
-  company: Company | null
+export type UserResponse = Omit<User, 'deletedAt' | 'globalRoleId'> & {
+  role: GlobalRole
   credentials: CredentialInfo[]
 }

@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common'
 
-import { Session } from './entities/session.entity'
+import { Session } from '@prisma/client'
+
 import { CreateSessionDto } from './dtos/create-session.dto'
 import { SessionQueryDto } from './dtos/session-query.dto'
 import { UpdateSessionDto } from './dtos/update-session.dto'
-import { SessionPaginatedResponse } from './types/session-paginated-response.type'
 import { SessionRepository } from './session.repository'
+import {
+  SessionPaginatedResponse,
+} from './types/session-paginated-response.type'
 import { SessionResponse } from './types/session.response.type'
 
 @Injectable()
@@ -16,7 +19,10 @@ export class SessionService {
     return this.sessionsRepository.create(createDto)
   }
 
-  async getListByUserId(userId: string, query: SessionQueryDto): Promise<SessionPaginatedResponse> {
+  async getListByUserId(
+    userId: string,
+    query: SessionQueryDto,
+  ): Promise<SessionPaginatedResponse> {
     return this.sessionsRepository.getListByUserId(userId, query)
   }
 
@@ -28,7 +34,9 @@ export class SessionService {
     return this.sessionsRepository.getByRefreshToken(refreshToken)
   }
 
-  async findByRefreshToken(refreshToken: string): Promise<Session | null> {
+  async findByRefreshToken(
+    refreshToken: string,
+  ): Promise<Session | null> {
     return this.sessionsRepository.findByRefreshToken(refreshToken)
   }
 

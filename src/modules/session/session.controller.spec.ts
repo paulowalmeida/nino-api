@@ -22,7 +22,19 @@ describe('SessionController', () => {
           provide: SessionService,
           useValue: {
             create: jest.fn().mockResolvedValue(mockSession),
-            getListByUserId: jest.fn().mockResolvedValue({ data: [mockSession], pagination: { page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null } }),
+            getListByUserId: jest
+              .fn()
+              .mockResolvedValue({
+                data: [mockSession],
+                pagination: {
+                  page: 1,
+                  size: 20,
+                  total: 1,
+                  totalPages: 1,
+                  previousPage: null,
+                  nextPage: null,
+                },
+              }),
             getById: jest.fn().mockResolvedValue(mockSession),
             update: jest.fn().mockResolvedValue(undefined),
             delete: jest.fn().mockResolvedValue(undefined),

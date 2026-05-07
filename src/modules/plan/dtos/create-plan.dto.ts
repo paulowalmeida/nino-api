@@ -40,5 +40,9 @@ export class CreatePlanDto {
 
   @IsBoolean()
   @IsOptional()
+  hasPrioritySupport?: boolean
+
+  @IsBoolean()
+  @IsOptional()
   isActive?: boolean
 }

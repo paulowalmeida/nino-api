@@ -75,7 +75,7 @@ collection:
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"userId\": \"{{USER_ID}}\",\n  \"ip\": \"127.0.0.1\",\n  \"userAgent\": \"Insomnia\"\n}"
+          text: "{\n  \"userId\": \"{{USER_ID}}\",\n  \"refreshToken\": \"{{REFRESH_TOKEN}}\",\n  \"ipAddress\": \"127.0.0.1\",\n  \"userAgent\": \"Insomnia\",\n  \"expiresAt\": \"2027-01-01T00:00:00.000Z\"\n}"
         headers:
           - name: Content-Type
             value: application/json
@@ -104,7 +104,7 @@ collection:
         method: PATCH
         body:
           mimeType: application/json
-          text: "{\n  \"isActive\": false\n}"
+          text: "{\n  \"expiresAt\": \"2027-01-01T00:00:00.000Z\"\n}"
         headers:
           - name: Content-Type
             value: application/json
@@ -169,5 +169,6 @@ environments:
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
+        REFRESH_TOKEN: ""
         USER_ID: ""
         SESSION_ID: ""

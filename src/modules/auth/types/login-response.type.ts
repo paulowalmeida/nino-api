@@ -1,5 +1,7 @@
-import { User } from '@user/entities/user.entity'
+import { UserResponse } from '@user/types/user-response.type'
+import { Tokens } from './tokens.type'
 
 export type LoginResponse = {
-  user: User
+  user: UserResponse
+  tokens: Tokens
 }

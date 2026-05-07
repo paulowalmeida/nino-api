@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 
 import { CredentialsModule } from '@credential/credential.module'
-import { RoleModule } from '@role/role.module'
+import { GlobalRoleModule } from '@role/global/global-role.module'
 import { SessionModule } from '@session/session.module'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'
@@ -18,7 +18,7 @@ import { JwtRefreshStrategy } from './jwt-refresh.strategy'
     UserModule,
     CredentialsModule,
     SessionModule,
-    RoleModule,
+    GlobalRoleModule,
   ],
   controllers: [AuthController],
   providers: [

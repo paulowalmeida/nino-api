@@ -1,105 +1,110 @@
 import * as dotenv from 'dotenv'
 import 'reflect-metadata'
-import { DataSource, ObjectLiteral, Repository } from 'typeorm'
-
 dotenv.config()
 
-import { InvoiceStatus } from '@invoice-status/entities/invoice-status.entity'
-import { NotificationType } from '@notification-type/entities/notification-type.entity'
-import { PlanType } from '@plan-type/entities/plan-type.entity'
-import { Plan } from '@plan/entities/plan.entity'
-import { Role } from '@role/entities/role.entity'
-import { SubscriptionStatus } from '@subscription-status/entities/subscription-status.entity'
-import { TenantStatus } from '@tenant-status/entities/tenant-status.entity'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@prisma/client'
+import { Pool } from 'pg'
 
 import {
+  globalRoles,
   invoiceStatuses,
   notificationTypes,
   planTypes,
   plans,
-  roles,
   subscriptionStatuses,
+  tenantRoles,
   tenantStatuses,
 } from './seed.data'
 
-const dataSource = new DataSource({
-  type: 'postgres',
-  url: process.env.DB_URL,
-  entities: [
-    Role,
-    TenantStatus,
-    SubscriptionStatus,
-    InvoiceStatus,
-    NotificationType,
-    PlanType,
-    Plan,
-  ],
-  synchronize: false,
-})
+const pool = new Pool({ connectionString: process.env.DB_URL })
+const adapter = new PrismaPg(pool)
+const prisma = new PrismaClient({ adapter })
 
-async function upsertByName<T extends ObjectLiteral>(
-  repo: Repository<T>,
-  items: object[],
-  label: string,
-): Promise<void> {
-  await repo.upsert(items as T[], {
-    conflictPaths: ['name'],
-    skipUpdateIfNoValuesChanged: true,
-  })
-  console.log(`✅  ${label}`)
-}
-
-async function main(): Promise<void> {
-  await dataSource.initialize()
+async function main() {
   console.log('🔌 Conectado ao banco\n')
 
-  try {
-    await upsertByName(dataSource.getRepository(Role), roles, 'roles')
-    await upsertByName(
-      dataSource.getRepository(TenantStatus),
-      tenantStatuses,
-      'tenant_statuses',
-    )
-    await upsertByName(
-      dataSource.getRepository(SubscriptionStatus),
-      subscriptionStatuses,
-      'subscription_statuses',
-    )
-    await upsertByName(
-      dataSource.getRepository(InvoiceStatus),
-      invoiceStatuses,
-      'invoice_statuses',
-    )
-    await upsertByName(
-      dataSource.getRepository(NotificationType),
-      notificationTypes,
-      'notification_types',
-    )
-    await upsertByName(
-      dataSource.getRepository(PlanType),
-      planTypes,
-      'plan_types',
-    )
-
-    // plans precisam do typeId: busca MONTHLY após upsert acima
-    const monthlyType = await dataSource
-      .getRepository(PlanType)
-      .findOneByOrFail({ name: 'MONTHLY' })
-    const plansWithType = plans.map((p) => ({ ...p, typeId: monthlyType.id }))
-    await dataSource.getRepository(Plan).upsert(plansWithType, {
-      conflictPaths: ['name'],
-      skipUpdateIfNoValuesChanged: true,
+  for (const role of globalRoles) {
+    await prisma.globalRole.upsert({
+      where: { name: role.name },
+      update: {},
+      create: role,
     })
-    console.log('✅  plans')
-
-    console.log('\n🌱 Seed concluído com sucesso!')
-  } catch (error) {
-    console.error('❌ Erro durante o seed:', error)
-    process.exit(1)
-  } finally {
-    await dataSource.destroy()
-    console.log('👋 Conexão encerrada')
   }
+  console.log('✅  global_roles')
+
+  for (const role of tenantRoles) {
+    await prisma.tenantRole.upsert({
+      where: { name: role.name },
+      update: {},
+      create: role,
+    })
+  }
+  console.log('✅  tenant_roles')
+
+  for (const ts of tenantStatuses) {
+    await prisma.tenantStatus.upsert({
+      where: { name: ts.name },
+      update: {},
+      create: ts,
+    })
+  }
+  console.log('✅  tenant_statuses')
+
+  for (const ss of subscriptionStatuses) {
+    await prisma.subscriptionStatus.upsert({
+      where: { name: ss.name },
+      update: {},
+      create: ss,
+    })
+  }
+  console.log('✅  subscription_statuses')
+
+  for (const is of invoiceStatuses) {
+    await prisma.invoiceStatus.upsert({
+      where: { name: is.name },
+      update: {},
+      create: is,
+    })
+  }
+  console.log('✅  invoice_statuses')
+
+  for (const nt of notificationTypes) {
+    await prisma.notificationType.upsert({
+      where: { name: nt.name },
+      update: {},
+      create: nt,
+    })
+  }
+  console.log('✅  notification_types')
+
+  for (const pt of planTypes) {
+    await prisma.planType.upsert({
+      where: { name: pt.name },
+      update: {},
+      create: pt,
+    })
+  }
+  console.log('✅  plan_types')
+
+  const monthlyType = await prisma.planType.findUniqueOrThrow({
+    where: { name: 'MONTHLY' },
+  })
+  for (const plan of plans) {
+    await prisma.plan.upsert({
+      where: { name: plan.name },
+      update: {},
+      create: { ...plan, typeId: monthlyType.id },
+    })
+  }
+  console.log('✅  plans')
+
+  console.log('\n🌱 Seed concluído com sucesso!')
 }
 
 main()
+  .catch((e) => {
+    console.error('❌ Erro durante o seed:', e)
+    process.exit(1)
+  })
+  .finally(() => prisma.$disconnect())

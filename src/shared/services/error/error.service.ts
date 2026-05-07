@@ -5,34 +5,28 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { QueryFailedError } from 'typeorm'
 
-// PostgreSQL error codes
-const PG_UNIQUE_VIOLATION = '23505'
-const PG_FOREIGN_KEY_VIOLATION = '23503'
-const PG_NOT_NULL_VIOLATION = '23502'
-const PG_INVALID_INPUT_SYNTAX = '22P02'
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client.js'
 
 @Injectable()
 export class ErrorService {
-  private readonly pgErrorMap: Record<string, (msg?: string) => HttpException> = {
-    [PG_UNIQUE_VIOLATION]: (msg) => new ConflictException(msg || 'Unique constraint failed'),
-    [PG_FOREIGN_KEY_VIOLATION]: (msg) => new BadRequestException(msg || 'Foreign key constraint failed'),
-    [PG_NOT_NULL_VIOLATION]: (msg) => new BadRequestException(msg || 'Required field is missing'),
-    [PG_INVALID_INPUT_SYNTAX]: (msg) => new BadRequestException(msg || 'Invalid value format'),
+  private readonly prismaErrorMap: Record<
+    string,
+    (msg?: string) => HttpException
+  > = {
+    P2002: (msg) => new ConflictException(msg || 'Unique constraint failed'),
+    P2003: (msg) =>
+      new BadRequestException(msg || 'Foreign key constraint failed'),
+    P2025: (msg) => new NotFoundException(msg || 'Record not found'),
+    P2014: (msg) => new BadRequestException(msg || 'Required relation missing'),
   }
 
   handle(error: unknown, customMessage?: string): never {
     if (error instanceof HttpException) throw error
 
-    if (error instanceof QueryFailedError) {
-      const code = (error.driverError as { code?: string }).code
-      const handler = code ? this.pgErrorMap[code] : undefined
+    if (error instanceof PrismaClientKnownRequestError) {
+      const handler = this.prismaErrorMap[error.code]
       if (handler) throw handler(customMessage)
-    }
-
-    if (error instanceof Error && error.message.includes('not found')) {
-      throw new NotFoundException(customMessage || error.message)
     }
 
     throw error

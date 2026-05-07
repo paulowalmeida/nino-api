@@ -1,17 +1,16 @@
-// src/company/company.service.spec.ts
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { CompanyRepository } from './company.repository'
 import { CompanyService } from './company.service'
 
-describe('CompanyService', () => {
+describe(CompanyService.name, () => {
   let service: CompanyService
   let repository: CompanyRepository
 
   const mockCompany = {
     id: 'uuid-1',
-    companyName: 'Acme Corp',
+    name: 'Acme Corp',
     cnpj: '12345678000190',
     legalName: null,
     stateRegistration: null,
@@ -22,7 +21,19 @@ describe('CompanyService', () => {
   }
 
   const mockRepository = {
-    getAll: jest.fn().mockResolvedValue({ data: [], pagination: { page: 1, size: 20, total: 0, totalPages: 0, previousPage: null, nextPage: null } }),
+    getAll: jest
+      .fn()
+      .mockResolvedValue({
+        data: [],
+        pagination: {
+          page: 1,
+          size: 20,
+          total: 0,
+          totalPages: 0,
+          previousPage: null,
+          nextPage: null,
+        },
+      }),
     getById: jest.fn(),
     getByCnpj: jest.fn(),
     create: jest.fn(),
@@ -50,17 +61,27 @@ describe('CompanyService', () => {
     jest.clearAllMocks()
   })
 
-  it('getAll - deve retornar companies paginadas', async () => {
+  it('should return paginated companies', async () => {
     const query = { page: 1, size: 20 }
-    mockRepository.getAll.mockResolvedValue({ data: [mockCompany], pagination: { page: 1, size: 20, total: 1, totalPages: 1, previousPage: null, nextPage: null } })
+    mockRepository.getAll.mockResolvedValue({
+      data: [mockCompany],
+      pagination: {
+        page: 1,
+        size: 20,
+        total: 1,
+        totalPages: 1,
+        previousPage: null,
+        nextPage: null,
+      },
+    })
 
-    const result = await service.getAll(query)
+    const result = await service.getAll(query as any)
 
     expect(result.data).toEqual([mockCompany])
     expect(repository.getAll).toHaveBeenCalledWith(query)
   })
 
-  it('getById - deve retornar company por id', async () => {
+  it('should return company by id', async () => {
     mockRepository.getById.mockResolvedValue(mockCompany)
 
     const result = await service.getById('uuid-1')
@@ -69,7 +90,7 @@ describe('CompanyService', () => {
     expect(repository.getById).toHaveBeenCalledWith('uuid-1')
   })
 
-  it('getById - deve lançar NotFoundException se não encontrar', async () => {
+  it('should throw NotFoundException when company not found by id', async () => {
     mockRepository.getById.mockRejectedValue(
       new NotFoundException('Company not found'),
     )
@@ -79,7 +100,7 @@ describe('CompanyService', () => {
     )
   })
 
-  it('getByCnpj - deve retornar company por cnpj', async () => {
+  it('should return company by cnpj', async () => {
     mockRepository.getByCnpj.mockResolvedValue(mockCompany)
 
     const result = await service.getByCnpj('12345678000190')
@@ -88,7 +109,7 @@ describe('CompanyService', () => {
     expect(repository.getByCnpj).toHaveBeenCalledWith('12345678000190')
   })
 
-  it('getByCnpj - deve lançar NotFoundException se não encontrar', async () => {
+  it('should throw NotFoundException when company not found by cnpj', async () => {
     mockRepository.getByCnpj.mockRejectedValue(
       new NotFoundException('Company not found'),
     )
@@ -98,56 +119,58 @@ describe('CompanyService', () => {
     )
   })
 
-  it('create - deve criar nova company', async () => {
-    const createData = { companyName: 'New Corp', cnpj: '98765432000100' }
+  it('should create a new company', async () => {
+    const createData = { name: 'New Corp', cnpj: '98765432000100' }
     mockRepository.create.mockResolvedValue({ ...mockCompany, ...createData })
 
-    const result = await service.create(createData)
+    const result = await service.create(createData as any)
 
-    expect(result.companyName).toBe('New Corp')
+    expect(result.name).toBe('New Corp')
     expect(repository.create).toHaveBeenCalledWith(createData)
   })
 
-  it('create - deve lançar ConflictException se CNPJ já existe', async () => {
-    const createData = { companyName: 'New Corp', cnpj: '12345678000190' }
+  it('should throw ConflictException when CNPJ already exists on create', async () => {
+    const createData = { name: 'New Corp', cnpj: '12345678000190' }
     mockRepository.create.mockRejectedValue(
       new ConflictException('CNPJ already exists'),
     )
 
-    await expect(service.create(createData)).rejects.toThrow(ConflictException)
+    await expect(service.create(createData as any)).rejects.toThrow(
+      ConflictException,
+    )
   })
 
-  it('update - deve atualizar company', async () => {
-    const updateData = { companyName: 'Updated Corp' }
+  it('should update company', async () => {
+    const updateData = { name: 'Updated Corp' }
     mockRepository.update.mockResolvedValue({ ...mockCompany, ...updateData })
 
-    const result = await service.update('uuid-1', updateData)
+    const result = await service.update('uuid-1', updateData as any)
 
-    expect(result.companyName).toBe('Updated Corp')
+    expect(result.name).toBe('Updated Corp')
     expect(repository.update).toHaveBeenCalledWith('uuid-1', updateData)
   })
 
-  it('update - deve lançar NotFoundException se não existe', async () => {
+  it('should throw NotFoundException when company not found on update', async () => {
     mockRepository.update.mockRejectedValue(
       new NotFoundException('Company not found'),
     )
 
-    await expect(service.update('invalid-id', {})).rejects.toThrow(
+    await expect(service.update('invalid-id', {} as any)).rejects.toThrow(
       NotFoundException,
     )
   })
 
-  it('update - deve lançar ConflictException se novo CNPJ já existe', async () => {
+  it('should throw ConflictException when new CNPJ already exists on update', async () => {
     mockRepository.update.mockRejectedValue(
       new ConflictException('CNPJ já cadastrado'),
     )
 
     await expect(
-      service.update('uuid-1', { cnpj: '98765432000100' }),
+      service.update('uuid-1', { cnpj: '98765432000100' } as any),
     ).rejects.toThrow(ConflictException)
   })
 
-  it('delete - deve deletar company', async () => {
+  it('should delete company', async () => {
     mockRepository.delete.mockResolvedValue({
       message: 'Company deleted successfully',
     })
@@ -158,7 +181,7 @@ describe('CompanyService', () => {
     expect(repository.delete).toHaveBeenCalledWith('uuid-1')
   })
 
-  it('delete - deve lançar NotFoundException se não existe', async () => {
+  it('should throw NotFoundException when company not found on delete', async () => {
     mockRepository.delete.mockRejectedValue(
       new NotFoundException('Company not found'),
     )
@@ -168,7 +191,7 @@ describe('CompanyService', () => {
     )
   })
 
-  it('activate - deve ativar company', async () => {
+  it('should activate company', async () => {
     const activated = { ...mockCompany, isActive: true }
     mockRepository.activate.mockResolvedValue(activated)
 
@@ -178,7 +201,7 @@ describe('CompanyService', () => {
     expect(repository.activate).toHaveBeenCalledWith('uuid-1')
   })
 
-  it('activate - deve lançar NotFoundException se não existe', async () => {
+  it('should throw NotFoundException when company not found on activate', async () => {
     mockRepository.activate.mockRejectedValue(
       new NotFoundException('Company not found'),
     )
@@ -188,7 +211,7 @@ describe('CompanyService', () => {
     )
   })
 
-  it('deactivate - deve desativar company', async () => {
+  it('should deactivate company', async () => {
     const deactivated = { ...mockCompany, isActive: false }
     mockRepository.deactivate.mockResolvedValue(deactivated)
 
@@ -198,7 +221,7 @@ describe('CompanyService', () => {
     expect(repository.deactivate).toHaveBeenCalledWith('uuid-1')
   })
 
-  it('deactivate - deve lançar NotFoundException se não existe', async () => {
+  it('should throw NotFoundException when company not found on deactivate', async () => {
     mockRepository.deactivate.mockRejectedValue(
       new NotFoundException('Company not found'),
     )

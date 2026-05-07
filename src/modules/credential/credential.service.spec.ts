@@ -5,7 +5,7 @@ import { PasswordService } from '@shared/services/password/password.service'
 import { CredentialsRepository } from './credential.repository'
 import { CredentialsService } from './credential.service'
 
-describe('CredentialsService', () => {
+describe(CredentialsService.name, () => {
   let service: CredentialsService
   let repository: CredentialsRepository
   let passwordService: PasswordService
@@ -14,6 +14,23 @@ describe('CredentialsService', () => {
     id: 'cred-id',
     userId: 'user-id',
     email: 'test@test.com',
+  }
+
+  const mockFullCredential = {
+    id: 'cred-id',
+    userId: 'user-id',
+    email: 'test@test.com',
+    password: 'hashed',
+    providerCode: 'local-code',
+    provider: 'local',
+    emailVerifiedAt: null,
+    resetTokenHash: null,
+    resetTokenExpiresAt: null,
+    emailVerificationTokenHash: null,
+    emailVerificationExpiresAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
   }
 
   beforeEach(async () => {
@@ -28,6 +45,7 @@ describe('CredentialsService', () => {
             getById: jest.fn().mockResolvedValue(mockCredential),
             getByIdWithPassword: jest.fn().mockResolvedValue(mockCredential),
             getByEmail: jest.fn().mockResolvedValue(mockCredential),
+            getByEmailWithPassword: jest.fn().mockResolvedValue(mockCredential),
             update: jest.fn().mockResolvedValue(undefined),
             updatePassword: jest.fn().mockResolvedValue(undefined),
             delete: jest.fn().mockResolvedValue(undefined),
@@ -87,6 +105,14 @@ describe('CredentialsService', () => {
     const result = await service.getByEmail('test@test.com')
     expect(repository.getByEmail).toHaveBeenCalledWith('test@test.com')
     expect(result).toEqual(mockCredential)
+  })
+
+  it('should get a credential by email with password', async () => {
+    jest
+      .spyOn(repository, 'getByEmailWithPassword')
+      .mockResolvedValue(mockFullCredential)
+    const result = await service.getByEmailWithPassword('test@test.com')
+    expect(result).toEqual(mockFullCredential)
   })
 
   it('should update a credential hashing the password if provided', async () => {

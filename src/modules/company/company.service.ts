@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common'
 
+import { Company } from '@prisma/client'
+
 import { CompanyRepository } from './company.repository'
-import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
 import { CompanyQueryDto } from './dto/company-query.dto'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
-import { Company } from './entities/company.entity'
+import {
+  CompanyPaginatedResponse,
+} from './types/company-paginated-response.type'
 
 @Injectable()
 export class CompanyService {

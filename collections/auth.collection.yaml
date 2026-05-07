@@ -22,12 +22,12 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: public"
           sortKey: -1
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"name\": \"Paulo\",\n  \"email\": \"paulo@nino.com\",\n  \"password\": \"senha123\",\n  \"role\": \"ADMIN\"\n}"
+          text: "{\n  \"name\": \"Paulo\",\n  \"email\": \"paulo@nino.com\",\n  \"password\": \"senha123\",\n  \"globalRole\": \"ADMIN\"\n}"
         headers:
           - id: pair_register_h1
             name: Content-Type
@@ -49,7 +49,7 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
+          description: "Roles: public"
           sortKey: -2
         method: POST
         body:
@@ -59,10 +59,7 @@ collection:
           - id: pair_login_h1
             name: Content-Type
             value: application/json
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
+        authentication: {}
         scripts:
           afterResponse: |
             const data = await insomnia.response.json();
@@ -84,7 +81,7 @@ collection:
           created: 1776000000001
           modified: 1776000000001
           isPrivate: false
-          description: ""
+          description: "Roles: authenticated"
           sortKey: -3
         method: GET
         headers: []
@@ -108,14 +105,19 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -3
+          description: "Roles: public"
+          sortKey: -4
         method: POST
         headers: []
         authentication:
           type: bearer
           token: "{{REFRESH_TOKEN}}"
           prefix: Bearer
+        scripts:
+          afterResponse: |
+            const data = await insomnia.response.json();
+            insomnia.environment.set("ACCESS_TOKEN", data.tokens.accessToken);
+            insomnia.environment.set("REFRESH_TOKEN", data.tokens.refreshToken);
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -132,8 +134,8 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -4
+          description: "Roles: public"
+          sortKey: -5
         method: POST
         headers: []
         authentication:
@@ -174,3 +176,4 @@ environments:
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
+        REFRESH_TOKEN: ""

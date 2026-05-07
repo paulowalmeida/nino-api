@@ -2,6 +2,7 @@ import {
   IsBoolean,
   IsNotEmpty,
   IsOptional,
+  IsPhoneNumber,
   IsString,
   IsUUID,
 } from 'class-validator'
@@ -11,13 +12,13 @@ export class CreateUserDto {
   @IsNotEmpty()
   name: string
 
+  @IsPhoneNumber('BR')
+  @IsOptional()
+  phone?: string
+
   @IsUUID()
   @IsNotEmpty()
-  roleId: string
-
-  @IsOptional()
-  @IsUUID()
-  companyId?: string
+  globalRoleId: string
 
   @IsOptional()
   @IsBoolean()
