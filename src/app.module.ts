@@ -8,26 +8,26 @@ import { join } from 'path'
 import { AuthModule } from '@auth/auth.module'
 import {
   CompanyResponsibleModule,
-} from '@company-responsible/company-responsible.module'
+} from '@company/modules/company-responsible/company-responsible.module'
 import { CompanyModule } from '@company/company.module'
 import { CredentialsModule } from '@credential/credential.module'
 import { HealthModule } from '@health/health.module'
-import { InvoiceStatusModule } from '@invoice-status/invoice-status.module'
+import { InvoiceStatusModule } from 'src/modules/invoice/modules/invoice-status/invoice-status.module'
 import { MocksModule } from '@mocks/mocks.module'
 import {
   NotificationTypeModule,
-} from '@notification-type/notification-type.module'
-import { PlanTypeModule } from '@plan-type/plan-type.module'
+} from 'src/modules/notification/modules/notification-type/notification-type.module'
+import { PlanTypeModule } from '@plan/modules/plan-type/plan-type.module'
 import { PlanModule } from '@plan/plan.module'
-import { GlobalRoleModule } from '@role/global/global-role.module'
-import { TenantRoleModule } from '@role/tenant/tenant-role.module'
+import { GlobalRoleModule } from '@role/modules/global-role/global-role.module'
+import { TenantRoleModule } from '@role/modules/tenant-role/tenant-role.module'
 import { SessionModule } from '@session/session.module'
 import { PrismaModule } from '@shared/services/prisma/prisma.module'
 import {
   SubscriptionStatusModule,
-} from '@subscription-status/subscription-status.module'
-import { TenantStatusModule } from '@tenant-status/tenant-status.module'
-import { UserTenantModule } from '@user-tenant/user-tenant.module'
+} from 'src/modules/subscription/modules/subscription-status/subscription-status.module'
+import { TenantStatusModule } from 'src/modules/tenant/modules/tenant-status/tenant-status.module'
+import { UserTenantModule } from '@user/modules/user-tenant/user-tenant.module'
 import { UserModule } from '@user/user.module'
 import { AppService } from './app.service'
 
