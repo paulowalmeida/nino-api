@@ -111,8 +111,9 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^@auth/(.*)$": "<rootDir>/modules/auth/$1",
+      "^@business-category/(.*)$": "<rootDir>/modules/company/modules/business-category/$1",
       "^@company/(.*)$": "<rootDir>/modules/company/$1",
-      "^@company-responsible/(.*)$": "<rootDir>/modules/company-responsible/$1",
+      "^@company-responsible/(.*)$": "<rootDir>/modules/company/modules/company-responsible/$1",
       "^@credential/(.*)$": "<rootDir>/modules/credential/$1",
       "^@invoice-status/(.*)$": "<rootDir>/modules/invoice-status/$1",
       "^@mocks/(.*)$": "<rootDir>/mocks/$1",

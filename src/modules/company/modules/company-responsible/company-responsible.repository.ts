@@ -1,18 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 
-import { CompanyResponsible, Company } from '@prisma/client'
+import { Company, CompanyResponsible } from '@prisma/client'
 
-import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { ErrorService } from '@shared/services/error/error.service'
-import {
-  CreateCompanyResponsibleDto,
-} from './dto/create-company-responsible.dto'
-import {
-  UpdateCompanyResponsibleDto,
-} from './dto/update-company-responsible.dto'
-import {
-  CompanyResponsibleResponse,
-} from './types/company-responsible.type'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { CreateCompanyResponsibleDto } from './dto/create-company-responsible.dto'
+import { UpdateCompanyResponsibleDto } from './dto/update-company-responsible.dto'
+import { CompanyResponsibleResponse } from './types/company-responsible.type'
 
 @Injectable()
 export class CompanyResponsibleRepository {
@@ -47,8 +41,7 @@ export class CompanyResponsibleRepository {
         where: { id, deletedAt: null },
         include: { companies: true },
       })
-      if (!found)
-        throw new NotFoundException('Company responsible not found')
+      if (!found) throw new NotFoundException('Company responsible not found')
       return this.toResponse(found)
     } catch (error) {
       this.errorService.handle(error)
@@ -61,8 +54,7 @@ export class CompanyResponsibleRepository {
         where: { cpf, deletedAt: null },
         include: { companies: true },
       })
-      if (!found)
-        throw new NotFoundException('Company responsible not found')
+      if (!found) throw new NotFoundException('Company responsible not found')
       return this.toResponse(found)
     } catch (error) {
       this.errorService.handle(error)
@@ -94,16 +86,12 @@ export class CompanyResponsibleRepository {
     }
   }
 
-  async update(
-    id: string,
-    dto: UpdateCompanyResponsibleDto,
-  ): Promise<void> {
+  async update(id: string, dto: UpdateCompanyResponsibleDto): Promise<void> {
     try {
       const found = await this.prisma.companyResponsible.findFirst({
         where: { id, deletedAt: null },
       })
-      if (!found)
-        throw new NotFoundException('Company responsible not found')
+      if (!found) throw new NotFoundException('Company responsible not found')
       await this.prisma.companyResponsible.update({
         where: { id },
         data: dto,

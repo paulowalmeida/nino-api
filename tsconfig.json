@@ -25,6 +25,7 @@
     "types": ["jest", "node"],
     "paths": {
       "@auth/*": ["src/modules/auth/*"],
+      "@business-category/*": ["src/modules/company/modules/business-category/*"],
       "@company/*": ["src/modules/company/*"],
       "@company-responsible/*": ["src/modules/company/modules/company-responsible/*"],
       "@credential/*": ["src/modules/credential/*"],

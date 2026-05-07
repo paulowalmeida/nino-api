@@ -1,0 +1,185 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Business Category Module
+meta:
+  id: wrk_business_category_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Business category management"
+collection:
+  - name: business-category
+    meta:
+      id: fld_business_category_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Business category endpoints"
+    children:
+      - url: "{{BASE_URL}}/business-categories"
+        name: list
+        meta:
+          id: req_business_category_list
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -1
+        method: GET
+        parameters:
+          - name: page
+            value: "1"
+            disabled: true
+          - name: size
+            value: "20"
+            disabled: true
+          - name: orderBy
+            value: "name"
+            disabled: true
+          - name: orderDir
+            value: "ASC"
+            disabled: true
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/business-categories/{{BUSINESS_CATEGORY_ID}}"
+        name: by-id
+        meta:
+          id: req_business_category_get
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/business-categories"
+        name: create
+        meta:
+          id: req_business_category_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN"
+          sortKey: -3
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Pizzaria\",\n  \"description\": \"Estabelecimento para venda de pizzas\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/business-categories/{{BUSINESS_CATEGORY_ID}}"
+        name: update
+        meta:
+          id: req_business_category_update
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN"
+          sortKey: -4
+        method: PUT
+        body:
+          mimeType: application/json
+          text: "{\n  \"description\": \"Estabelecimento especializado em pizzas\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/business-categories/{{BUSINESS_CATEGORY_ID}}"
+        name: delete
+        meta:
+          id: req_business_category_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN"
+          sortKey: -5
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_business_category
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_business_category
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_business_category_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        BUSINESS_CATEGORY_ID: ""

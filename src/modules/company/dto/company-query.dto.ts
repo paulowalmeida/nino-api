@@ -1,7 +1,7 @@
 import { IsEnum, IsOptional } from 'class-validator'
 
+import { CompanyOrderBy } from '@company/enums/company-order-by.type'
 import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
-import { CompanyOrderBy } from '../types/company-order-by.type'
 
 export class CompanyQueryDto extends PaginatedQueryDto {
   @IsOptional()

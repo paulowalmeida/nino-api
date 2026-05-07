@@ -7,6 +7,8 @@ import {
 import { CompanyController } from './company.controller'
 import { CompanyRepository } from './company.repository'
 import { CompanyService } from './company.service'
+import { BusinessCategoryModule } from './modules/business-category/business-category.module';
+import { CompanyBusinessCategoryModule } from './modules/company-business-category/company-business-category.module';
 
 @Module({
   controllers: [CompanyController],
@@ -17,5 +19,6 @@ import { CompanyService } from './company.service'
     PaginationService,
   ],
   exports: [CompanyService],
+  imports: [BusinessCategoryModule, CompanyBusinessCategoryModule],
 })
 export class CompanyModule {}

@@ -1015,6 +1015,12 @@ Todo teste segue: monta dados → executa → verifica.
 
 **DTO** — testa validações class-validator
 
+### Mocks
+
+- Mocks de objetos em specs **sempre** usam types existentes do projeto — nunca objetos literais sem tipo declarado
+- Mocks parciais: usar `Pick<T, 'prop'>` ou `Partial<T>` conforme necessário
+- Jamais usar `any` ou objetos anônimos para simular entidades
+
 ---
 
 ## 12. 🔄 Fluxos Principais
