@@ -7,6 +7,7 @@ import { PrismaClient } from '@prisma/client'
 import { Pool } from 'pg'
 
 import {
+  businessCategories,
   globalRoles,
   invoiceStatuses,
   notificationTypes,
@@ -98,6 +99,15 @@ async function main() {
     })
   }
   console.log('✅  plans')
+
+  for (const bc of businessCategories) {
+    await prisma.businessCategory.upsert({
+      where: { name: bc.name },
+      update: {},
+      create: bc,
+    })
+  }
+  console.log('✅  business_categories')
 
   console.log('\n🌱 Seed concluído com sucesso!')
 }
