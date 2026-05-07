@@ -2,7 +2,7 @@ import { createHash } from 'crypto'
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 
 import { CredentialsService } from '@credential/credential.service'
-import { GlobalRoleService } from '@role/global/global-role.service'
+import { GlobalRoleService } from '@role/modules/global-role/global-role.service'
 import { SessionService } from '@session/session.service'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'

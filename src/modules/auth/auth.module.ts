@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 
 import { CredentialsModule } from '@credential/credential.module'
-import { GlobalRoleModule } from '@role/global/global-role.module'
+import { GlobalRoleModule } from '@role/modules/global-role/global-role.module'
 import { SessionModule } from '@session/session.module'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'
