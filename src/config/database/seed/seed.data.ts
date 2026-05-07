@@ -58,6 +58,29 @@ export const planTypes = [
   { name: PlanType.YEARLY, description: 'Plano Anual' },
 ]
 
+export const businessCategories = [
+  { name: 'Pizzaria', description: 'Especializada em pizzas' },
+  { name: 'Hamburgueria', description: 'Especializada em hambúrgueres' },
+  { name: 'Japonesa', description: 'Culinária japonesa e sushi' },
+  { name: 'Brasileira', description: 'Culinária tradicional brasileira' },
+  { name: 'Italiana', description: 'Culinária italiana' },
+  { name: 'Mexicana', description: 'Culinária mexicana' },
+  { name: 'Árabe', description: 'Culinária árabe' },
+  { name: 'Chinesa', description: 'Culinária chinesa' },
+  { name: 'Churrascaria', description: 'Especializada em carnes e churrasco' },
+  { name: 'Vegetariana', description: 'Opções vegetarianas e veganas' },
+  { name: 'Frutos do Mar', description: 'Especializada em peixes e frutos do mar' },
+  { name: 'Padaria e Café', description: 'Pães, doces e bebidas quentes' },
+  { name: 'Sorveteria', description: 'Sorvetes e sobremesas geladas' },
+  { name: 'Saudável', description: 'Alimentação saudável e fitness' },
+  { name: 'Fast Food', description: 'Refeições rápidas e lanches' },
+  { name: 'Doceria', description: 'Doces, bolos e confeitaria' },
+  { name: 'Açaí', description: 'Açaí e smoothies' },
+  { name: 'Tapiocaria', description: 'Especializada em tapiocas' },
+  { name: 'Marmitaria', description: 'Refeições em marmita' },
+  { name: 'Bar e Petiscos', description: 'Bebidas e petiscos' },
+]
+
 // typeId resolvido em runtime após upsert de planTypes
 // maxOrders: null = ilimitado
 export const plans = [

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 
+import { ErrorService } from '@shared/services/error/error.service'
 import { CompanyBusinessCategoryController } from './company-business-category.controller'
 import { CompanyBusinessCategoryRepository } from './company-business-category.repository'
 import { CompanyBusinessCategoryService } from './company-business-category.service'
@@ -9,6 +10,7 @@ import { CompanyBusinessCategoryService } from './company-business-category.serv
   providers: [
     CompanyBusinessCategoryService,
     CompanyBusinessCategoryRepository,
+    ErrorService,
   ],
   exports: [CompanyBusinessCategoryService],
 })
