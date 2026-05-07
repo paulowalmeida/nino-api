@@ -14,18 +14,10 @@ import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
-import {
-  CompanyResponsibleService,
-} from './company-responsible.service'
-import {
-  CreateCompanyResponsibleDto,
-} from './dto/create-company-responsible.dto'
-import {
-  UpdateCompanyResponsibleDto,
-} from './dto/update-company-responsible.dto'
-import {
-  CompanyResponsibleResponse,
-} from './types/company-responsible.type'
+import { CompanyResponsibleService } from './company-responsible.service'
+import { CreateCompanyResponsibleDto } from './dto/create-company-responsible.dto'
+import { UpdateCompanyResponsibleDto } from './dto/update-company-responsible.dto'
+import { CompanyResponsibleResponse } from './types/company-responsible.type'
 
 @Controller('company-responsibles')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,9 +31,7 @@ export class CompanyResponsibleController {
   }
 
   @Get('id/:id')
-  async getById(
-    @Param('id') id: string,
-  ): Promise<CompanyResponsibleResponse> {
+  async getById(@Param('id') id: string): Promise<CompanyResponsibleResponse> {
     return this.service.getById(id)
   }
 
