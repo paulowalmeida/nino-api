@@ -1,72 +1,51 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common'
+import { ConflictException, Injectable } from '@nestjs/common'
 
 import { GlobalRole } from '@prisma/client'
 
+import { BaseRepository } from '@shared/repositories/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { CreateGlobalRoleDto } from './dtos/create-global-role.dto'
 import { UpdateGlobalRoleDto } from './dtos/update-global-role.dto'
 
 @Injectable()
-export class GlobalRoleRepository {
+export class GlobalRoleRepository extends BaseRepository {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly errorService: ErrorService,
-  ) {}
+    errorService: ErrorService,
+  ) {
+    super(errorService)
+  }
 
   async getAll(): Promise<GlobalRole[]> {
-    try {
-      return await this.prisma.globalRole.findMany({
-        where: { deletedAt: null },
-        orderBy: { name: 'asc' },
-      })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return await this.findMany<GlobalRole[]>(this.prisma.globalRole)
   }
 
   async getById(id: string): Promise<GlobalRole> {
-    try {
-      const found = await this.prisma.globalRole.findFirst({
-        where: { id, deletedAt: null },
-      })
-      if (!found) throw new NotFoundException('GlobalRole not found')
-      return found
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return await this.getFirst<GlobalRole, string>(
+      this.prisma.globalRole,
+      'id',
+      id,
+    )
   }
 
   async getByName(name: string): Promise<GlobalRole> {
-    try {
-      const found = await this.prisma.globalRole.findFirst({
-        where: { name, deletedAt: null },
-      })
-      if (!found) throw new NotFoundException('GlobalRole not found')
-      return found
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return await this.getFirst<GlobalRole, string>(
+      this.prisma.globalRole,
+      'name',
+      name,
+    )
   }
 
   async create(data: CreateGlobalRoleDto): Promise<GlobalRole> {
-    try {
-      const exists = await this.prisma.globalRole.findFirst({
-        where: { name: data.name, deletedAt: null },
-      })
-      if (exists) throw new ConflictException('Name already exists')
-      return await this.prisma.globalRole.create({ data })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return await this.insert<CreateGlobalRoleDto, GlobalRole>(
+      this.prisma.globalRole,
+      data,
+    )
   }
 
   async update(id: string, data: UpdateGlobalRoleDto): Promise<GlobalRole> {
-    try {
+    return this.executeFnWithTryCatch(async () => {
       const role = await this.getById(id)
       if (data.name && data.name !== role.name) {
         const exists = await this.prisma.globalRole.findFirst({
@@ -75,21 +54,10 @@ export class GlobalRoleRepository {
         if (exists) throw new ConflictException('Name already exists')
       }
       return await this.prisma.globalRole.update({ where: { id }, data })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    })
   }
 
   async delete(id: string): Promise<{ message: string }> {
-    try {
-      await this.getById(id)
-      await this.prisma.globalRole.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      })
-      return { message: 'GlobalRole deleted successfully' }
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.softDelete(this.prisma.globalRole, id)
   }
 }

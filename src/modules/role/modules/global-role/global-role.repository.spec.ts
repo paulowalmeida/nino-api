@@ -1,14 +1,23 @@
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { GlobalRole } from '@prisma/client'
+
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { GlobalRoleRepository } from './global-role.repository'
 
+type GlobalRoleModel = {
+  findMany: jest.Mock
+  findFirst: jest.Mock
+  create: jest.Mock
+  update: jest.Mock
+}
+
 describe(GlobalRoleRepository.name, () => {
   let repository: GlobalRoleRepository
 
-  const mockRole = {
+  const mockRole: GlobalRole = {
     id: 'uuid-1',
     name: 'ADMIN',
     description: 'Administrator',
@@ -17,16 +26,18 @@ describe(GlobalRoleRepository.name, () => {
     deletedAt: null,
   }
 
-  const mockPrisma = {
-    globalRole: {
-      findMany: jest.fn(),
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
+  const mockGlobalRole: GlobalRoleModel = {
+    findMany: jest.fn(),
+    findFirst: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
   }
 
-  const mockErrorService = { handle: jest.fn() }
+  const mockPrisma = { globalRole: mockGlobalRole }
+
+  const mockErrorService: Pick<ErrorService, 'handle'> = {
+    handle: jest.fn().mockImplementation((e: unknown): never => { throw e }),
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -42,161 +53,100 @@ describe(GlobalRoleRepository.name, () => {
 
   afterEach(() => jest.clearAllMocks())
 
-  it('getAll() should return an array of global roles', async () => {
-    mockPrisma.globalRole.findMany.mockResolvedValue([mockRole])
-
-    const result = await repository.getAll()
-
-    expect(result).toEqual([mockRole])
-    expect(mockPrisma.globalRole.findMany).toHaveBeenCalledWith({
+  it('getAll() should return all non-deleted roles', async () => {
+    mockGlobalRole.findMany.mockResolvedValue([mockRole])
+    expect(await repository.getAll()).toEqual([mockRole])
+    expect(mockGlobalRole.findMany).toHaveBeenCalledWith({
       where: { deletedAt: null },
-      orderBy: { name: 'asc' },
+      orderBy: undefined,
     })
   })
 
-  it('getAll() should call errorService.handle on error', async () => {
-    const error = new Error('DB error')
-    mockPrisma.globalRole.findMany.mockRejectedValue(error)
-
-    await repository.getAll()
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('getAll() should throw on db error', async () => {
+    mockGlobalRole.findMany.mockRejectedValue(new Error('db error'))
+    await expect(repository.getAll()).rejects.toThrow('db error')
   })
 
-  it('getById() should return global role by id', async () => {
-    mockPrisma.globalRole.findFirst.mockResolvedValue(mockRole)
-
-    const result = await repository.getById('uuid-1')
-
-    expect(result).toEqual(mockRole)
-    expect(mockPrisma.globalRole.findFirst).toHaveBeenCalledWith({
+  it('getById() should return role by id', async () => {
+    mockGlobalRole.findFirst.mockResolvedValue(mockRole)
+    expect(await repository.getById('uuid-1')).toEqual(mockRole)
+    expect(mockGlobalRole.findFirst).toHaveBeenCalledWith({
       where: { id: 'uuid-1', deletedAt: null },
     })
   })
 
-  it('getById() should call errorService.handle on NotFoundException', async () => {
-    mockPrisma.globalRole.findFirst.mockResolvedValue(null)
-
-    await repository.getById('invalid-id')
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(NotFoundException),
-    )
+  it('getById() should throw NotFoundException when not found', async () => {
+    mockGlobalRole.findFirst.mockResolvedValue(null)
+    await expect(repository.getById('invalid')).rejects.toThrow(NotFoundException)
   })
 
-  it('create() should create and return a new global role', async () => {
-    const createData = { name: 'SUPPORT', description: 'Support' }
-    mockPrisma.globalRole.findFirst.mockResolvedValue(null)
-    mockPrisma.globalRole.create.mockResolvedValue({
-      ...mockRole,
-      ...createData,
-    })
-
-    const result = await repository.create(createData)
-
-    expect(result).toEqual({ ...mockRole, ...createData })
-    expect(mockPrisma.globalRole.create).toHaveBeenCalledWith({
-      data: createData,
+  it('getByName() should return role by name', async () => {
+    mockGlobalRole.findFirst.mockResolvedValue(mockRole)
+    expect(await repository.getByName('ADMIN')).toEqual(mockRole)
+    expect(mockGlobalRole.findFirst).toHaveBeenCalledWith({
+      where: { name: 'ADMIN', deletedAt: null },
     })
   })
 
-  it('create() should call errorService.handle on ConflictException', async () => {
-    mockPrisma.globalRole.findFirst.mockResolvedValue(mockRole)
-
-    await repository.create({ name: 'ADMIN', description: 'x' })
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
-    expect(mockPrisma.globalRole.create).not.toHaveBeenCalled()
+  it('getByName() should throw NotFoundException when not found', async () => {
+    mockGlobalRole.findFirst.mockResolvedValue(null)
+    await expect(repository.getByName('UNKNOWN')).rejects.toThrow(NotFoundException)
   })
 
-  it('update() should update and return the global role', async () => {
-    const updateData = { description: 'Updated' }
-    const updated = { ...mockRole, ...updateData }
-    mockPrisma.globalRole.findFirst.mockResolvedValue(mockRole)
-    mockPrisma.globalRole.update.mockResolvedValue(updated)
+  it('create() should create and return new role', async () => {
+    const data = { name: 'SUPPORT', description: 'Support' }
+    mockGlobalRole.create.mockResolvedValue({ ...mockRole, ...data })
+    expect(await repository.create(data)).toEqual({ ...mockRole, ...data })
+    expect(mockGlobalRole.create).toHaveBeenCalledWith({ data })
+  })
 
-    const result = await repository.update('uuid-1', updateData)
+  it('create() should throw on db error', async () => {
+    mockGlobalRole.create.mockRejectedValue(new Error('db error'))
+    await expect(repository.create({ name: 'X' })).rejects.toThrow('db error')
+  })
 
-    expect(result).toEqual(updated)
-    expect(mockPrisma.globalRole.update).toHaveBeenCalledWith({
+  it('update() should update and return role', async () => {
+    const updated = { ...mockRole, description: 'Updated' }
+    mockGlobalRole.findFirst.mockResolvedValue(mockRole)
+    mockGlobalRole.update.mockResolvedValue(updated)
+    expect(await repository.update('uuid-1', { description: 'Updated' })).toEqual(updated)
+    expect(mockGlobalRole.update).toHaveBeenCalledWith({
       where: { id: 'uuid-1' },
-      data: updateData,
+      data: { description: 'Updated' },
     })
+  })
+
+  it('update() should throw NotFoundException when role not found', async () => {
+    mockGlobalRole.findFirst.mockResolvedValue(null)
+    await expect(repository.update('invalid', { description: 'x' })).rejects.toThrow(NotFoundException)
+  })
+
+  it('update() should throw ConflictException when new name already exists', async () => {
+    const other = { ...mockRole, id: 'uuid-2', name: 'SUPPORT' }
+    mockGlobalRole.findFirst
+      .mockResolvedValueOnce(mockRole)
+      .mockResolvedValueOnce(other)
+    await expect(repository.update('uuid-1', { name: 'SUPPORT' })).rejects.toThrow(ConflictException)
+    expect(mockGlobalRole.update).not.toHaveBeenCalled()
+  })
+
+  it('update() should throw on db error', async () => {
+    mockGlobalRole.findFirst.mockResolvedValue(mockRole)
+    mockGlobalRole.update.mockRejectedValue(new Error('db error'))
+    await expect(repository.update('uuid-1', { description: 'x' })).rejects.toThrow('db error')
   })
 
   it('delete() should soft delete and return success message', async () => {
-    mockPrisma.globalRole.findFirst.mockResolvedValue(mockRole)
-    mockPrisma.globalRole.update.mockResolvedValue({
-      ...mockRole,
-      deletedAt: new Date(),
-    })
-
-    const result = await repository.delete('uuid-1')
-
-    expect(result).toEqual({ message: 'GlobalRole deleted successfully' })
-    expect(mockPrisma.globalRole.update).toHaveBeenCalledWith({
+    mockGlobalRole.update.mockResolvedValue({})
+    expect(await repository.delete('uuid-1')).toEqual({ message: 'Deleted successfully' })
+    expect(mockGlobalRole.update).toHaveBeenCalledWith({
       where: { id: 'uuid-1' },
       data: { deletedAt: expect.any(Date) },
     })
   })
 
-  it('delete() should call errorService.handle on NotFoundException', async () => {
-    mockPrisma.globalRole.findFirst.mockResolvedValue(null)
-
-    await repository.delete('invalid-id')
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(NotFoundException),
-    )
-  })
-
-  it('getByName() should return global role by name', async () => {
-    mockPrisma.globalRole.findFirst.mockResolvedValue(mockRole)
-
-    const result = await repository.getByName('ADMIN')
-
-    expect(result).toEqual(mockRole)
-  })
-
-  it('getByName() should call errorService.handle with NotFoundException if not found', async () => {
-    mockPrisma.globalRole.findFirst.mockResolvedValue(null)
-
-    await repository.getByName('UNKNOWN')
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(NotFoundException),
-    )
-  })
-
-  it('update() should call errorService.handle with ConflictException when new name exists', async () => {
-    mockPrisma.globalRole.findFirst.mockResolvedValue(mockRole)
-
-    await repository.update('uuid-1', { name: 'SUPPORT' })
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
-  })
-
-  it('update() should call errorService.handle when prisma.update throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.globalRole.findFirst.mockResolvedValue(mockRole)
-    mockPrisma.globalRole.update.mockRejectedValue(error)
-
-    await repository.update('uuid-1', { description: 'x' })
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
-  })
-
-  it('delete() should call errorService.handle when prisma.update throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.globalRole.findFirst.mockResolvedValue(mockRole)
-    mockPrisma.globalRole.update.mockRejectedValue(error)
-
-    await repository.delete('uuid-1')
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('delete() should throw on db error', async () => {
+    mockGlobalRole.update.mockRejectedValue(new Error('db error'))
+    await expect(repository.delete('uuid-1')).rejects.toThrow('db error')
   })
 })

@@ -1,60 +1,42 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common'
+import { ConflictException, Injectable } from '@nestjs/common'
 
 import { PlanType } from '@prisma/client'
 
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { BaseRepository } from '@shared/repositories/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { CreatePlanTypeDto } from './dtos/create-plan-type.dto'
 import { UpdatePlanTypeDto } from './dtos/update-plan-type.dto'
 
 @Injectable()
-export class PlanTypeRepository {
+export class PlanTypeRepository extends BaseRepository {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly errorService: ErrorService,
-  ) {}
+    errorService: ErrorService,
+  ) {
+    super(errorService)
+  }
 
   async getAll(): Promise<PlanType[]> {
-    try {
-      return await this.prisma.planType.findMany({
-        where: { deletedAt: null },
-        orderBy: { name: 'asc' },
-      })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.findMany<PlanType[]>(this.prisma.planType)
   }
 
   async getById(id: string): Promise<PlanType> {
-    try {
-      const found = await this.prisma.planType.findFirst({
-        where: { id, deletedAt: null },
-      })
-      if (!found) throw new NotFoundException('Plan Type not found')
-      return found
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.getFirst<PlanType, string>(this.prisma.planType, 'id', id)
   }
 
   async create(data: CreatePlanTypeDto): Promise<PlanType> {
-    try {
+    return this.executeFnWithTryCatch(async () => {
       const exists = await this.prisma.planType.findFirst({
         where: { name: data.name, deletedAt: null },
       })
       if (exists) throw new ConflictException('Name already exists')
-      return await this.prisma.planType.create({ data })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+      return this.prisma.planType.create({ data })
+    })
   }
 
   async update(id: string, data: UpdatePlanTypeDto): Promise<PlanType> {
-    try {
+    return this.executeFnWithTryCatch(async () => {
       const item = await this.getById(id)
       if (data.name && data.name !== item.name) {
         const exists = await this.prisma.planType.findFirst({
@@ -62,22 +44,11 @@ export class PlanTypeRepository {
         })
         if (exists) throw new ConflictException('Name already exists')
       }
-      return await this.prisma.planType.update({ where: { id }, data })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+      return this.prisma.planType.update({ where: { id }, data })
+    })
   }
 
   async delete(id: string): Promise<{ message: string }> {
-    try {
-      await this.getById(id)
-      await this.prisma.planType.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      })
-      return { message: 'Plan Type deleted successfully' }
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.softDelete(this.prisma.planType, id)
   }
 }

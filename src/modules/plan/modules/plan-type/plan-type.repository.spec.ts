@@ -1,14 +1,23 @@
 import { ConflictException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { PlanType } from '@prisma/client'
+
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { PlanTypeRepository } from './plan-type.repository'
 
+type PlanTypeModel = {
+  findMany: jest.Mock
+  findFirst: jest.Mock
+  create: jest.Mock
+  update: jest.Mock
+}
+
 describe(PlanTypeRepository.name, () => {
   let repository: PlanTypeRepository
 
-  const mockRecord = {
+  const mockRecord: PlanType = {
     id: 'uuid-1',
     name: 'MONTHLY',
     description: 'Monthly plan',
@@ -17,16 +26,18 @@ describe(PlanTypeRepository.name, () => {
     deletedAt: null,
   }
 
-  const mockPrisma = {
-    planType: {
-      findMany: jest.fn(),
-      findFirst: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-    },
+  const mockPlanType: PlanTypeModel = {
+    findMany: jest.fn(),
+    findFirst: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
   }
 
-  const mockErrorService = { handle: jest.fn() }
+  const mockPrisma = { planType: mockPlanType }
+
+  const mockErrorService: Pick<ErrorService, 'handle'> = {
+    handle: jest.fn().mockImplementation((e: unknown): never => { throw e }),
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -40,95 +51,97 @@ describe(PlanTypeRepository.name, () => {
     repository = module.get<PlanTypeRepository>(PlanTypeRepository)
   })
 
-  afterEach(() => { jest.clearAllMocks() })
+  afterEach(() => jest.clearAllMocks())
 
-  it('getAll() should return array', async () => {
-    mockPrisma.planType.findMany.mockResolvedValue([mockRecord])
-    const result = await repository.getAll()
-    expect(result).toEqual([mockRecord])
+  it('getAll() should return all non-deleted records', async () => {
+    mockPlanType.findMany.mockResolvedValue([mockRecord])
+    expect(await repository.getAll()).toEqual([mockRecord])
+    expect(mockPlanType.findMany).toHaveBeenCalledWith({
+      where: { deletedAt: null },
+      orderBy: undefined,
+    })
   })
 
-  it('getAll() should call errorService.handle on error', async () => {
-    const error = new Error('DB error')
-    mockPrisma.planType.findMany.mockRejectedValue(error)
-    await repository.getAll()
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('getAll() should throw on db error', async () => {
+    mockPlanType.findMany.mockRejectedValue(new Error('db error'))
+    await expect(repository.getAll()).rejects.toThrow('db error')
   })
 
   it('getById() should return record by id', async () => {
-    mockPrisma.planType.findFirst.mockResolvedValue(mockRecord)
-    const result = await repository.getById('uuid-1')
-    expect(result).toEqual(mockRecord)
-  })
-
-  it('getById() should handle NotFoundException when not found', async () => {
-    mockPrisma.planType.findFirst.mockResolvedValue(null)
-    await repository.getById('invalid-id')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(NotFoundException),
-    )
-  })
-
-  it('create() should create and return record', async () => {
-    mockPrisma.planType.findFirst.mockResolvedValue(null)
-    mockPrisma.planType.create.mockResolvedValue(mockRecord)
-    const result = await repository.create({
-      name: 'ANNUAL',
-      description: 'Annual plan',
+    mockPlanType.findFirst.mockResolvedValue(mockRecord)
+    expect(await repository.getById('uuid-1')).toEqual(mockRecord)
+    expect(mockPlanType.findFirst).toHaveBeenCalledWith({
+      where: { id: 'uuid-1', deletedAt: null },
     })
-    expect(result).toEqual(mockRecord)
   })
 
-  it('create() should handle ConflictException when name exists', async () => {
-    mockPrisma.planType.findFirst.mockResolvedValue(mockRecord)
-    await repository.create({ name: 'MONTHLY' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
-    expect(mockPrisma.planType.create).not.toHaveBeenCalled()
+  it('getById() should throw NotFoundException when not found', async () => {
+    mockPlanType.findFirst.mockResolvedValue(null)
+    await expect(repository.getById('invalid')).rejects.toThrow(NotFoundException)
+  })
+
+  it('create() should create and return new record', async () => {
+    const data = { name: 'ANNUAL', description: 'Annual plan' }
+    mockPlanType.findFirst.mockResolvedValue(null)
+    mockPlanType.create.mockResolvedValue({ ...mockRecord, ...data })
+    expect(await repository.create(data)).toEqual({ ...mockRecord, ...data })
+    expect(mockPlanType.create).toHaveBeenCalledWith({ data })
+  })
+
+  it('create() should throw ConflictException when name already exists', async () => {
+    mockPlanType.findFirst.mockResolvedValue(mockRecord)
+    await expect(repository.create({ name: 'MONTHLY' })).rejects.toThrow(ConflictException)
+    expect(mockPlanType.create).not.toHaveBeenCalled()
+  })
+
+  it('create() should throw on db error', async () => {
+    mockPlanType.findFirst.mockResolvedValue(null)
+    mockPlanType.create.mockRejectedValue(new Error('db error'))
+    await expect(repository.create({ name: 'X' })).rejects.toThrow('db error')
   })
 
   it('update() should update and return record', async () => {
     const updated = { ...mockRecord, description: 'Updated' }
-    mockPrisma.planType.findFirst.mockResolvedValue(mockRecord)
-    mockPrisma.planType.update.mockResolvedValue(updated)
-    const result = await repository.update('uuid-1', {
-      description: 'Updated',
+    mockPlanType.findFirst.mockResolvedValue(mockRecord)
+    mockPlanType.update.mockResolvedValue(updated)
+    expect(await repository.update('uuid-1', { description: 'Updated' })).toEqual(updated)
+    expect(mockPlanType.update).toHaveBeenCalledWith({
+      where: { id: 'uuid-1' },
+      data: { description: 'Updated' },
     })
-    expect(result).toEqual(updated)
   })
 
-  it('delete() should soft delete and return message', async () => {
-    mockPrisma.planType.findFirst.mockResolvedValue(mockRecord)
-    mockPrisma.planType.update.mockResolvedValue({
-      ...mockRecord,
-      deletedAt: new Date(),
+  it('update() should throw NotFoundException when record not found', async () => {
+    mockPlanType.findFirst.mockResolvedValue(null)
+    await expect(repository.update('invalid', { description: 'x' })).rejects.toThrow(NotFoundException)
+  })
+
+  it('update() should throw ConflictException when new name already exists', async () => {
+    const other = { ...mockRecord, id: 'uuid-2', name: 'ANNUAL' }
+    mockPlanType.findFirst
+      .mockResolvedValueOnce(mockRecord)
+      .mockResolvedValueOnce(other)
+    await expect(repository.update('uuid-1', { name: 'ANNUAL' })).rejects.toThrow(ConflictException)
+    expect(mockPlanType.update).not.toHaveBeenCalled()
+  })
+
+  it('update() should throw on db error', async () => {
+    mockPlanType.findFirst.mockResolvedValue(mockRecord)
+    mockPlanType.update.mockRejectedValue(new Error('db error'))
+    await expect(repository.update('uuid-1', { description: 'x' })).rejects.toThrow('db error')
+  })
+
+  it('delete() should soft delete and return success message', async () => {
+    mockPlanType.update.mockResolvedValue({})
+    expect(await repository.delete('uuid-1')).toEqual({ message: 'Deleted successfully' })
+    expect(mockPlanType.update).toHaveBeenCalledWith({
+      where: { id: 'uuid-1' },
+      data: { deletedAt: expect.any(Date) },
     })
-    const result = await repository.delete('uuid-1')
-    expect(result).toEqual({ message: 'Plan Type deleted successfully' })
   })
 
-  it('update() should call errorService.handle with ConflictException when new name exists', async () => {
-    mockPrisma.planType.findFirst.mockResolvedValue(mockRecord)
-    await repository.update('uuid-1', { name: 'ANNUAL' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
-  })
-
-  it('update() should call errorService.handle when prisma.update throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.planType.findFirst.mockResolvedValue(mockRecord)
-    mockPrisma.planType.update.mockRejectedValue(error)
-    await repository.update('uuid-1', { description: 'x' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
-  })
-
-  it('delete() should call errorService.handle when prisma.update throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.planType.findFirst.mockResolvedValue(mockRecord)
-    mockPrisma.planType.update.mockRejectedValue(error)
-    await repository.delete('uuid-1')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('delete() should throw on db error', async () => {
+    mockPlanType.update.mockRejectedValue(new Error('db error'))
+    await expect(repository.delete('uuid-1')).rejects.toThrow('db error')
   })
 })
