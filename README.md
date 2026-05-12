@@ -1,4 +1,4 @@
-# Ninomia Delivery — nino-api
+# Nino Delivery — nino-api
 
 ## 📋 Sumário
 
@@ -27,7 +27,7 @@
 ## 1. 📋 Visão Geral e Modelo de Negócio (Business Core)
 
 ### 1.1 Identidade e Conceito do Produto
-O **Nino** (anteriormente referido como Ninomia) é uma plataforma de Software as a Service (SaaS) voltada para o mercado de alimentação (restaurantes, lanchonetes, padarias e similares). O sistema opera sob o modelo **White-Label B2B**, o que define as seguintes premissas obrigatórias:
+O **Nino** é uma plataforma de Software as a Service (SaaS) voltada para o mercado de alimentação (restaurantes, lanchonetes, padarias e similares). O sistema opera sob o modelo **White-Label B2B**, o que define as seguintes premissas obrigatórias:
 - **Invisibilidade da Marca:** O cliente final (o consumidor que pede a comida) nunca interage com a marca "Nino". Toda a interface, comunicação e domínio são personalizados com a identidade visual do restaurante contratante.
 - **Isolamento de Marca:** Cada `Company` (Empresa) possui sua própria configuração de identidade, permitindo que o sistema se comporte como um aplicativo proprietário para cada cliente.
 - **Origem e Propósito:** O nome é uma homenagem afetiva aos pets da família fundadora (Nino e Mia), trazendo uma identidade de proximidade e cuidado para um produto tecnológico de alta performance.
@@ -1210,7 +1210,7 @@ FIREBASE_CREDENTIALS_JSON={ ... }
 R2_USER_ID=xxxxx
 R2_ACCESS_KEY_ID=xxxxx
 R2_SECRET_ACCESS_KEY=xxxxx
-R2_BUCKET_NAME=ninomia-files
+R2_BUCKET_NAME=nino-files
 ```
 
 **Arquivo `.env.example`:** Sempre atualizado com as variáveis necessárias.
