@@ -6,7 +6,6 @@ import { BusinessCategory } from '@prisma/client'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
-import { BusinessCategoryQueryDto } from './dtos/business-category-query.dto'
 import { BusinessCategoryRepository } from './business-category.repository'
 
 describe(BusinessCategoryRepository.name, () => {
@@ -21,8 +20,6 @@ describe(BusinessCategoryRepository.name, () => {
     deletedAt: null,
   }
 
-  const mockQuery: BusinessCategoryQueryDto = { page: 1, size: 20 }
-
   const mockPrisma = {
     businessCategory: {
       findMany: jest.fn(),
@@ -33,12 +30,19 @@ describe(BusinessCategoryRepository.name, () => {
     },
   }
 
-  const mockPaginationService = {
+  const mockPaginationService: Pick<
+    PaginationService,
+    'getPaginationParams' | 'paginate'
+  > = {
     getPaginationParams: jest.fn().mockReturnValue({ skip: 0, take: 20 }),
     paginate: jest.fn(),
   }
 
-  const mockErrorService = { handle: jest.fn() }
+  const mockErrorService: Pick<ErrorService, 'handle'> = {
+    handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => {
+      throw e
+    }),
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -55,90 +59,97 @@ describe(BusinessCategoryRepository.name, () => {
     )
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
+  afterEach(() => jest.clearAllMocks())
+
+  describe('getAll()', () => {
+    it('should return paginated response', async () => {
+      const paginated = { data: [mockRecord], pagination: {} }
+      mockPrisma.businessCategory.findMany.mockResolvedValue([mockRecord])
+      mockPrisma.businessCategory.count.mockResolvedValue(1)
+      ;(mockPaginationService.paginate as jest.Mock).mockReturnValue(paginated)
+      expect(await repository.getAll({ page: 1, size: 20 })).toEqual(paginated)
+    })
+
+    it('should throw on db error', async () => {
+      mockPrisma.businessCategory.findMany.mockRejectedValue(
+        new Error('db error'),
+      )
+      mockPrisma.businessCategory.count.mockResolvedValue(0)
+      await expect(repository.getAll({ page: 1, size: 20 })).rejects.toThrow(
+        'db error',
+      )
+    })
   })
 
-  it('getAll() should return paginated response', async () => {
-    const paginated = { data: [mockRecord], pagination: {} }
-    mockPrisma.businessCategory.findMany.mockResolvedValue([mockRecord])
-    mockPrisma.businessCategory.count.mockResolvedValue(1)
-    mockPaginationService.paginate.mockReturnValue(paginated)
-    const result = await repository.getAll(mockQuery)
-    expect(result).toEqual(paginated)
+  describe('getById()', () => {
+    it('should return record by id', async () => {
+      mockPrisma.businessCategory.findFirst.mockResolvedValue(mockRecord)
+      expect(await repository.getById('uuid-1')).toEqual(mockRecord)
+    })
+
+    it('should throw NotFoundException when not found', async () => {
+      mockPrisma.businessCategory.findFirst.mockResolvedValue(null)
+      await expect(repository.getById('invalid')).rejects.toThrow(
+        NotFoundException,
+      )
+    })
   })
 
-  it('getAll() should call errorService.handle on error', async () => {
-    const error = new Error('DB error')
-    mockPrisma.businessCategory.findMany.mockRejectedValue(error)
-    mockPrisma.businessCategory.count.mockResolvedValue(0)
-    await repository.getAll(mockQuery)
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  describe('create()', () => {
+    it('should create and return record', async () => {
+      mockPrisma.businessCategory.create.mockResolvedValue(mockRecord)
+      expect(await repository.create({ name: 'Pizzaria' })).toEqual(mockRecord)
+      expect(mockPrisma.businessCategory.create).toHaveBeenCalledWith({
+        data: { name: 'Pizzaria' },
+      })
+    })
+
+    it('should throw on db error', async () => {
+      mockPrisma.businessCategory.create.mockRejectedValue(
+        new Error('db error'),
+      )
+      await expect(repository.create({ name: 'Pizzaria' })).rejects.toThrow(
+        'db error',
+      )
+    })
   })
 
-  it('getById() should return record by id', async () => {
-    mockPrisma.businessCategory.findFirst.mockResolvedValue(mockRecord)
-    const result = await repository.getById('uuid-1')
-    expect(result).toEqual(mockRecord)
+  describe('update()', () => {
+    it('should update and return record', async () => {
+      const updated = { ...mockRecord, description: 'Updated' }
+      mockPrisma.businessCategory.update.mockResolvedValue(updated)
+      expect(
+        await repository.update('uuid-1', { description: 'Updated' }),
+      ).toEqual(updated)
+      expect(mockPrisma.businessCategory.update).toHaveBeenCalledWith({
+        where: { id: 'uuid-1' },
+        data: { description: 'Updated' },
+      })
+    })
+
+    it('should throw on db error', async () => {
+      mockPrisma.businessCategory.update.mockRejectedValue(
+        new Error('db error'),
+      )
+      await expect(
+        repository.update('uuid-1', { description: 'x' }),
+      ).rejects.toThrow('db error')
+    })
   })
 
-  it('getById() should call errorService.handle with NotFoundException when not found', async () => {
-    mockPrisma.businessCategory.findFirst.mockResolvedValue(null)
-    await repository.getById('invalid-id')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(NotFoundException),
-    )
-  })
+  describe('delete()', () => {
+    it('should soft delete and return success message', async () => {
+      mockPrisma.businessCategory.update.mockResolvedValue({})
+      expect(await repository.delete('uuid-1')).toEqual({
+        message: 'Deleted successfully',
+      })
+    })
 
-  it('create() should create and return record', async () => {
-    mockPrisma.businessCategory.create.mockResolvedValue(mockRecord)
-    const result = await repository.create({ name: 'Pizzaria' })
-    expect(result).toEqual(mockRecord)
-  })
-
-  it('create() should call errorService.handle on prisma error', async () => {
-    const error = new Error('db error')
-    mockPrisma.businessCategory.create.mockRejectedValue(error)
-    await repository.create({ name: 'Pizzaria' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
-  })
-
-  it('update() should update and return record', async () => {
-    const updated: BusinessCategory = { ...mockRecord, description: 'Updated' }
-    mockPrisma.businessCategory.findFirst.mockResolvedValue(mockRecord)
-    mockPrisma.businessCategory.update.mockResolvedValue(updated)
-    const result = await repository.update('uuid-1', { description: 'Updated' })
-    expect(result).toEqual(updated)
-  })
-
-  it('update() should call errorService.handle with NotFoundException when not found', async () => {
-    mockPrisma.businessCategory.findFirst.mockResolvedValue(null)
-    await repository.update('uuid-1', { name: 'Pizza' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(NotFoundException),
-    )
-  })
-
-  it('update() should call errorService.handle when prisma.update throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.businessCategory.findFirst.mockResolvedValue(mockRecord)
-    mockPrisma.businessCategory.update.mockRejectedValue(error)
-    await repository.update('uuid-1', { description: 'x' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
-  })
-
-  it('delete() should soft delete and return message', async () => {
-    mockPrisma.businessCategory.findFirst.mockResolvedValue(mockRecord)
-    mockPrisma.businessCategory.update.mockResolvedValue(undefined)
-    const result = await repository.delete('uuid-1')
-    expect(result).toEqual({ message: 'Business Category deleted successfully' })
-  })
-
-  it('delete() should call errorService.handle when prisma.update throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.businessCategory.findFirst.mockResolvedValue(mockRecord)
-    mockPrisma.businessCategory.update.mockRejectedValue(error)
-    await repository.delete('uuid-1')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+    it('should throw on db error', async () => {
+      mockPrisma.businessCategory.update.mockRejectedValue(
+        new Error('db error'),
+      )
+      await expect(repository.delete('uuid-1')).rejects.toThrow('db error')
+    })
   })
 })

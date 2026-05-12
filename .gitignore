@@ -1,3 +1,4 @@
+token-waste.md
 node_modules/
 dist/
 build/
@@ -7,3 +8,5 @@ build/
 coverage/
 .idea/
 .continue/*
+CLAUDE.md
+.claude/

@@ -1,86 +1,43 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 
-import { InvoiceStatus } from '@prisma/client'
+import { InvoiceStatus, Prisma } from '@prisma/client'
 
+import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { CreateInvoiceStatusDto } from './dtos/create-invoice-status.dto'
 import { UpdateInvoiceStatusDto } from './dtos/update-invoice-status.dto'
 
 @Injectable()
-export class InvoiceStatusRepository {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly errorService: ErrorService,
-  ) {}
+export class InvoiceStatusRepository
+  extends BaseRepository<Prisma.InvoiceStatusDelegate> {
+  constructor(prisma: PrismaService, errorService: ErrorService) {
+    super(errorService, prisma.invoiceStatus, 'Invoice Status')
+  }
 
   async getAll(): Promise<InvoiceStatus[]> {
-    try {
-      return await this.prisma.invoiceStatus.findMany({
-        where: { deletedAt: null },
-        orderBy: { name: 'asc' },
-      })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.findAll<InvoiceStatus>({ orderBy: { name: 'asc' } })
   }
 
   async getById(id: string): Promise<InvoiceStatus> {
-    try {
-      const found = await this.prisma.invoiceStatus.findFirst({
-        where: { id, deletedAt: null },
-      })
-      if (!found) throw new NotFoundException('Invoice Status not found')
-      return found
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.findItem<InvoiceStatus>({ where: { id } })
   }
 
   async create(data: CreateInvoiceStatusDto): Promise<InvoiceStatus> {
-    try {
-      const exists = await this.prisma.invoiceStatus.findFirst({
-        where: { name: data.name, deletedAt: null },
-      })
-      if (exists) throw new ConflictException('Name already exists')
-      return await this.prisma.invoiceStatus.create({ data })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.insert<CreateInvoiceStatusDto, InvoiceStatus>({ data })
   }
 
   async update(
     id: string,
     data: UpdateInvoiceStatusDto,
   ): Promise<InvoiceStatus> {
-    try {
-      const item = await this.getById(id)
-      if (data.name && data.name !== item.name) {
-        const exists = await this.prisma.invoiceStatus.findFirst({
-          where: { name: data.name, deletedAt: null },
-        })
-        if (exists) throw new ConflictException('Name already exists')
-      }
-      return await this.prisma.invoiceStatus.update({ where: { id }, data })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.updateItem<UpdateInvoiceStatusDto, InvoiceStatus>({
+      where: { id },
+      data,
+    })
   }
 
   async delete(id: string): Promise<{ message: string }> {
-    try {
-      await this.getById(id)
-      await this.prisma.invoiceStatus.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      })
-      return { message: 'Invoice Status deleted successfully' }
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.softDelete(id)
   }
 }

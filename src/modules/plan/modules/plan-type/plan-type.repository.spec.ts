@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common'
+import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { PlanType } from '@prisma/client'
@@ -12,6 +12,8 @@ type PlanTypeModel = {
   findFirst: jest.Mock
   create: jest.Mock
   update: jest.Mock
+  count: jest.Mock
+  deleteMany: jest.Mock
 }
 
 describe(PlanTypeRepository.name, () => {
@@ -31,15 +33,18 @@ describe(PlanTypeRepository.name, () => {
     findFirst: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    count: jest.fn(),
+    deleteMany: jest.fn(),
   }
 
   const mockPrisma = { planType: mockPlanType }
 
   const mockErrorService: Pick<ErrorService, 'handle'> = {
-    handle: jest.fn().mockImplementation((e: unknown): never => { throw e }),
+    handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => { throw e }),
   }
 
   beforeEach(async () => {
+    mockErrorService.handle.mockImplementation((e: unknown): never => { throw e as never })
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PlanTypeRepository,
@@ -51,7 +56,7 @@ describe(PlanTypeRepository.name, () => {
     repository = module.get<PlanTypeRepository>(PlanTypeRepository)
   })
 
-  afterEach(() => jest.clearAllMocks())
+  afterEach(() => jest.resetAllMocks())
 
   it('getAll() should return all non-deleted records', async () => {
     mockPlanType.findMany.mockResolvedValue([mockRecord])
@@ -59,6 +64,7 @@ describe(PlanTypeRepository.name, () => {
     expect(mockPlanType.findMany).toHaveBeenCalledWith({
       where: { deletedAt: null },
       orderBy: undefined,
+      include: undefined,
     })
   })
 
@@ -72,6 +78,7 @@ describe(PlanTypeRepository.name, () => {
     expect(await repository.getById('uuid-1')).toEqual(mockRecord)
     expect(mockPlanType.findFirst).toHaveBeenCalledWith({
       where: { id: 'uuid-1', deletedAt: null },
+      include: undefined,
     })
   })
 
@@ -82,27 +89,18 @@ describe(PlanTypeRepository.name, () => {
 
   it('create() should create and return new record', async () => {
     const data = { name: 'ANNUAL', description: 'Annual plan' }
-    mockPlanType.findFirst.mockResolvedValue(null)
     mockPlanType.create.mockResolvedValue({ ...mockRecord, ...data })
     expect(await repository.create(data)).toEqual({ ...mockRecord, ...data })
     expect(mockPlanType.create).toHaveBeenCalledWith({ data })
   })
 
-  it('create() should throw ConflictException when name already exists', async () => {
-    mockPlanType.findFirst.mockResolvedValue(mockRecord)
-    await expect(repository.create({ name: 'MONTHLY' })).rejects.toThrow(ConflictException)
-    expect(mockPlanType.create).not.toHaveBeenCalled()
-  })
-
   it('create() should throw on db error', async () => {
-    mockPlanType.findFirst.mockResolvedValue(null)
     mockPlanType.create.mockRejectedValue(new Error('db error'))
     await expect(repository.create({ name: 'X' })).rejects.toThrow('db error')
   })
 
   it('update() should update and return record', async () => {
     const updated = { ...mockRecord, description: 'Updated' }
-    mockPlanType.findFirst.mockResolvedValue(mockRecord)
     mockPlanType.update.mockResolvedValue(updated)
     expect(await repository.update('uuid-1', { description: 'Updated' })).toEqual(updated)
     expect(mockPlanType.update).toHaveBeenCalledWith({
@@ -111,22 +109,7 @@ describe(PlanTypeRepository.name, () => {
     })
   })
 
-  it('update() should throw NotFoundException when record not found', async () => {
-    mockPlanType.findFirst.mockResolvedValue(null)
-    await expect(repository.update('invalid', { description: 'x' })).rejects.toThrow(NotFoundException)
-  })
-
-  it('update() should throw ConflictException when new name already exists', async () => {
-    const other = { ...mockRecord, id: 'uuid-2', name: 'ANNUAL' }
-    mockPlanType.findFirst
-      .mockResolvedValueOnce(mockRecord)
-      .mockResolvedValueOnce(other)
-    await expect(repository.update('uuid-1', { name: 'ANNUAL' })).rejects.toThrow(ConflictException)
-    expect(mockPlanType.update).not.toHaveBeenCalled()
-  })
-
   it('update() should throw on db error', async () => {
-    mockPlanType.findFirst.mockResolvedValue(mockRecord)
     mockPlanType.update.mockRejectedValue(new Error('db error'))
     await expect(repository.update('uuid-1', { description: 'x' })).rejects.toThrow('db error')
   })

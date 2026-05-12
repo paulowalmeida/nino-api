@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common'
 
-import {
-  CompanyBusinessCategoryRepository,
-  CompanyBusinessCategoryWithCategory,
-} from './company-business-category.repository'
+import { CompanyBusinessCategoryRepository } from './company-business-category.repository'
+import { CompanyBusinessCategoryWithCategory } from './types/company-business-category-with-category.type'
 
 @Injectable()
 export class CompanyBusinessCategoryService {
@@ -19,7 +17,7 @@ export class CompanyBusinessCategoryService {
     companyId: string,
     businessCategoryId: string,
   ): Promise<CompanyBusinessCategoryWithCategory> {
-    return this.repo.create(companyId, businessCategoryId)
+    return this.repo.create(companyId, { businessCategoryId })
   }
 
   async unlink(

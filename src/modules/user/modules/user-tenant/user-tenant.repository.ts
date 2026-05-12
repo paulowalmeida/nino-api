@@ -1,38 +1,34 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 
 import { Prisma } from '@prisma/client'
 
 import { CredentialInfo } from '@credential/types/credential-info.type'
-import { PrismaService } from '@shared/services/prisma/prisma.service'
+import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
-import {
-  PaginationService,
-} from '@shared/services/pagination/pagination.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { CreateUserTenantDto } from './dtos/create-user-tenant.dto'
 import { UserTenantQueryDto } from './dtos/user-tenant-query.dto'
 import { UserTenantFull } from './types/user-tenant-full.type'
 import { UserTenantOrderBy } from './types/user-tenant-order-by.type'
-import {
-  UserTenantPaginatedResponse,
-} from './types/user-tenant-paginated-response.type'
+import { UserTenantPaginatedResponse } from './types/user-tenant-paginated-response.type'
 import { UserTenantResponse } from './types/user-tenant.response.type'
 
 @Injectable()
-export class UserTenantRepository {
-  private readonly USER_INCLUDE = {
-    globalRole: true,
-    credentials: true,
+export class UserTenantRepository
+  extends BaseRepository<Prisma.UserTenantDelegate> {
+  private readonly ITEM_INCLUDE = {
+    tenantRole: true,
+    user: { include: { globalRole: true, credentials: true } },
   } as const
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly errorService: ErrorService,
-    private readonly paginationService: PaginationService,
-  ) {}
+    prisma: PrismaService,
+    paginationService: PaginationService,
+    errorService: ErrorService,
+  ) {
+    super(errorService, prisma.userTenant, 'User Tenant', paginationService)
+  }
 
   private toResponse(item: UserTenantFull): UserTenantResponse {
     const { userId: _, tenantRoleId: _r, tenantRole, user, ...rest } = item
@@ -50,103 +46,53 @@ export class UserTenantRepository {
   }
 
   async create(data: CreateUserTenantDto): Promise<UserTenantResponse> {
-    try {
-      const exists = await this.prisma.userTenant.findUnique({
-        where: {
-          userId_tenantId: {
-            userId: data.userId,
-            tenantId: data.tenantId,
-          },
-        },
-      })
-
-      if (exists)
-        throw new ConflictException('User is already linked to this tenant')
-
-      const saved = await this.prisma.userTenant.create({
-        data,
-        include: {
-          tenantRole: true,
-          user: { include: this.USER_INCLUDE },
-        },
-      }) as UserTenantFull
-
-      return this.toResponse(saved)
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    const saved = await this.insert<CreateUserTenantDto, UserTenantFull>({
+      data,
+      include: this.ITEM_INCLUDE,
+    })
+    return this.toResponse(saved)
   }
 
   async getByUserId(
     userId: string,
     query: UserTenantQueryDto,
   ): Promise<UserTenantPaginatedResponse> {
-    try {
-      const params = this.paginationService.getPaginationParams(query)
-      const orderBy = query.orderBy ?? UserTenantOrderBy.CREATED_AT
-      const [items, total] = await Promise.all([
-        this.prisma.userTenant.findMany({
-          where: { userId },
-          orderBy: {
-            [orderBy]: query.orderDir?.toLowerCase() ?? 'asc',
-          } as Prisma.UserTenantOrderByWithRelationInput,
-          include: {
-            tenantRole: true,
-            user: { include: this.USER_INCLUDE },
-          },
-          skip: params.skip,
-          take: params.take,
-        }),
-        this.prisma.userTenant.count({ where: { userId } }),
-      ])
-      const data = (items as UserTenantFull[]).map((i) => this.toResponse(i))
-      return this.paginationService.paginate(data, total, query)
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    const orderBy = query.orderBy ?? UserTenantOrderBy.CREATED_AT
+    const result = await this.findAllPaginated<UserTenantFull>({
+      page: query.page ?? 1,
+      size: query.size ?? 10,
+      where: { userId },
+      orderBy: {
+        [orderBy]: query.orderDir?.toLowerCase() ?? 'asc',
+      } as Prisma.UserTenantOrderByWithRelationInput,
+      include: this.ITEM_INCLUDE,
+      ignoreDeleted: true,
+    })
+    return { ...result, data: result.data.map((i) => this.toResponse(i)) }
   }
 
   async getByTenantId(
     tenantId: string,
     query: UserTenantQueryDto,
   ): Promise<UserTenantPaginatedResponse> {
-    try {
-      const params = this.paginationService.getPaginationParams(query)
-      const orderBy = query.orderBy ?? UserTenantOrderBy.CREATED_AT
-      const [items, total] = await Promise.all([
-        this.prisma.userTenant.findMany({
-          where: { tenantId },
-          orderBy: {
-            [orderBy]: query.orderDir?.toLowerCase() ?? 'asc',
-          } as Prisma.UserTenantOrderByWithRelationInput,
-          include: {
-            tenantRole: true,
-            user: { include: this.USER_INCLUDE },
-          },
-          skip: params.skip,
-          take: params.take,
-        }),
-        this.prisma.userTenant.count({ where: { tenantId } }),
-      ])
-      const data = (items as UserTenantFull[]).map((i) => this.toResponse(i))
-      return this.paginationService.paginate(data, total, query)
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    const orderBy = query.orderBy ?? UserTenantOrderBy.CREATED_AT
+    const result = await this.findAllPaginated<UserTenantFull>({
+      page: query.page ?? 1,
+      size: query.size ?? 10,
+      where: { tenantId },
+      orderBy: {
+        [orderBy]: query.orderDir?.toLowerCase() ?? 'asc',
+      } as Prisma.UserTenantOrderByWithRelationInput,
+      include: this.ITEM_INCLUDE,
+      ignoreDeleted: true,
+    })
+    return { ...result, data: result.data.map((i) => this.toResponse(i)) }
   }
 
   async delete(userId: string, tenantId: string): Promise<{ message: string }> {
-    try {
-      const found = await this.prisma.userTenant.findUnique({
-        where: { userId_tenantId: { userId, tenantId } },
-      })
-      if (!found) throw new NotFoundException('UserTenant link not found')
-      await this.prisma.userTenant.delete({
-        where: { userId_tenantId: { userId, tenantId } },
-      })
-      return { message: 'UserTenant link removed successfully' }
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.updateItem<{ deletedAt: Date }, { message: string }>({
+      where: { userId_tenantId: { userId, tenantId } },
+      data: { deletedAt: new Date() },
+    }).then(() => ({ message: 'Deleted successfully' }))
   }
 }

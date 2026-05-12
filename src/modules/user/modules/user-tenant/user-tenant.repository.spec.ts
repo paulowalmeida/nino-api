@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common'
+import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { ErrorService } from '@shared/services/error/error.service'
@@ -37,17 +37,21 @@ describe(UserTenantRepository.name, () => {
 
   const mockPrisma = {
     userTenant: {
-      findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       count: jest.fn(),
       create: jest.fn(),
-      delete: jest.fn(),
+      update: jest.fn(),
+      deleteMany: jest.fn(),
     },
   }
 
-  const mockErrorService = { handle: jest.fn() }
+  const mockErrorService: Pick<ErrorService, 'handle'> = {
+    handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => { throw e }),
+  }
 
   beforeEach(async () => {
+    mockErrorService.handle.mockImplementation((e: unknown): never => { throw e as never })
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserTenantRepository,
@@ -61,36 +65,29 @@ describe(UserTenantRepository.name, () => {
     mockPrisma.userTenant.count.mockResolvedValue(0)
   })
 
-  afterEach(() => jest.clearAllMocks())
+  afterEach(() => jest.resetAllMocks())
 
   describe('create()', () => {
     it('should create and return UserTenantResponse without userId', async () => {
-      mockPrisma.userTenant.findUnique
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(mockUserTenant)
       mockPrisma.userTenant.create.mockResolvedValue(mockUserTenant)
-
       const result = await repository.create({
         userId: 'user-uuid-1',
         tenantId: 'tenant-uuid-1',
         tenantRoleId: 'role-uuid-1',
       })
-
       expect(result.tenantId).toBe('tenant-uuid-1')
-      expect((result as any).userId).toBeUndefined()
+      expect((result as Record<string, unknown>).userId).toBeUndefined()
     })
 
-    it('should call errorService.handle with ConflictException if already linked', async () => {
-      mockPrisma.userTenant.findUnique.mockResolvedValue(mockUserTenant)
-      await repository.create({
-        userId: 'user-uuid-1',
-        tenantId: 'tenant-uuid-1',
-        tenantRoleId: 'role-uuid-1',
-      })
-      expect(mockErrorService.handle).toHaveBeenCalledWith(
-        expect.any(ConflictException),
-      )
-      expect(mockPrisma.userTenant.create).not.toHaveBeenCalled()
+    it('should throw on db error', async () => {
+      mockPrisma.userTenant.create.mockRejectedValue(new Error('db error'))
+      await expect(
+        repository.create({
+          userId: 'user-uuid-1',
+          tenantId: 'tenant-uuid-1',
+          tenantRoleId: 'role-uuid-1',
+        }),
+      ).rejects.toThrow('db error')
     })
   })
 
@@ -98,19 +95,16 @@ describe(UserTenantRepository.name, () => {
     it('should return paginated results', async () => {
       mockPrisma.userTenant.findMany.mockResolvedValue([mockUserTenant])
       mockPrisma.userTenant.count.mockResolvedValue(1)
-      const result = await repository.getByUserId('user-uuid-1', {
-        page: 1,
-        size: 20,
-      })
+      const result = await repository.getByUserId('user-uuid-1', { page: 1, size: 20 })
       expect(result.data).toHaveLength(1)
       expect(result.pagination.total).toBe(1)
     })
 
-    it('should call errorService.handle on error', async () => {
-      const error = new Error('DB error')
-      mockPrisma.userTenant.findMany.mockRejectedValue(error)
-      await repository.getByUserId('user-uuid-1', {})
-      expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+    it('should throw on db error', async () => {
+      mockPrisma.userTenant.findMany.mockRejectedValue(new Error('db error'))
+      await expect(
+        repository.getByUserId('user-uuid-1', { page: 1, size: 10 }),
+      ).rejects.toThrow('db error')
     })
   })
 
@@ -118,38 +112,38 @@ describe(UserTenantRepository.name, () => {
     it('should return paginated results', async () => {
       mockPrisma.userTenant.findMany.mockResolvedValue([mockUserTenant])
       mockPrisma.userTenant.count.mockResolvedValue(1)
-      const result = await repository.getByTenantId('tenant-uuid-1', {
-        page: 1,
-        size: 20,
-      })
+      const result = await repository.getByTenantId('tenant-uuid-1', { page: 1, size: 20 })
       expect(result.data).toHaveLength(1)
       expect(result.pagination.total).toBe(1)
     })
   })
 
   describe('delete()', () => {
-    it('should delete and return success message', async () => {
-      mockPrisma.userTenant.findUnique.mockResolvedValue(mockUserTenant)
-      mockPrisma.userTenant.delete.mockResolvedValue(undefined)
+    it('should soft delete and return success message', async () => {
+      mockPrisma.userTenant.update.mockResolvedValue(mockUserTenant)
       const result = await repository.delete('user-uuid-1', 'tenant-uuid-1')
-      expect(result).toEqual({ message: 'UserTenant link removed successfully' })
+      expect(result).toEqual({ message: 'Deleted successfully' })
+      expect(mockPrisma.userTenant.update).toHaveBeenCalledWith({
+        where: {
+          userId_tenantId: { userId: 'user-uuid-1', tenantId: 'tenant-uuid-1' },
+        },
+        data: { deletedAt: expect.any(Date) },
+        include: undefined,
+      })
     })
 
-    it('should call errorService.handle with NotFoundException if not found', async () => {
-      mockPrisma.userTenant.findUnique.mockResolvedValue(null)
-      await repository.delete('user-uuid-1', 'tenant-uuid-1')
-      expect(mockErrorService.handle).toHaveBeenCalledWith(
-        expect.any(NotFoundException),
-      )
-      expect(mockPrisma.userTenant.delete).not.toHaveBeenCalled()
+    it('should throw NotFoundException when not found', async () => {
+      mockPrisma.userTenant.update.mockRejectedValue(new NotFoundException())
+      await expect(
+        repository.delete('user-uuid-1', 'tenant-uuid-1'),
+      ).rejects.toThrow(NotFoundException)
     })
 
-    it('should call errorService.handle when prisma.delete throws', async () => {
-      const error = new Error('db error')
-      mockPrisma.userTenant.findUnique.mockResolvedValue(mockUserTenant)
-      mockPrisma.userTenant.delete.mockRejectedValue(error)
-      await repository.delete('user-uuid-1', 'tenant-uuid-1')
-      expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+    it('should throw on db error', async () => {
+      mockPrisma.userTenant.update.mockRejectedValue(new Error('db error'))
+      await expect(
+        repository.delete('user-uuid-1', 'tenant-uuid-1'),
+      ).rejects.toThrow('db error')
     })
   })
 
@@ -174,10 +168,7 @@ describe(UserTenantRepository.name, () => {
     }
     mockPrisma.userTenant.findMany.mockResolvedValue([withCred])
     mockPrisma.userTenant.count.mockResolvedValue(1)
-    const result = await repository.getByUserId('user-uuid-1', {
-      page: 1,
-      size: 20,
-    })
+    const result = await repository.getByUserId('user-uuid-1', { page: 1, size: 20 })
     expect(result.data[0]).toBeDefined()
   })
 })

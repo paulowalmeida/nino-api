@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 
 import { PasswordService } from '@shared/services/password/password.service'
-import { CredentialsRepository } from './credential.repository'
+import { CredentialRepository } from './credential.repository'
 import { CreateCredentialDto } from './dto/create-credentail.dto'
 import { UpdateCredentialDto } from './dto/update-credential.dto'
 import { CredentialRepositoryType } from './types/credential-repository.type'
@@ -10,7 +10,7 @@ import { CredentialResponse } from './types/credential.response.type'
 @Injectable()
 export class CredentialsService {
   constructor(
-    private readonly credentialsRepository: CredentialsRepository,
+    private readonly credentialsRepository: CredentialRepository,
     private readonly passwordService: PasswordService,
   ) {}
 
@@ -56,24 +56,18 @@ export class CredentialsService {
   ): Promise<void> {
     const credential =
       await this.credentialsRepository.getByIdWithPassword(userId)
-
-    if (!credential || !credential.password) {
-      throw new UnauthorizedException('Invalid credentials')
-    }
-
-    const isOldValid = await this.passwordService.compare(
-      oldPass,
-      credential.password,
-    )
-    if (!isOldValid) {
-      throw new UnauthorizedException('Old password does not match')
-    }
-
+    await this.assertOldPassword(credential.password, oldPass)
     const hashedNewPass = await this.passwordService.hash(newPass)
-    await this.credentialsRepository.updatePassword(
-      credential.id,
-      hashedNewPass,
-    )
+    await this.credentialsRepository.updatePassword(credential.id, hashedNewPass)
+  }
+
+  private async assertOldPassword(
+    stored: string | null,
+    oldPass: string,
+  ): Promise<void> {
+    if (!stored) throw new UnauthorizedException('Invalid credentials')
+    const isValid = await this.passwordService.compare(oldPass, stored)
+    if (!isValid) throw new UnauthorizedException('Old password does not match')
   }
 
   async delete(id: string): Promise<{ message: string }> {
