@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common'
+import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { GlobalRole } from '@prisma/client'
@@ -12,6 +12,8 @@ type GlobalRoleModel = {
   findFirst: jest.Mock
   create: jest.Mock
   update: jest.Mock
+  count: jest.Mock
+  deleteMany: jest.Mock
 }
 
 describe(GlobalRoleRepository.name, () => {
@@ -31,6 +33,8 @@ describe(GlobalRoleRepository.name, () => {
     findFirst: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    count: jest.fn(),
+    deleteMany: jest.fn(),
   }
 
   const mockPrisma = { globalRole: mockGlobalRole }
@@ -58,7 +62,8 @@ describe(GlobalRoleRepository.name, () => {
     expect(await repository.getAll()).toEqual([mockRole])
     expect(mockGlobalRole.findMany).toHaveBeenCalledWith({
       where: { deletedAt: null },
-      orderBy: undefined,
+      orderBy: { name: 'asc' },
+      include: undefined,
     })
   })
 
@@ -107,7 +112,6 @@ describe(GlobalRoleRepository.name, () => {
 
   it('update() should update and return role', async () => {
     const updated = { ...mockRole, description: 'Updated' }
-    mockGlobalRole.findFirst.mockResolvedValue(mockRole)
     mockGlobalRole.update.mockResolvedValue(updated)
     expect(await repository.update('uuid-1', { description: 'Updated' })).toEqual(updated)
     expect(mockGlobalRole.update).toHaveBeenCalledWith({
@@ -116,22 +120,7 @@ describe(GlobalRoleRepository.name, () => {
     })
   })
 
-  it('update() should throw NotFoundException when role not found', async () => {
-    mockGlobalRole.findFirst.mockResolvedValue(null)
-    await expect(repository.update('invalid', { description: 'x' })).rejects.toThrow(NotFoundException)
-  })
-
-  it('update() should throw ConflictException when new name already exists', async () => {
-    const other = { ...mockRole, id: 'uuid-2', name: 'SUPPORT' }
-    mockGlobalRole.findFirst
-      .mockResolvedValueOnce(mockRole)
-      .mockResolvedValueOnce(other)
-    await expect(repository.update('uuid-1', { name: 'SUPPORT' })).rejects.toThrow(ConflictException)
-    expect(mockGlobalRole.update).not.toHaveBeenCalled()
-  })
-
   it('update() should throw on db error', async () => {
-    mockGlobalRole.findFirst.mockResolvedValue(mockRole)
     mockGlobalRole.update.mockRejectedValue(new Error('db error'))
     await expect(repository.update('uuid-1', { description: 'x' })).rejects.toThrow('db error')
   })

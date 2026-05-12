@@ -1,30 +1,45 @@
 import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { Credential } from '@prisma/client'
+
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
-import { CredentialsRepository } from './credential.repository'
+import { CreateCredentialDto } from './dto/create-credentail.dto'
+import { CredentialRepository } from './credential.repository'
 
-describe(CredentialsRepository.name, () => {
-  let repository: CredentialsRepository
+describe(CredentialRepository.name, () => {
+  let repository: CredentialRepository
 
-  const mockCredential = {
+  const mockCredential: Credential = {
     id: 'cred-id',
     userId: 'user-id',
     email: 'test@test.com',
-    provider: 'local',
-    providerCode: null,
     password: 'hashed',
+    providerCode: 'provider-code',
+    provider: 'local',
+    emailVerifiedAt: null,
+    resetTokenHash: null,
+    resetTokenExpiresAt: null,
+    emailVerificationTokenHash: null,
+    emailVerificationExpiresAt: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
+  }
+
+  const mockCreateDto: CreateCredentialDto = {
+    userId: 'user-id',
+    email: 'test@test.com',
+    provider: 'local',
+    password: 'hashed',
   }
 
   const mockResponse = {
     id: 'cred-id',
     email: 'test@test.com',
     provider: 'local',
-    providerCode: null,
+    providerCode: 'provider-code',
     createdAt: expect.any(Date),
     updatedAt: expect.any(Date),
   }
@@ -35,65 +50,65 @@ describe(CredentialsRepository.name, () => {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      count: jest.fn(),
+      deleteMany: jest.fn(),
     },
   }
 
-  const mockErrorService = { handle: jest.fn() }
+  const mockErrorService: Pick<ErrorService, 'handle'> = {
+    handle: jest.fn<never, [unknown, string?]>(),
+  }
 
   beforeEach(async () => {
+    mockErrorService.handle.mockImplementation((e: unknown): never => { throw e as never })
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        CredentialsRepository,
+        CredentialRepository,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: ErrorService, useValue: mockErrorService },
       ],
     }).compile()
 
-    repository = module.get<CredentialsRepository>(CredentialsRepository)
+    repository = module.get<CredentialRepository>(CredentialRepository)
   })
 
-  afterEach(() => { jest.clearAllMocks() })
+  afterEach(() => jest.resetAllMocks())
 
   it('should create a credential successfully', async () => {
     mockPrisma.credential.create.mockResolvedValue(mockCredential)
-    const result = await repository.create({ userId: 'user-id' } as any)
+    const result = await repository.create(mockCreateDto)
     expect(result).toMatchObject(mockResponse)
-    expect((result as any).password).toBeUndefined()
-    expect((result as any).userId).toBeUndefined()
+    expect((result as Record<string, unknown>).password).toBeUndefined()
+    expect((result as Record<string, unknown>).userId).toBeUndefined()
   })
 
-  it('should call errorService.handle when create throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.credential.create.mockRejectedValue(error)
-    await repository.create({ userId: 'user-id' } as any)
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('should throw on create db error', async () => {
+    mockPrisma.credential.create.mockRejectedValue(new Error('db error'))
+    await expect(repository.create(mockCreateDto)).rejects.toThrow('db error')
   })
 
   it('should get credentials by userId', async () => {
     mockPrisma.credential.findMany.mockResolvedValue([mockCredential])
     const result = await repository.getAll('user-id')
     expect(result[0]).toMatchObject(mockResponse)
-    expect((result[0] as any).password).toBeUndefined()
+    expect((result[0] as Record<string, unknown>).password).toBeUndefined()
   })
 
-  it('should call errorService.handle when getAll throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.credential.findMany.mockRejectedValue(error)
-    await repository.getAll('user-id')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('should throw on getAll db error', async () => {
+    mockPrisma.credential.findMany.mockRejectedValue(new Error('db error'))
+    await expect(repository.getAll('user-id')).rejects.toThrow('db error')
   })
 
   it('should get a credential by id', async () => {
     mockPrisma.credential.findFirst.mockResolvedValue(mockCredential)
     const result = await repository.getById('cred-id')
     expect(result).toMatchObject(mockResponse)
-    expect((result as any).password).toBeUndefined()
+    expect((result as Record<string, unknown>).password).toBeUndefined()
   })
 
-  it('should call errorService.handle with NotFoundException when getById finds nothing', async () => {
+  it('should throw NotFoundException when getById finds nothing', async () => {
     mockPrisma.credential.findFirst.mockResolvedValue(null)
-    await repository.getById('cred-id')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
+    await expect(repository.getById('cred-id')).rejects.toThrow(NotFoundException)
   })
 
   it('should get a credential by email', async () => {
@@ -102,10 +117,9 @@ describe(CredentialsRepository.name, () => {
     expect(result).toMatchObject(mockResponse)
   })
 
-  it('should call errorService.handle with NotFoundException when getByEmail finds nothing', async () => {
+  it('should throw NotFoundException when getByEmail finds nothing', async () => {
     mockPrisma.credential.findFirst.mockResolvedValue(null)
-    await repository.getByEmail('test@test.com')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
+    await expect(repository.getByEmail('test@test.com')).rejects.toThrow(NotFoundException)
   })
 
   it('should get a credential by id with password', async () => {
@@ -115,17 +129,14 @@ describe(CredentialsRepository.name, () => {
     expect(result.password).toBe('hashed')
   })
 
-  it('should call errorService.handle with NotFoundException when getByIdWithPassword finds nothing', async () => {
+  it('should throw NotFoundException when getByIdWithPassword finds nothing', async () => {
     mockPrisma.credential.findFirst.mockResolvedValue(null)
-    await repository.getByIdWithPassword('cred-id')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
+    await expect(repository.getByIdWithPassword('cred-id')).rejects.toThrow(NotFoundException)
   })
 
-  it('should call errorService.handle when getByIdWithPassword throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.credential.findFirst.mockRejectedValue(error)
-    await repository.getByIdWithPassword('cred-id')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('should throw on getByIdWithPassword db error', async () => {
+    mockPrisma.credential.findFirst.mockRejectedValue(new Error('db error'))
+    await expect(repository.getByIdWithPassword('cred-id')).rejects.toThrow('db error')
   })
 
   it('should get a credential by email with password', async () => {
@@ -135,76 +146,56 @@ describe(CredentialsRepository.name, () => {
     expect(result.password).toBe('hashed')
   })
 
-  it('should call errorService.handle with NotFoundException when getByEmailWithPassword finds nothing', async () => {
+  it('should throw NotFoundException when getByEmailWithPassword finds nothing', async () => {
     mockPrisma.credential.findFirst.mockResolvedValue(null)
-    await repository.getByEmailWithPassword('test@test.com')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
+    await expect(
+      repository.getByEmailWithPassword('test@test.com'),
+    ).rejects.toThrow(NotFoundException)
   })
 
-  it('should call errorService.handle when getByEmailWithPassword throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.credential.findFirst.mockRejectedValue(error)
-    await repository.getByEmailWithPassword('test@test.com')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('should throw on getByEmailWithPassword db error', async () => {
+    mockPrisma.credential.findFirst.mockRejectedValue(new Error('db error'))
+    await expect(
+      repository.getByEmailWithPassword('test@test.com'),
+    ).rejects.toThrow('db error')
   })
 
   it('should update a credential successfully', async () => {
     const updated = { ...mockCredential, email: 'new@test.com' }
-    mockPrisma.credential.findFirst.mockResolvedValue(mockCredential)
     mockPrisma.credential.update.mockResolvedValue(updated)
     const result = await repository.update('cred-id', { email: 'new@test.com' })
     expect(result.email).toBe('new@test.com')
-    expect((result as any).password).toBeUndefined()
+    expect((result as Record<string, unknown>).password).toBeUndefined()
   })
 
-  it('should call errorService.handle with NotFoundException when update finds nothing', async () => {
-    mockPrisma.credential.findFirst.mockResolvedValue(null)
-    await repository.update('cred-id', { email: 'x@x.com' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
-  })
-
-  it('should call errorService.handle when update throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.credential.findFirst.mockRejectedValue(error)
-    await repository.update('cred-id', { email: 'x@x.com' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('should throw on update db error', async () => {
+    mockPrisma.credential.update.mockRejectedValue(new Error('db error'))
+    await expect(repository.update('cred-id', { email: 'x@x.com' })).rejects.toThrow('db error')
   })
 
   it('should update password successfully', async () => {
-    mockPrisma.credential.findFirst.mockResolvedValue(mockCredential)
     mockPrisma.credential.update.mockResolvedValue(undefined)
     await repository.updatePassword('cred-id', 'new-password')
-    expect(mockPrisma.credential.update).toHaveBeenCalledWith({
-      where: { id: 'cred-id' },
-      data: { password: 'new-password' },
-    })
+    expect(mockPrisma.credential.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'cred-id' },
+        data: { password: 'new-password' },
+      }),
+    )
   })
 
-  it('should call errorService.handle with NotFoundException when updatePassword finds nothing', async () => {
-    mockPrisma.credential.findFirst.mockResolvedValue(null)
-    await repository.updatePassword('cred-id', 'new-password')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(expect.any(NotFoundException))
-  })
-
-  it('should call errorService.handle when updatePassword throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.credential.findFirst.mockRejectedValue(error)
-    await repository.updatePassword('cred-id', 'new-password')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('should throw on updatePassword db error', async () => {
+    mockPrisma.credential.update.mockRejectedValue(new Error('db error'))
+    await expect(repository.updatePassword('cred-id', 'new-password')).rejects.toThrow('db error')
   })
 
   it('should soft delete a credential successfully', async () => {
-    mockPrisma.credential.findFirst.mockResolvedValue(mockCredential)
-    mockPrisma.credential.update.mockResolvedValue({ ...mockCredential, deletedAt: new Date() })
-    const result = await repository.delete('cred-id')
-    expect(result).toEqual({ message: 'Credential deleted successfully' })
+    mockPrisma.credential.update.mockResolvedValue({})
+    expect(await repository.delete('cred-id')).toEqual({ message: 'Deleted successfully' })
   })
 
-  it('should call errorService.handle when delete update throws', async () => {
-    const error = new Error('db error')
-    mockPrisma.credential.findFirst.mockResolvedValue(mockCredential)
-    mockPrisma.credential.update.mockRejectedValue(error)
-    await repository.delete('cred-id')
-    expect(mockErrorService.handle).toHaveBeenCalledWith(error)
+  it('should throw on delete db error', async () => {
+    mockPrisma.credential.update.mockRejectedValue(new Error('db error'))
+    await expect(repository.delete('cred-id')).rejects.toThrow('db error')
   })
 })

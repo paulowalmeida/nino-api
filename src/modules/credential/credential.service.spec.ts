@@ -2,12 +2,12 @@ import { UnauthorizedException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { PasswordService } from '@shared/services/password/password.service'
-import { CredentialsRepository } from './credential.repository'
+import { CredentialRepository } from './credential.repository'
 import { CredentialsService } from './credential.service'
 
 describe(CredentialsService.name, () => {
   let service: CredentialsService
-  let repository: CredentialsRepository
+  let repository: CredentialRepository
   let passwordService: PasswordService
 
   const mockCredential = {
@@ -38,7 +38,7 @@ describe(CredentialsService.name, () => {
       providers: [
         CredentialsService,
         {
-          provide: CredentialsRepository,
+          provide: CredentialRepository,
           useValue: {
             create: jest.fn().mockResolvedValue(mockCredential),
             getAll: jest.fn().mockResolvedValue([mockCredential]),
@@ -62,7 +62,7 @@ describe(CredentialsService.name, () => {
     }).compile()
 
     service = module.get<CredentialsService>(CredentialsService)
-    repository = module.get<CredentialsRepository>(CredentialsRepository)
+    repository = module.get<CredentialRepository>(CredentialRepository)
     passwordService = module.get<PasswordService>(PasswordService)
   })
 

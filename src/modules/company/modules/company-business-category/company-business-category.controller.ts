@@ -14,9 +14,10 @@ import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
-import { CreateCompanyBusinessCategoryDto } from './dtos/create-company-business-category.dto'
+
 import { CompanyBusinessCategoryService } from './company-business-category.service'
-import { CompanyBusinessCategoryWithCategory } from './company-business-category.repository'
+import { CreateCompanyBusinessCategoryDto } from './dtos/create-company-business-category.dto'
+import { CompanyBusinessCategoryWithCategory } from './types/company-business-category-with-category.type'
 
 @Controller('companies/:companyId/business-categories')
 @UseGuards(JwtAuthGuard, RolesGuard)

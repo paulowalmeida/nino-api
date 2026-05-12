@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 
-import { BusinessCategory } from '@prisma/client'
+import { BusinessCategory, Prisma } from '@prisma/client'
 
+import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
@@ -11,77 +12,45 @@ import { UpdateBusinessCategoryDto } from './dtos/update-business-category.dto'
 import { BusinessCategoryPaginatedResponse } from './types/business-category-paginated-response.type'
 
 @Injectable()
-export class BusinessCategoryRepository {
+export class BusinessCategoryRepository
+  extends BaseRepository<Prisma.BusinessCategoryDelegate> {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly errorService: ErrorService,
-    private readonly paginationService: PaginationService,
-  ) {}
+    prisma: PrismaService,
+    errorService: ErrorService,
+    paginationService: PaginationService,
+  ) {
+    super(errorService, prisma.businessCategory, 'Business Category', paginationService)
+  }
 
   async getAll(
     query: BusinessCategoryQueryDto,
   ): Promise<BusinessCategoryPaginatedResponse> {
-    try {
-      const params = this.paginationService.getPaginationParams(query)
-      const orderBy = query.orderBy ?? 'name'
-      const orderDir = query.orderDir ?? 'ASC'
-      const [data, total] = await Promise.all([
-        this.prisma.businessCategory.findMany({
-          where: { deletedAt: null },
-          orderBy: { [orderBy]: orderDir.toLowerCase() },
-          skip: params.skip,
-          take: params.take,
-        }),
-        this.prisma.businessCategory.count({ where: { deletedAt: null } }),
-      ])
-      return this.paginationService.paginate(data, total, query)
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.findAllPaginated<BusinessCategory>({
+      page: query.page ?? 1,
+      size: query.size ?? 10,
+      orderBy: { [query.orderBy ?? 'name']: 'asc' },
+    })
   }
 
   async getById(id: string): Promise<BusinessCategory> {
-    try {
-      const found = await this.prisma.businessCategory.findFirst({
-        where: { id, deletedAt: null },
-      })
-      if (!found) throw new NotFoundException('Business Category not found')
-      return found
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.findItem<BusinessCategory>({ where: { id } })
   }
 
   async create(data: CreateBusinessCategoryDto): Promise<BusinessCategory> {
-    try {
-      return await this.prisma.businessCategory.create({ data })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.insert<CreateBusinessCategoryDto, BusinessCategory>({ data })
   }
 
   async update(
     id: string,
     data: UpdateBusinessCategoryDto,
   ): Promise<BusinessCategory> {
-    try {
-      await this.getById(id)
-      return await this.prisma.businessCategory.update({ where: { id }, data })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.updateItem<UpdateBusinessCategoryDto, BusinessCategory>({
+      where: { id },
+      data,
+    })
   }
 
   async delete(id: string): Promise<{ message: string }> {
-    try {
-      await this.getById(id)
-      await this.prisma.businessCategory.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-      })
-      return { message: 'Business Category deleted successfully' }
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.softDelete(id)
   }
 }

@@ -1,95 +1,84 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 
-import { BusinessCategory, CompanyBusinessCategory } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
+import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
-
-export type CompanyBusinessCategoryWithCategory = CompanyBusinessCategory & {
-  businessCategory: BusinessCategory
-}
+import { CreateCompanyBusinessCategoryDto } from './dtos/create-company-business-category.dto'
+import { CompanyBusinessCategoryWithCategory } from './types/company-business-category-with-category.type'
 
 @Injectable()
-export class CompanyBusinessCategoryRepository {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly errorService: ErrorService,
-  ) {}
+export class CompanyBusinessCategoryRepository
+  extends BaseRepository<Prisma.CompanyBusinessCategoryDelegate> {
+  constructor(prisma: PrismaService, errorService: ErrorService) {
+    super(errorService, prisma.companyBusinessCategory, 'Company Business Category')
+  }
 
   async getByCompanyId(
     companyId: string,
   ): Promise<CompanyBusinessCategoryWithCategory[]> {
-    try {
-      return await this.prisma.companyBusinessCategory.findMany({
-        where: { companyId, deletedAt: null },
-        include: { businessCategory: true },
-      })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.findAll<CompanyBusinessCategoryWithCategory>({
+      where: { companyId },
+      include: { businessCategory: true },
+    })
   }
 
   async create(
     companyId: string,
-    businessCategoryId: string,
+    dto: CreateCompanyBusinessCategoryDto,
   ): Promise<CompanyBusinessCategoryWithCategory> {
-    try {
-      return await this.prisma.companyBusinessCategory.create({
-        data: { companyId, businessCategoryId },
-        include: { businessCategory: true },
-      })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.insert<
+      CreateCompanyBusinessCategoryDto & { companyId: string },
+      CompanyBusinessCategoryWithCategory
+    >({
+      data: { ...dto, companyId },
+      include: { businessCategory: true },
+    })
   }
 
   async delete(
     companyId: string,
     businessCategoryId: string,
   ): Promise<{ message: string }> {
-    try {
-      const found = await this.prisma.companyBusinessCategory.findFirst({
-        where: { companyId, businessCategoryId, deletedAt: null },
-      })
-      if (!found)
-        throw new NotFoundException('Company Business Category not found')
-      await this.prisma.companyBusinessCategory.update({
-        where: { businessCategoryId_companyId: { businessCategoryId, companyId } },
-        data: { deletedAt: new Date() },
-      })
-      return { message: 'Company Business Category unlinked successfully' }
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    await this.updateItem<{ deletedAt: Date }, void>({
+      where: {
+        businessCategoryId_companyId: { businessCategoryId, companyId },
+      },
+      data: { deletedAt: new Date() },
+    })
+    return { message: 'Company Business Category unlinked successfully' }
   }
 
   async activate(
     companyId: string,
     businessCategoryId: string,
   ): Promise<CompanyBusinessCategoryWithCategory> {
-    try {
-      return await this.prisma.companyBusinessCategory.update({
-        where: { businessCategoryId_companyId: { businessCategoryId, companyId } },
-        data: { isActive: true },
-        include: { businessCategory: true },
-      })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.updateItem<
+      { isActive: boolean },
+      CompanyBusinessCategoryWithCategory
+    >({
+      where: {
+        businessCategoryId_companyId: { businessCategoryId, companyId },
+      },
+      data: { isActive: true },
+      include: { businessCategory: true },
+    })
   }
 
   async deactivate(
     companyId: string,
     businessCategoryId: string,
   ): Promise<CompanyBusinessCategoryWithCategory> {
-    try {
-      return await this.prisma.companyBusinessCategory.update({
-        where: { businessCategoryId_companyId: { businessCategoryId, companyId } },
-        data: { isActive: false },
-        include: { businessCategory: true },
-      })
-    } catch (error) {
-      this.errorService.handle(error)
-    }
+    return this.updateItem<
+      { isActive: boolean },
+      CompanyBusinessCategoryWithCategory
+    >({
+      where: {
+        businessCategoryId_companyId: { businessCategoryId, companyId },
+      },
+      data: { isActive: false },
+      include: { businessCategory: true },
+    })
   }
 }

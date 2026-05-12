@@ -42,7 +42,7 @@ describe(BusinessCategoryService.name, () => {
 
   it('getAll() should return array', async () => {
     mockRepo.getAll.mockResolvedValue([mockRecord])
-    const result = await service.getAll()
+    const result = await service.getAll({})
     expect(result).toEqual([mockRecord])
   })
 

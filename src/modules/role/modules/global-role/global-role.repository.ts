@@ -1,63 +1,47 @@
-import { ConflictException, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 
-import { GlobalRole } from '@prisma/client'
+import { GlobalRole, Prisma } from '@prisma/client'
 
-import { BaseRepository } from '@shared/repositories/base.repository'
+import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { CreateGlobalRoleDto } from './dtos/create-global-role.dto'
 import { UpdateGlobalRoleDto } from './dtos/update-global-role.dto'
 
 @Injectable()
-export class GlobalRoleRepository extends BaseRepository {
+export class GlobalRoleRepository
+  extends BaseRepository<Prisma.GlobalRoleDelegate> {
   constructor(
-    private readonly prisma: PrismaService,
+    prisma: PrismaService,
     errorService: ErrorService,
   ) {
-    super(errorService)
+    super(errorService, prisma.globalRole, 'Global Role')
   }
 
   async getAll(): Promise<GlobalRole[]> {
-    return await this.findMany<GlobalRole[]>(this.prisma.globalRole)
+    return this.findAll<GlobalRole>({ orderBy: { name: 'asc' } })
   }
 
   async getById(id: string): Promise<GlobalRole> {
-    return await this.getFirst<GlobalRole, string>(
-      this.prisma.globalRole,
-      'id',
-      id,
-    )
+    return this.findItem<GlobalRole>({ where: { id } })
   }
 
   async getByName(name: string): Promise<GlobalRole> {
-    return await this.getFirst<GlobalRole, string>(
-      this.prisma.globalRole,
-      'name',
-      name,
-    )
+    return this.findItem<GlobalRole>({ where: { name } })
   }
 
   async create(data: CreateGlobalRoleDto): Promise<GlobalRole> {
-    return await this.insert<CreateGlobalRoleDto, GlobalRole>(
-      this.prisma.globalRole,
-      data,
-    )
+    return this.insert<CreateGlobalRoleDto, GlobalRole>({ data })
   }
 
   async update(id: string, data: UpdateGlobalRoleDto): Promise<GlobalRole> {
-    return this.executeFnWithTryCatch(async () => {
-      const role = await this.getById(id)
-      if (data.name && data.name !== role.name) {
-        const exists = await this.prisma.globalRole.findFirst({
-          where: { name: data.name, deletedAt: null },
-        })
-        if (exists) throw new ConflictException('Name already exists')
-      }
-      return await this.prisma.globalRole.update({ where: { id }, data })
+    return this.updateItem<UpdateGlobalRoleDto, GlobalRole>({
+      where: { id },
+      data,
     })
   }
 
   async delete(id: string): Promise<{ message: string }> {
-    return this.softDelete(this.prisma.globalRole, id)
+    return this.softDelete(id)
   }
 }

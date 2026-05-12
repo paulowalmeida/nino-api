@@ -2,11 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { BusinessCategory } from '@prisma/client'
 
-import {
-  CompanyBusinessCategoryRepository,
-  CompanyBusinessCategoryWithCategory,
-} from './company-business-category.repository'
+import { CompanyBusinessCategoryRepository } from './company-business-category.repository'
 import { CompanyBusinessCategoryService } from './company-business-category.service'
+import { CompanyBusinessCategoryWithCategory } from './types/company-business-category-with-category.type'
 
 describe(CompanyBusinessCategoryService.name, () => {
   let service: CompanyBusinessCategoryService
@@ -30,25 +28,22 @@ describe(CompanyBusinessCategoryService.name, () => {
     businessCategory: mockCategory,
   }
 
+  const getByCompanyId = jest.fn()
+  const create = jest.fn()
+  const deleteFn = jest.fn()
+  const activate = jest.fn()
+  const deactivate = jest.fn()
+
   const mockRepo: Pick<
     CompanyBusinessCategoryRepository,
     'getByCompanyId' | 'create' | 'delete' | 'activate' | 'deactivate'
-  > = {
-    getByCompanyId: jest.fn(),
-    create: jest.fn(),
-    delete: jest.fn(),
-    activate: jest.fn(),
-    deactivate: jest.fn(),
-  }
+  > = { getByCompanyId, create, delete: deleteFn, activate, deactivate }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CompanyBusinessCategoryService,
-        {
-          provide: CompanyBusinessCategoryRepository,
-          useValue: mockRepo,
-        },
+        { provide: CompanyBusinessCategoryRepository, useValue: mockRepo },
       ],
     }).compile()
 
@@ -57,47 +52,50 @@ describe(CompanyBusinessCategoryService.name, () => {
     )
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
-  })
+  afterEach(() => jest.clearAllMocks())
 
-  it('getByCompanyId() should return array with categories', async () => {
-    ;(mockRepo.getByCompanyId as jest.Mock).mockResolvedValue([mockLink])
-    const result = await service.getByCompanyId('company-1')
-    expect(result).toEqual([mockLink])
-  })
-
-  it('link() should return link with category', async () => {
-    ;(mockRepo.create as jest.Mock).mockResolvedValue(mockLink)
-    const result = await service.link('company-1', 'cat-1')
-    expect(result).toEqual(mockLink)
-  })
-
-  it('unlink() should return success message', async () => {
-    ;(mockRepo.delete as jest.Mock).mockResolvedValue({
-      message: 'Company Business Category unlinked successfully',
-    })
-    const result = await service.unlink('company-1', 'cat-1')
-    expect(result).toEqual({
-      message: 'Company Business Category unlinked successfully',
+  describe('getByCompanyId()', () => {
+    it('should delegate to repo and return result', async () => {
+      getByCompanyId.mockResolvedValue([mockLink])
+      expect(await service.getByCompanyId('company-1')).toEqual([mockLink])
+      expect(getByCompanyId).toHaveBeenCalledWith('company-1')
     })
   })
 
-  it('activate() should return link with isActive true', async () => {
-    ;(mockRepo.activate as jest.Mock).mockResolvedValue({
-      ...mockLink,
-      isActive: true,
+  describe('link()', () => {
+    it('should call repo.create with dto and return result', async () => {
+      create.mockResolvedValue(mockLink)
+      expect(await service.link('company-1', 'cat-1')).toEqual(mockLink)
+      expect(create).toHaveBeenCalledWith('company-1', {
+        businessCategoryId: 'cat-1',
+      })
     })
-    const result = await service.activate('company-1', 'cat-1')
-    expect(result.isActive).toBe(true)
   })
 
-  it('deactivate() should return link with isActive false', async () => {
-    ;(mockRepo.deactivate as jest.Mock).mockResolvedValue({
-      ...mockLink,
-      isActive: false,
+  describe('unlink()', () => {
+    it('should delegate to repo.delete and return message', async () => {
+      const message = { message: 'Company Business Category unlinked successfully' }
+      deleteFn.mockResolvedValue(message)
+      expect(await service.unlink('company-1', 'cat-1')).toEqual(message)
+      expect(deleteFn).toHaveBeenCalledWith('company-1', 'cat-1')
     })
-    const result = await service.deactivate('company-1', 'cat-1')
-    expect(result.isActive).toBe(false)
+  })
+
+  describe('activate()', () => {
+    it('should delegate to repo.activate and return result', async () => {
+      const activated = { ...mockLink, isActive: true }
+      activate.mockResolvedValue(activated)
+      expect(await service.activate('company-1', 'cat-1')).toEqual(activated)
+      expect(activate).toHaveBeenCalledWith('company-1', 'cat-1')
+    })
+  })
+
+  describe('deactivate()', () => {
+    it('should delegate to repo.deactivate and return result', async () => {
+      const deactivated = { ...mockLink, isActive: false }
+      deactivate.mockResolvedValue(deactivated)
+      expect(await service.deactivate('company-1', 'cat-1')).toEqual(deactivated)
+      expect(deactivate).toHaveBeenCalledWith('company-1', 'cat-1')
+    })
   })
 })
