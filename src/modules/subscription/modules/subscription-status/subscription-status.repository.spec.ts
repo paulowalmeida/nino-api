@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common'
+import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { ErrorService } from '@shared/services/error/error.service'
@@ -74,7 +74,6 @@ describe(SubscriptionStatusRepository.name, () => {
   })
 
   it('create() should create and return record', async () => {
-    mockPrisma.subscriptionStatus.findFirst.mockResolvedValue(null)
     mockPrisma.subscriptionStatus.create.mockResolvedValue(mockRecord)
     const result = await repository.create({
       name: 'SUSPENDED',
@@ -83,48 +82,24 @@ describe(SubscriptionStatusRepository.name, () => {
     expect(result).toEqual(mockRecord)
   })
 
-  it('create() should handle ConflictException when name exists', async () => {
-    mockPrisma.subscriptionStatus.findFirst.mockResolvedValue(mockRecord)
-    await repository.create({ name: 'ACTIVE' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
-    expect(mockPrisma.subscriptionStatus.create).not.toHaveBeenCalled()
-  })
-
   it('update() should update and return record', async () => {
     const updated = { ...mockRecord, description: 'Updated' }
-    mockPrisma.subscriptionStatus.findFirst.mockResolvedValue(mockRecord)
     mockPrisma.subscriptionStatus.update.mockResolvedValue(updated)
-    const result = await repository.update('uuid-1', {
-      description: 'Updated',
-    })
+    const result = await repository.update('uuid-1', { description: 'Updated' })
     expect(result).toEqual(updated)
   })
 
   it('delete() should soft delete and return message', async () => {
-    mockPrisma.subscriptionStatus.findFirst.mockResolvedValue(mockRecord)
     mockPrisma.subscriptionStatus.update.mockResolvedValue({
       ...mockRecord,
       deletedAt: new Date(),
     })
     const result = await repository.delete('uuid-1')
-    expect(result).toEqual({
-      message: 'Subscription Status deleted successfully',
-    })
-  })
-
-  it('update() should call errorService.handle with ConflictException when new name exists', async () => {
-    mockPrisma.subscriptionStatus.findFirst.mockResolvedValue(mockRecord)
-    await repository.update('uuid-1', { name: 'SUSPENDED' })
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
+    expect(result).toEqual({ message: 'Deleted successfully' })
   })
 
   it('update() should call errorService.handle when prisma.update throws', async () => {
     const error = new Error('db error')
-    mockPrisma.subscriptionStatus.findFirst.mockResolvedValue(mockRecord)
     mockPrisma.subscriptionStatus.update.mockRejectedValue(error)
     await repository.update('uuid-1', { description: 'x' })
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)
@@ -132,7 +107,6 @@ describe(SubscriptionStatusRepository.name, () => {
 
   it('delete() should call errorService.handle when prisma.update throws', async () => {
     const error = new Error('db error')
-    mockPrisma.subscriptionStatus.findFirst.mockResolvedValue(mockRecord)
     mockPrisma.subscriptionStatus.update.mockRejectedValue(error)
     await repository.delete('uuid-1')
     expect(mockErrorService.handle).toHaveBeenCalledWith(error)

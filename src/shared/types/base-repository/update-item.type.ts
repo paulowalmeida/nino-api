@@ -1,5 +1,5 @@
-export type UpdateItem<DT> = {
+export type UpdateItem<DataType> = {
   where: Record<string, unknown>
-  data: DT
+  data: DataType
   include?: Record<string, unknown>
 }

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 
 import { BusinessCategory, Prisma } from '@prisma/client'
 
+import type { IBaseLookupRepository } from '@shared/interfaces/base-lookup-repository.interface'
 import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
@@ -13,7 +14,14 @@ import { BusinessCategoryPaginatedResponse } from './types/business-category-pag
 
 @Injectable()
 export class BusinessCategoryRepository
-  extends BaseRepository<Prisma.BusinessCategoryDelegate> {
+  extends BaseRepository<Prisma.BusinessCategoryDelegate>
+  implements IBaseLookupRepository<
+    BusinessCategory,
+    CreateBusinessCategoryDto,
+    UpdateBusinessCategoryDto,
+    BusinessCategoryQueryDto,
+    BusinessCategoryPaginatedResponse
+  > {
   constructor(
     prisma: PrismaService,
     errorService: ErrorService,

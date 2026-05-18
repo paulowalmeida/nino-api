@@ -2,9 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { BusinessCategory, CompanyBusinessCategory } from '@prisma/client'
 
-import {
-  CompanyBusinessCategoryWithCategory,
-} from './company-business-category.repository'
+import { CompanyBusinessCategoryWithCategory } from './types/company-business-category-with-category.type'
 import { CompanyBusinessCategoryController } from './company-business-category.controller'
 import { CompanyBusinessCategoryService } from './company-business-category.service'
 

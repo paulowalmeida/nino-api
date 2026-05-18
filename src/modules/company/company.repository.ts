@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 
 import { Company, Prisma } from '@prisma/client'
 
+import type { IBaseLookupRepository } from '@shared/interfaces/base-lookup-repository.interface'
 import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
@@ -13,7 +14,14 @@ import { CompanyPaginatedResponse } from './types/company-paginated-response.typ
 
 @Injectable()
 export class CompanyRepository
-  extends BaseRepository<Prisma.CompanyDelegate> {
+  extends BaseRepository<Prisma.CompanyDelegate>
+  implements IBaseLookupRepository<
+    Company,
+    CreateCompanyDto,
+    UpdateCompanyDto,
+    CompanyQueryDto,
+    CompanyPaginatedResponse
+  > {
   constructor(
     prisma: PrismaService,
     errorService: ErrorService,

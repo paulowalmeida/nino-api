@@ -47,14 +47,12 @@ export class PlanController {
     @Param('id') id: string,
     @Body() updateDto: UpdatePlanDto,
   ): Promise<PlanResponse> {
-    await this.planService.update(id, updateDto)
-    return await this.planService.getById(id)
+    return this.planService.update(id, updateDto)
   }
 
   @Delete(':id')
   @Roles(GlobalRole.ADMIN)
   async delete(@Param('id') id: string): Promise<{ message: string }> {
-    await this.planService.delete(id)
-    return { message: 'plan deleted successfully' }
+    return this.planService.delete(id)
   }
 }

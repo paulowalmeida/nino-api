@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { randomUUID } from 'crypto'
 import { Credential, Prisma } from '@prisma/client'
 
+import type { IBaseLookupRepository } from '@shared/interfaces/base-lookup-repository.interface'
 import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
@@ -12,7 +13,13 @@ import { CredentialResponse } from './types/credential.response.type'
 
 @Injectable()
 export class CredentialRepository
-  extends BaseRepository<Prisma.CredentialDelegate> {
+  extends BaseRepository<Prisma.CredentialDelegate>
+  implements IBaseLookupRepository<
+    CredentialResponse,
+    CreateCredentialDto,
+    UpdateCredentialDto,
+    string
+  > {
   constructor(prisma: PrismaService, errorService: ErrorService) {
     super(errorService, prisma.credential, 'Credential')
   }
@@ -29,7 +36,7 @@ export class CredentialRepository
     return this.toResponse(credential)
   }
 
-  async getAll(userId: string): Promise<CredentialResponse[]> {
+  async getAll(userId?: string): Promise<CredentialResponse[]> {
     const items = await this.findAll<Credential>({ where: { userId } })
     return items.map((c) => this.toResponse(c))
   }
@@ -65,11 +72,12 @@ export class CredentialRepository
     return this.toResponse(updated)
   }
 
-  async updatePassword(id: string, password: string): Promise<void> {
+  async updatePassword(id: string, password: string): Promise<{ message: string }> {
     await this.updateItem<{ password: string }, Credential>({
       where: { id },
       data: { password },
     })
+    return { message: 'Password updated successfully' }
   }
 
   async delete(id: string): Promise<{ message: string }> {

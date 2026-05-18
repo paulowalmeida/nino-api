@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 
 import { Plan, PlanType, Prisma } from '@prisma/client'
 
+import type { IBaseLookupRepository } from '@shared/interfaces/base-lookup-repository.interface'
 import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
@@ -10,7 +11,9 @@ import { UpdatePlanDto } from './dtos/update-plan.dto'
 import { PlanResponse } from './types/plan.response.type'
 
 @Injectable()
-export class PlanRepository extends BaseRepository<Prisma.PlanDelegate> {
+export class PlanRepository
+  extends BaseRepository<Prisma.PlanDelegate>
+  implements IBaseLookupRepository<PlanResponse, CreatePlanDto, UpdatePlanDto> {
   constructor(prisma: PrismaService, errorService: ErrorService) {
     super(errorService, prisma.plan, 'Plan')
   }
@@ -44,8 +47,13 @@ export class PlanRepository extends BaseRepository<Prisma.PlanDelegate> {
     return this.toResponse(saved)
   }
 
-  async update(id: string, data: UpdatePlanDto): Promise<void> {
-    await this.updateItem<UpdatePlanDto, Plan>({ where: { id }, data })
+  async update(id: string, data: UpdatePlanDto): Promise<PlanResponse> {
+    const updated = await this.updateItem<UpdatePlanDto, Plan & { type: PlanType }>({
+      where: { id },
+      data,
+      include: { type: true },
+    })
+    return this.toResponse(updated)
   }
 
   async delete(id: string): Promise<{ message: string }> {

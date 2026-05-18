@@ -40,15 +40,15 @@ export class SessionService {
     return this.sessionsRepository.findByRefreshToken(refreshToken)
   }
 
-  async deleteAllByUserId(userId: string): Promise<void> {
+  async deleteAllByUserId(userId: string): Promise<{ message: string }> {
     return this.sessionsRepository.deleteAllByUserId(userId)
   }
 
-  async update(id: string, updateDto: UpdateSessionDto): Promise<void> {
+  async update(id: string, updateDto: UpdateSessionDto): Promise<Session> {
     return this.sessionsRepository.update(id, updateDto)
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string): Promise<{ message: string }> {
     return this.sessionsRepository.delete(id)
   }
 }

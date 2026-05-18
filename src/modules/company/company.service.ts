@@ -2,47 +2,34 @@ import { Injectable } from '@nestjs/common'
 
 import { Company } from '@prisma/client'
 
+import { BaseService } from '@shared/services/base/base.service'
 import { CompanyRepository } from './company.repository'
 import { CompanyQueryDto } from './dto/company-query.dto'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
-import {
-  CompanyPaginatedResponse,
-} from './types/company-paginated-response.type'
+import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
 
 @Injectable()
-export class CompanyService {
-  constructor(private readonly repo: CompanyRepository) {}
-
-  async getAll(query: CompanyQueryDto): Promise<CompanyPaginatedResponse> {
-    return await this.repo.getAll(query)
-  }
-
-  async getById(id: string): Promise<Company> {
-    return await this.repo.getById(id)
+export class CompanyService extends BaseService<
+  Company,
+  CreateCompanyDto,
+  UpdateCompanyDto,
+  CompanyQueryDto,
+  CompanyPaginatedResponse
+> {
+  constructor(private repo: CompanyRepository) {
+    super(repo)
   }
 
   async getByCnpj(cnpj: string): Promise<Company> {
-    return await this.repo.getByCnpj(cnpj)
-  }
-
-  async create(data: CreateCompanyDto): Promise<Company> {
-    return await this.repo.create(data)
-  }
-
-  async update(id: string, data: UpdateCompanyDto): Promise<Company> {
-    return await this.repo.update(id, data)
-  }
-
-  async delete(id: string): Promise<{ message: string }> {
-    return await this.repo.delete(id)
+    return this.repo.getByCnpj(cnpj)
   }
 
   async activate(id: string): Promise<Company> {
-    return await this.repo.activate(id)
+    return this.repo.activate(id)
   }
 
   async deactivate(id: string): Promise<Company> {
-    return await this.repo.deactivate(id)
+    return this.repo.deactivate(id)
   }
 }

@@ -39,7 +39,7 @@ describe(PlanTypeRepository.name, () => {
 
   const mockPrisma = { planType: mockPlanType }
 
-  const mockErrorService: Pick<ErrorService, 'handle'> = {
+  const mockErrorService: jest.Mocked<Pick<ErrorService, 'handle'>> = {
     handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => { throw e }),
   }
 
@@ -63,7 +63,7 @@ describe(PlanTypeRepository.name, () => {
     expect(await repository.getAll()).toEqual([mockRecord])
     expect(mockPlanType.findMany).toHaveBeenCalledWith({
       where: { deletedAt: null },
-      orderBy: undefined,
+      orderBy: { name: 'asc' },
       include: undefined,
     })
   })

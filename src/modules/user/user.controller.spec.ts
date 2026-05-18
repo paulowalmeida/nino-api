@@ -62,15 +62,18 @@ describe(UserController.name, () => {
 
   it('should update a user and return the updated entity', async () => {
     const dto = { name: 'Jane Doe' }
+    jest.spyOn(service, 'update').mockResolvedValue(mockUser as never)
     const result = await controller.update('user-id', dto)
     expect(service.update).toHaveBeenCalledWith('user-id', dto)
-    expect(service.getById).toHaveBeenCalledWith('user-id')
+    expect(service.getById).not.toHaveBeenCalled()
     expect(result).toEqual(mockUser)
   })
 
   it('should delete a user and return a success message', async () => {
+    const deleteResponse = { message: 'Deleted successfully' }
+    jest.spyOn(service, 'delete').mockResolvedValue(deleteResponse)
     const result = await controller.delete('user-id')
     expect(service.delete).toHaveBeenCalledWith('user-id')
-    expect(result).toEqual({ message: 'user deleted successfully' })
+    expect(result).toEqual(deleteResponse)
   })
 })

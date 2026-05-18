@@ -1,11 +1,15 @@
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { InvoiceStatus } from '@shared/enums/invoice-status.enum'
 import { NotificationType } from '@shared/enums/notification-type.enum'
+import { OrderStatus } from '@shared/enums/order-status.enum'
+import { PaymentMethod } from '@shared/enums/payment-method.enum'
+import { PaymentStatus } from '@shared/enums/payment-status.enum'
 import { PlanType } from '@shared/enums/plan-type.enum'
 import { Plan } from '@shared/enums/plan.enum'
 import { SubscriptionStatus } from '@shared/enums/subscription-status.enum'
 import { TenantRole } from '@shared/enums/tenant-role.enum'
 import { TenantStatus } from '@shared/enums/tenant-status.enum'
+import { TenantType } from '@shared/enums/tenant-type.enum'
 
 export const globalRoles = [
   { name: GlobalRole.ADMIN, description: 'Dono da Plataforma' },
@@ -79,6 +83,39 @@ export const businessCategories = [
   { name: 'Tapiocaria', description: 'Especializada em tapiocas' },
   { name: 'Marmitaria', description: 'Refeições em marmita' },
   { name: 'Bar e Petiscos', description: 'Bebidas e petiscos' },
+]
+
+export const tenantTypes = [
+  { name: TenantType.RESTAURANT, description: 'Restaurante tradicional' },
+  { name: TenantType.FOOD_TRUCK, description: 'Food truck' },
+  { name: TenantType.DARK_KITCHEN, description: 'Cozinha exclusiva para delivery' },
+  { name: TenantType.FRANCHISE, description: 'Unidade franqueada' },
+]
+
+export const orderStatuses = [
+  { name: OrderStatus.PENDING, description: 'Aguardando confirmação' },
+  { name: OrderStatus.CONFIRMED, description: 'Confirmado pelo estabelecimento' },
+  { name: OrderStatus.PREPARING, description: 'Em preparo' },
+  { name: OrderStatus.READY, description: 'Pronto para retirada ou entrega' },
+  { name: OrderStatus.OUT_FOR_DELIVERY, description: 'Saiu para entrega' },
+  { name: OrderStatus.DELIVERED, description: 'Entregue' },
+  { name: OrderStatus.CANCELLED, description: 'Cancelado' },
+]
+
+export const paymentStatuses = [
+  { name: PaymentStatus.PENDING, description: 'Aguardando pagamento' },
+  { name: PaymentStatus.PAID, description: 'Pago' },
+  { name: PaymentStatus.FAILED, description: 'Falha no pagamento' },
+  { name: PaymentStatus.REFUNDED, description: 'Estornado' },
+  { name: PaymentStatus.CANCELLED, description: 'Cancelado' },
+]
+
+export const paymentMethods = [
+  { name: PaymentMethod.CREDIT_CARD, description: 'Cartão de crédito' },
+  { name: PaymentMethod.DEBIT_CARD, description: 'Cartão de débito' },
+  { name: PaymentMethod.PIX, description: 'PIX' },
+  { name: PaymentMethod.CASH, description: 'Dinheiro' },
+  { name: PaymentMethod.VOUCHER, description: 'Vale-refeição ou alimentação' },
 ]
 
 // typeId resolvido em runtime após upsert de planTypes

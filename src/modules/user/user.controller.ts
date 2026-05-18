@@ -58,14 +58,12 @@ export class UserController {
     @Param('id') id: string,
     @Body() updateDto: UpdateUserDto,
   ): Promise<UserResponse> {
-    await this.userService.update(id, updateDto)
-    return await this.userService.getById(id)
+    return this.userService.update(id, updateDto)
   }
 
   @Delete(':id')
   @Roles(GlobalRole.ADMIN)
   async delete(@Param('id') id: string): Promise<{ message: string }> {
-    await this.userService.delete(id)
-    return { message: 'user deleted successfully' }
+    return this.userService.delete(id)
   }
 }

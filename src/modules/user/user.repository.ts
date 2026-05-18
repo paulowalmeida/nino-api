@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common'
 
-import { User, Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
+import type { IBaseLookupRepository } from '@shared/interfaces/base-lookup-repository.interface'
 import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
@@ -15,7 +16,15 @@ import { UserPaginatedResponse } from './types/user-paginated-response.type'
 import { UserResponse } from './types/user-response.type'
 
 @Injectable()
-export class UserRepository extends BaseRepository<Prisma.UserDelegate> {
+export class UserRepository
+  extends BaseRepository<Prisma.UserDelegate>
+  implements IBaseLookupRepository<
+    UserResponse,
+    CreateUserDto,
+    UpdateUserDto,
+    UserQueryDto,
+    UserPaginatedResponse
+  > {
   constructor(
     prisma: PrismaService,
     paginationService: PaginationService,
@@ -38,8 +47,12 @@ export class UserRepository extends BaseRepository<Prisma.UserDelegate> {
     return { ...rest, role, credentials }
   }
 
-  async create(data: CreateUserDto): Promise<User> {
-    return this.insert<CreateUserDto, User>({ data })
+  async create(data: CreateUserDto): Promise<UserResponse> {
+    const user = await this.insert<CreateUserDto, UserFull>({
+      data,
+      include: { globalRole: true, credentials: true },
+    })
+    return this.toResponse(user)
   }
 
   async getAll(query: UserQueryDto): Promise<UserPaginatedResponse> {
@@ -69,11 +82,16 @@ export class UserRepository extends BaseRepository<Prisma.UserDelegate> {
     return users.map((u) => this.toResponse(u))
   }
 
-  async update(id: string, data: UpdateUserDto): Promise<void> {
-    await this.updateItem<UpdateUserDto, User>({ where: { id }, data })
+  async update(id: string, data: UpdateUserDto): Promise<UserResponse> {
+    const updated = await this.updateItem<UpdateUserDto, UserFull>({
+      where: { id },
+      data,
+      include: { globalRole: true, credentials: true },
+    })
+    return this.toResponse(updated)
   }
 
-  async delete(id: string): Promise<void> {
-    await this.softDelete(id)
+  async delete(id: string): Promise<{ message: string }> {
+    return this.softDelete(id)
   }
 }

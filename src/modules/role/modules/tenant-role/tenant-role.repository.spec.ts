@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common'
+import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { ErrorService } from '@shared/services/error/error.service'
@@ -86,11 +86,7 @@ describe(TenantRoleRepository.name, () => {
 
   it('create() should create and return a new tenant role', async () => {
     const createData = { name: 'CASHIER', description: 'Cashier' }
-    mockPrisma.tenantRole.findFirst.mockResolvedValue(null)
-    mockPrisma.tenantRole.create.mockResolvedValue({
-      ...mockRole,
-      ...createData,
-    })
+    mockPrisma.tenantRole.create.mockResolvedValue({ ...mockRole, ...createData })
 
     const result = await repository.create(createData)
 
@@ -100,21 +96,9 @@ describe(TenantRoleRepository.name, () => {
     })
   })
 
-  it('create() should call errorService.handle on ConflictException', async () => {
-    mockPrisma.tenantRole.findFirst.mockResolvedValue(mockRole)
-
-    await repository.create({ name: 'MANAGER', description: 'x' })
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
-    expect(mockPrisma.tenantRole.create).not.toHaveBeenCalled()
-  })
-
   it('update() should update and return the tenant role', async () => {
     const updateData = { description: 'Updated' }
     const updated = { ...mockRole, ...updateData }
-    mockPrisma.tenantRole.findFirst.mockResolvedValue(mockRole)
     mockPrisma.tenantRole.update.mockResolvedValue(updated)
 
     const result = await repository.update('uuid-1', updateData)
@@ -127,7 +111,6 @@ describe(TenantRoleRepository.name, () => {
   })
 
   it('delete() should soft delete and return success message', async () => {
-    mockPrisma.tenantRole.findFirst.mockResolvedValue(mockRole)
     mockPrisma.tenantRole.update.mockResolvedValue({
       ...mockRole,
       deletedAt: new Date(),
@@ -135,21 +118,11 @@ describe(TenantRoleRepository.name, () => {
 
     const result = await repository.delete('uuid-1')
 
-    expect(result).toEqual({ message: 'TenantRole deleted successfully' })
+    expect(result).toEqual({ message: 'Deleted successfully' })
     expect(mockPrisma.tenantRole.update).toHaveBeenCalledWith({
       where: { id: 'uuid-1' },
       data: { deletedAt: expect.any(Date) },
     })
-  })
-
-  it('delete() should call errorService.handle on NotFoundException', async () => {
-    mockPrisma.tenantRole.findFirst.mockResolvedValue(null)
-
-    await repository.delete('invalid-id')
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(NotFoundException),
-    )
   })
 
   it('getByName() should return tenant role by name', async () => {
@@ -170,19 +143,8 @@ describe(TenantRoleRepository.name, () => {
     )
   })
 
-  it('update() should call errorService.handle with ConflictException when new name exists', async () => {
-    mockPrisma.tenantRole.findFirst.mockResolvedValue(mockRole)
-
-    await repository.update('uuid-1', { name: 'CASHIER' })
-
-    expect(mockErrorService.handle).toHaveBeenCalledWith(
-      expect.any(ConflictException),
-    )
-  })
-
   it('update() should call errorService.handle when prisma.update throws', async () => {
     const error = new Error('db error')
-    mockPrisma.tenantRole.findFirst.mockResolvedValue(mockRole)
     mockPrisma.tenantRole.update.mockRejectedValue(error)
 
     await repository.update('uuid-1', { description: 'x' })
@@ -192,7 +154,6 @@ describe(TenantRoleRepository.name, () => {
 
   it('delete() should call errorService.handle when prisma.update throws', async () => {
     const error = new Error('db error')
-    mockPrisma.tenantRole.findFirst.mockResolvedValue(mockRole)
     mockPrisma.tenantRole.update.mockRejectedValue(error)
 
     await repository.delete('uuid-1')

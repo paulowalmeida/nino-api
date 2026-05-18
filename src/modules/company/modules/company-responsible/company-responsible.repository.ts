@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 
 import { Prisma } from '@prisma/client'
 
+import type { IBaseLookupRepository } from '@shared/interfaces/base-lookup-repository.interface'
 import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
@@ -12,7 +13,12 @@ import { CompanyResponsibleResponse } from './types/company-responsible.type'
 
 @Injectable()
 export class CompanyResponsibleRepository
-  extends BaseRepository<Prisma.CompanyResponsibleDelegate> {
+  extends BaseRepository<Prisma.CompanyResponsibleDelegate>
+  implements IBaseLookupRepository<
+    CompanyResponsibleResponse,
+    CreateCompanyResponsibleDto,
+    UpdateCompanyResponsibleDto
+  > {
   constructor(prisma: PrismaService, errorService: ErrorService) {
     super(errorService, prisma.companyResponsible, 'Company Responsible')
   }
@@ -58,11 +64,19 @@ export class CompanyResponsibleRepository
     return this.toResponse(saved)
   }
 
-  async update(id: string, dto: UpdateCompanyResponsibleDto): Promise<void> {
-    await this.updateItem<UpdateCompanyResponsibleDto, void>({
+  async update(
+    id: string,
+    dto: UpdateCompanyResponsibleDto,
+  ): Promise<CompanyResponsibleResponse> {
+    const updated = await this.updateItem<
+      UpdateCompanyResponsibleDto,
+      CompanyResponsibleWithCompanies
+    >({
       where: { id },
       data: dto,
+      include: { companies: true },
     })
+    return this.toResponse(updated)
   }
 
   async delete(id: string): Promise<{ message: string }> {

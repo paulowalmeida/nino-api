@@ -19,10 +19,12 @@
 * [15. 📊 Status dos Módulos](#15--status-dos-módulos)
 * [16. 🚀 Próximas Features (Roadmap)](#16--próximas-features-roadmap)
 * [17. 🛠️ Variáveis de Ambiente](#17-️-variáveis-de-ambiente)
-* [18. 🐳 Docker & Local Development](#18--docker--local-development)
-* [19. 📚 Referências & Documentação](#19--referências--documentação)
-* [20. 🤝 Contribuição & Commits](#20--contribuição--commits)
-* [21. 📞 Suporte & Dúvidas](#21--suporte--dúvidas)
+* [17. 🛠️ Variáveis de Ambiente](#17-️-variáveis-de-ambiente)
+* [18. ☁️ Infraestrutura & Hospedagem](#18-️-infraestrutura--hospedagem)
+* [20. 🐳 Docker & Local Development](#20--docker--local-development)
+* [21. 📚 Referências & Documentação](#21--referências--documentação)
+* [22. 🤝 Contribuição & Commits](#22--contribuição--commits)
+* [23. 📞 Suporte & Dúvidas](#23--suporte--dúvidas)
 
 ## 1. 📋 Visão Geral e Modelo de Negócio (Business Core)
 
@@ -1249,7 +1251,46 @@ R2_BUCKET_NAME=nino-files
 
 ---
 
-## 18. 🐳 Docker & Local Development
+## 18. ☁️ Infraestrutura & Hospedagem
+
+### Plataforma: Fly.io
+
+A plataforma escolhida para produção é o **Fly.io**, pelos seguintes motivos:
+
+- **Custo**: ~$6–8/mês (NestJS + Postgres gerenciado) — mais barato que AWS e Railway
+- **Domínios customizados por cliente**: suporte nativo a certificados SSL dinâmicos via API — essencial para o modelo white-label do Nino, onde cada restaurante pode usar seu próprio domínio (ex: `pedidos.meurestaurante.com`)
+- **Controle**: permite configuração via Dockerfile e CLI (`flyctl`), com escala horizontal quando necessário
+
+### Custo Estimado (Produção)
+
+| Serviço | Plano | Custo/mês |
+|---|---|---|
+| NestJS API | shared-cpu-1x, 512MB | ~$3 |
+| Postgres gerenciado | Fly Postgres | ~$3 |
+| **Total** | | **~$6–8** |
+
+### Front-end (Next.js SSR)
+
+O painel administrativo e as lojas white-label serão servidos via **Next.js com SSR**, hospedado também no Fly.io como container separado. Tokens de sessão ficam em cookies HttpOnly no servidor — nunca expostos no browser.
+
+| Serviço | Plano | Custo/mês |
+|---|---|---|
+| Next.js (SSR) | shared-cpu-1x, 256MB | ~$2–3 |
+
+### Domínios Customizados por Cliente
+
+O campo `customDomain` no modelo `Tenant` permite que cada restaurante aponte seu próprio domínio para o Nino. O fluxo:
+
+1. Cliente cadastra o domínio no painel (`customDomain` no Tenant)
+2. API provisiona o certificado SSL via Fly.io Certificates API
+3. Cliente aponta o DNS para o servidor Fly.io
+4. `TenantInterceptor` resolve o `tenantId` pelo domínio em cada requisição
+
+> **Escalável**: Fly.io provisiona certificados Let's Encrypt automaticamente por domínio via API, sem intervenção manual.
+
+---
+
+## 20. 🐳 Docker & Local Development
 
 ### Docker Compose (PostgreSQL + Redis)
 
@@ -1289,7 +1330,7 @@ npm run test:e2e            # Testes end-to-end
 
 ---
 
-## 19. 📚 Referências & Documentação
+## 21. 📚 Referências & Documentação
 
 - **NestJS:** https://docs.nestjs.com
 - **Prisma:** https://www.prisma.io/docs
@@ -1304,7 +1345,7 @@ npm run test:e2e            # Testes end-to-end
 
 ---
 
-## 20. 🤝 Contribuição & Commits
+## 22. 🤝 Contribuição & Commits
 
 ### Padrão de Branches
 
@@ -1330,7 +1371,7 @@ refactor(repository): extrair queries em helpers
 
 ---
 
-## 21. 📞 Suporte & Dúvidas
+## 23. 📞 Suporte & Dúvidas
 
 Dúvidas sobre código? Consulte:
 
