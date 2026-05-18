@@ -130,18 +130,15 @@ describe(CompanyResponsibleService.name, () => {
   })
 
   it('should update company responsible', async () => {
-    const dto: UpdateCompanyResponsibleDto = {
-      name: 'Jane Doe',
-    }
+    const dto: UpdateCompanyResponsibleDto = { name: 'Jane Doe' }
     const updated = { ...mockResponsible, name: 'Jane Doe' }
-    mockRepository.update.mockResolvedValue(undefined)
-    mockRepository.getById.mockResolvedValue(updated)
+    mockRepository.update.mockResolvedValue(updated)
 
     const result = await service.update('123', dto)
 
     expect(result).toEqual(updated)
     expect(repository.update).toHaveBeenCalledWith('123', dto)
-    expect(repository.getById).toHaveBeenCalledWith('123')
+    expect(repository.getById).not.toHaveBeenCalled()
   })
 
   it('should delete company responsible', async () => {

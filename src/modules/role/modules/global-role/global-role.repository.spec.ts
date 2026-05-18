@@ -39,8 +39,8 @@ describe(GlobalRoleRepository.name, () => {
 
   const mockPrisma = { globalRole: mockGlobalRole }
 
-  const mockErrorService: Pick<ErrorService, 'handle'> = {
-    handle: jest.fn().mockImplementation((e: unknown): never => { throw e }),
+  const mockErrorService: jest.Mocked<Pick<ErrorService, 'handle'>> = {
+    handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => { throw e }),
   }
 
   beforeEach(async () => {

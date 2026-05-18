@@ -30,7 +30,7 @@ describe(InvoiceStatusRepository.name, () => {
     },
   }
 
-  const mockErrorService: Pick<ErrorService, 'handle'> = {
+  const mockErrorService: jest.Mocked<Pick<ErrorService, 'handle'>> = {
     handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => { throw e }),
   }
 

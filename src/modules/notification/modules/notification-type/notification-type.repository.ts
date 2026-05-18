@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 
 import { NotificationType, Prisma } from '@prisma/client'
 
+import type { IBaseLookupRepository } from '@shared/interfaces/base-lookup-repository.interface'
 import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
@@ -10,7 +11,12 @@ import { UpdateNotificationTypeDto } from './dtos/update-notification-type.dto'
 
 @Injectable()
 export class NotificationTypeRepository
-  extends BaseRepository<Prisma.NotificationTypeDelegate> {
+  extends BaseRepository<Prisma.NotificationTypeDelegate>
+  implements IBaseLookupRepository<
+    NotificationType,
+    CreateNotificationTypeDto,
+    UpdateNotificationTypeDto
+  > {
   constructor(
     prisma: PrismaService,
     errorService: ErrorService,

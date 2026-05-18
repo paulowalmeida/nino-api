@@ -187,11 +187,14 @@ describe(CompanyResponsibleRepository.name, () => {
 
   describe('update()', () => {
     it('should call update with id and data', async () => {
-      mockPrisma.companyResponsible.update.mockResolvedValue(undefined)
-      await repository.update('uuid-1', { name: 'Jane Doe' })
+      const updated = { ...mockResponsible, name: 'Jane Doe' }
+      mockPrisma.companyResponsible.update.mockResolvedValue(updated)
+      const result = await repository.update('uuid-1', { name: 'Jane Doe' })
+      expect(result).not.toHaveProperty('deletedAt')
       expect(mockPrisma.companyResponsible.update).toHaveBeenCalledWith({
         where: { id: 'uuid-1' },
         data: { name: 'Jane Doe' },
+        include: { companies: true },
       })
     })
 

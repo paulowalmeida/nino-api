@@ -11,11 +11,15 @@ import {
   globalRoles,
   invoiceStatuses,
   notificationTypes,
+  orderStatuses,
+  paymentMethods,
+  paymentStatuses,
   planTypes,
   plans,
   subscriptionStatuses,
   tenantRoles,
   tenantStatuses,
+  tenantTypes,
 } from './seed.data'
 
 const pool = new Pool({ connectionString: process.env.DB_URL })
@@ -108,6 +112,42 @@ async function main() {
     })
   }
   console.log('✅  business_categories')
+
+  for (const tt of tenantTypes) {
+    await prisma.tenantType.upsert({
+      where: { name: tt.name },
+      update: {},
+      create: tt,
+    })
+  }
+  console.log('✅  tenant_types')
+
+  for (const os of orderStatuses) {
+    await prisma.orderStatus.upsert({
+      where: { name: os.name },
+      update: {},
+      create: os,
+    })
+  }
+  console.log('✅  order_statuses')
+
+  for (const ps of paymentStatuses) {
+    await prisma.paymentStatus.upsert({
+      where: { name: ps.name },
+      update: {},
+      create: ps,
+    })
+  }
+  console.log('✅  payment_statuses')
+
+  for (const pm of paymentMethods) {
+    await prisma.paymentMethod.upsert({
+      where: { name: pm.name },
+      update: {},
+      create: pm,
+    })
+  }
+  console.log('✅  payment_methods')
 
   console.log('\n🌱 Seed concluído com sucesso!')
 }

@@ -42,7 +42,7 @@ describe(PlanRepository.name, () => {
     },
   }
 
-  const mockErrorService: Pick<ErrorService, 'handle'> = {
+  const mockErrorService: jest.Mocked<Pick<ErrorService, 'handle'>> = {
     handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => { throw e }),
   }
 
@@ -100,10 +100,12 @@ describe(PlanRepository.name, () => {
 
   it('update() should update plan successfully', async () => {
     mockPrisma.plan.update.mockResolvedValue(mockPlanRaw)
-    await repository.update('plan-uuid-1', { name: 'New Pro' })
+    const result = await repository.update('plan-uuid-1', { name: 'New Pro' })
+    expect(result.type).toEqual({ name: 'MONTHLY' })
     expect(mockPrisma.plan.update).toHaveBeenCalledWith({
       where: { id: 'plan-uuid-1' },
       data: { name: 'New Pro' },
+      include: { type: true },
     })
   })
 

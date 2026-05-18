@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 
 import { GlobalRole, Prisma } from '@prisma/client'
 
+import type { IBaseLookupRepository } from '@shared/interfaces/base-lookup-repository.interface'
 import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
@@ -10,7 +11,12 @@ import { UpdateGlobalRoleDto } from './dtos/update-global-role.dto'
 
 @Injectable()
 export class GlobalRoleRepository
-  extends BaseRepository<Prisma.GlobalRoleDelegate> {
+  extends BaseRepository<Prisma.GlobalRoleDelegate>
+  implements IBaseLookupRepository<
+    GlobalRole,
+    CreateGlobalRoleDto,
+    UpdateGlobalRoleDto
+  > {
   constructor(
     prisma: PrismaService,
     errorService: ErrorService,

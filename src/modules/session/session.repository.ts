@@ -102,15 +102,17 @@ export class SessionRepository
     })
   }
 
-  async deleteAllByUserId(userId: string): Promise<void> {
+  async deleteAllByUserId(userId: string): Promise<{ message: string }> {
     await this.deleteMany({ userId })
+    return { message: 'Sessions deleted successfully' }
   }
 
-  async update(id: string, data: UpdateSessionDto): Promise<void> {
-    await this.updateItem<UpdateSessionDto, Session>({ where: { id }, data })
+  async update(id: string, data: UpdateSessionDto): Promise<Session> {
+    return this.updateItem<UpdateSessionDto, Session>({ where: { id }, data })
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string): Promise<{ message: string }> {
     await this.deleteMany({ id })
+    return { message: 'Session deleted successfully' }
   }
 }

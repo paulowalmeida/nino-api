@@ -89,22 +89,22 @@ describe(PlanController.name, () => {
 
   it('update() should update a plan and return the updated entity', async () => {
     const dto: UpdatePlanDto = { name: 'New Pro' }
-    mockService.update.mockResolvedValue(undefined)
-    mockService.getById.mockResolvedValue(mockPlan)
+    mockService.update.mockResolvedValue(mockPlan)
 
     const result = await controller.update('uuid-1', dto)
 
     expect(service.update).toHaveBeenCalledWith('uuid-1', dto)
-    expect(service.getById).toHaveBeenCalledWith('uuid-1')
+    expect(service.getById).not.toHaveBeenCalled()
     expect(result).toEqual(mockPlan)
   })
 
   it('delete() should delete a plan and return a success message', async () => {
-    mockService.delete.mockResolvedValue(undefined)
+    const deleteResponse = { message: 'Deleted successfully' }
+    mockService.delete.mockResolvedValue(deleteResponse)
 
     const result = await controller.delete('uuid-1')
 
     expect(service.delete).toHaveBeenCalledWith('uuid-1')
-    expect(result).toEqual({ message: 'plan deleted successfully' })
+    expect(result).toEqual(deleteResponse)
   })
 })

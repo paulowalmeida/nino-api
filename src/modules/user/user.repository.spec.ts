@@ -52,7 +52,7 @@ describe(UserRepository.name, () => {
     },
   }
 
-  const mockErrorService: Pick<ErrorService, 'handle'> = {
+  const mockErrorService: jest.Mocked<Pick<ErrorService, 'handle'>> = {
     handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => { throw e }),
   }
 
@@ -76,7 +76,8 @@ describe(UserRepository.name, () => {
   it('should create a user successfully', async () => {
     mockPrisma.user.create.mockResolvedValue(mockUser)
     const result = await repository.create({ name: 'John Doe', globalRoleId: 'role-id' } as never)
-    expect(result).toEqual(mockUser)
+    expect(result.id).toBe('user-id')
+    expect((result as Record<string, unknown>).deletedAt).toBeUndefined()
     expect(mockPrisma.user.create).toHaveBeenCalled()
   })
 
@@ -125,10 +126,13 @@ describe(UserRepository.name, () => {
 
   it('should update a user successfully', async () => {
     mockPrisma.user.update.mockResolvedValue(mockUser)
-    await repository.update('user-id', { name: 'Jane Doe' })
+    const result = await repository.update('user-id', { name: 'Jane Doe' })
+    expect(result.id).toBe('user-id')
+    expect((result as Record<string, unknown>).deletedAt).toBeUndefined()
     expect(mockPrisma.user.update).toHaveBeenCalledWith({
       where: { id: 'user-id' },
       data: { name: 'Jane Doe' },
+      include: { globalRole: true, credentials: true },
     })
   })
 

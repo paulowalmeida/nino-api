@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 
 import { InvoiceStatus, Prisma } from '@prisma/client'
 
+import type { IBaseLookupRepository } from '@shared/interfaces/base-lookup-repository.interface'
 import { BaseRepository } from '@shared/repositories/base/base.repository'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
@@ -10,7 +11,12 @@ import { UpdateInvoiceStatusDto } from './dtos/update-invoice-status.dto'
 
 @Injectable()
 export class InvoiceStatusRepository
-  extends BaseRepository<Prisma.InvoiceStatusDelegate> {
+  extends BaseRepository<Prisma.InvoiceStatusDelegate>
+  implements IBaseLookupRepository<
+    InvoiceStatus,
+    CreateInvoiceStatusDto,
+    UpdateInvoiceStatusDto
+  > {
   constructor(prisma: PrismaService, errorService: ErrorService) {
     super(errorService, prisma.invoiceStatus, 'Invoice Status')
   }
