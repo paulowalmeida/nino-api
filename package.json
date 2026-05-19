@@ -124,7 +124,16 @@
       "^@session/(.*)$": "<rootDir>/modules/session/$1",
       "^@shared/(.*)$": "<rootDir>/shared/$1",
       "^@subscription-status/(.*)$": "<rootDir>/modules/subscription-status/$1",
-      "^@tenant-status/(.*)$": "<rootDir>/modules/tenant-status/$1",
+      "^@tenant/(.*)$": "<rootDir>/modules/tenant/$1",
+      "^@tenant-phone/(.*)$": "<rootDir>/modules/tenant/modules/tenant-phone/$1",
+      "^@tenant-settings/(.*)$": "<rootDir>/modules/tenant/modules/tenant-settings/$1",
+      "^@tenant-status/(.*)$": "<rootDir>/modules/tenant/modules/tenant-status/$1",
+      "^@tenant-type/(.*)$": "<rootDir>/modules/tenant/modules/tenant-type/$1",
+      "^@opening-hours/(.*)$": "<rootDir>/modules/tenant/modules/opening-hours/$1",
+      "^@customer/(.*)$": "<rootDir>/modules/customer/$1",
+      "^@customer-address/(.*)$": "<rootDir>/modules/customer/modules/customer-address/$1",
+      "^@customer-tenant/(.*)$": "<rootDir>/modules/customer/modules/customer-tenant/$1",
+      "^@customer-payment-method/(.*)$": "<rootDir>/modules/customer/modules/customer-payment-method/$1",
       "^@user/(.*)$": "<rootDir>/modules/user/$1",
       "^@user-tenant/(.*)$": "<rootDir>/modules/user-tenant/$1"
     }

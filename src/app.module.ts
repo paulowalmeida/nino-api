@@ -26,8 +26,8 @@ import { PrismaModule } from '@shared/services/prisma/prisma.module'
 import {
   SubscriptionStatusModule,
 } from 'src/modules/subscription/modules/subscription-status/subscription-status.module'
-import { TenantStatusModule } from 'src/modules/tenant/modules/tenant-status/tenant-status.module'
-import { TenantTypeModule } from 'src/modules/tenant/modules/tenant-type/tenant-type.module'
+import { CustomerModule } from 'src/modules/customer/customer.module'
+import { TenantModule } from '@tenant/tenant.module'
 import { UserTenantModule } from '@user/modules/user-tenant/user-tenant.module'
 import { UserModule } from '@user/user.module'
 import { AppService } from './app.service'
@@ -53,8 +53,8 @@ import { AppService } from './app.service'
     SessionModule,
     SubscriptionStatusModule,
     TenantRoleModule,
-    TenantStatusModule,
-    TenantTypeModule,
+    CustomerModule,
+    TenantModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }]),
     UserModule,
     UserTenantModule,

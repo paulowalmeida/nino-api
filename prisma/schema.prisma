@@ -218,17 +218,18 @@ model Tenant {
   tenantype    TenantType   @relation(fields: [typeId], references: [id])
 
   // Bindings
-  userTenants     UserTenant[] // 1 Tenant -> N UserTenants
-  tenantPhones    TenantPhone[] // 1 Tenant -> N TenantPhones
-  customerTenants CustomerTenant[] // 1 Tenant -> N CustomerTenants
-  products        Product[] // 1 Tenant -> N Products
-  orders          Order[] // 1 Tenant -> N Orders
-  productCategory ProductCategory[] // 1 Tenant -> N ProductCategories
-  openingHours    OpeningHours[] // 1 Tenant -> N OpeningHours 
-  modifiers       ProductModifier[] // 1 Tenant -> N ProductModifiers
-  settings        TenantSettings? // 1 Tenant -> 1 TenantSettings
-  invites         Invite[] // 1 Tenant -> N Invites
-  paymentMethods  TenantPaymentMethod[] // 1 Tenant -> N TenantPaymentMethods
+  userTenants         UserTenant[] // 1 Tenant -> N UserTenants
+  tenantPhones        TenantPhone[] // 1 Tenant -> N TenantPhones
+  customerTenants     CustomerTenant[] // 1 Tenant -> N CustomerTenants
+  loyaltyTransactions LoyaltyTransaction[] // 1 Tenant -> N LoyaltyTransactions
+  products            Product[] // 1 Tenant -> N Products
+  orders              Order[] // 1 Tenant -> N Orders
+  productCategory     ProductCategory[] // 1 Tenant -> N ProductCategories
+  openingHours        OpeningHours[] // 1 Tenant -> N OpeningHours 
+  modifiers           ProductModifier[] // 1 Tenant -> N ProductModifiers
+  settings            TenantSettings? // 1 Tenant -> 1 TenantSettings
+  invites             Invite[] // 1 Tenant -> N Invites
+  paymentMethods      TenantPaymentMethod[] // 1 Tenant -> N TenantPaymentMethods
 
   @@map("tenants")
 }
@@ -276,21 +277,22 @@ model TenantType {
 }
 
 model TenantSettings {
-  id                    String   @id @default(uuid())
-  tenantId              String   @unique @map("tenant_id")
-  requireAccount        Boolean  @default(false) @map("require_account")
-  requireCpf            Boolean  @default(false) @map("require_cpf")
-  allowGuestOrder       Boolean  @default(true) @map("allow_guest_order")
-  deliveryFee           Decimal  @default(0) @map("delivery_fee") @db.Decimal(10, 2)
-  minOrderAmount        Decimal  @default(0) @map("min_order_amount") @db.Decimal(10, 2)
-  deliveryRadius        Int      @default(0) @map("delivery_radius")
-  isDeliveryEnabled     Boolean  @default(true) @map("is_delivery_enabled")
-  isPickupEnabled       Boolean  @default(false) @map("is_pickup_enabled")
-  loyaltyEnabled        Boolean  @default(false) @map("loyalty_enabled")
-  loyaltyPointsPerOrder Int      @default(0) @map("loyalty_points_per_order")
-  loyaltyPointValue     Decimal  @default(0) @map("loyalty_point_value") @db.Decimal(10, 4) // valor monetário de 1 ponto (ex: 0.05 = R$0,05)
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
+  id                    String    @id @default(uuid())
+  tenantId              String    @unique @map("tenant_id")
+  requireAccount        Boolean   @default(false) @map("require_account")
+  requireCpf            Boolean   @default(false) @map("require_cpf")
+  allowGuestOrder       Boolean   @default(true) @map("allow_guest_order")
+  deliveryFee           Decimal   @default(0) @map("delivery_fee") @db.Decimal(10, 2)
+  minOrderAmount        Decimal   @default(0) @map("min_order_amount") @db.Decimal(10, 2)
+  deliveryRadius        Int       @default(0) @map("delivery_radius")
+  isDeliveryEnabled     Boolean   @default(true) @map("is_delivery_enabled")
+  isPickupEnabled       Boolean   @default(false) @map("is_pickup_enabled")
+  loyaltyEnabled        Boolean   @default(false) @map("loyalty_enabled")
+  loyaltyPointsPerOrder Int       @default(0) @map("loyalty_points_per_order")
+  loyaltyPointValue     Decimal   @default(0) @map("loyalty_point_value") @db.Decimal(10, 4) // valor monetário de 1 ponto (ex: 0.05 = R$0,05)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  deletedAt             DateTime? @map("deleted_at")
 
   // FK -> PK
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -299,14 +301,15 @@ model TenantSettings {
 }
 
 model OpeningHours {
-  id        String   @id @default(uuid())
-  tenantId  String   @map("tenant_id")
-  dayOfWeek Int      @map("day_of_week")
-  openTime  String   @map("open_time")
-  closeTime String   @map("close_time")
-  isOpen    Boolean  @default(true) @map("is_open")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id        String    @id @default(uuid())
+  tenantId  String    @map("tenant_id")
+  dayOfWeek Int       @map("day_of_week")
+  openTime  String    @map("open_time")
+  closeTime String    @map("close_time")
+  isOpen    Boolean   @default(true) @map("is_open")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
 
   // FK -> PK
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -511,9 +514,10 @@ model Order {
   deliveryAddress CustomerAddress? @relation(fields: [deliveryAddressId], references: [id])
 
   // Bindings
-  items         OrderItem[]
-  payment       Payment?
-  statusHistory OrderStatusHistory[]
+  items               OrderItem[]
+  payment             Payment?
+  statusHistory       OrderStatusHistory[]
+  loyaltyTransactions LoyaltyTransaction[]
 
   @@map("orders")
 }
@@ -594,9 +598,12 @@ model Customer {
   user User @relation(fields: [userId], references: [id])
 
   // Binding
-  address         CustomerAddress[] // 1 User -> N Addresses
-  customerTenants CustomerTenant[] // 1 Customer -> N CustomerTenants
-  orders          Order[]
+  address                         CustomerAddress[] // 1 User -> N Addresses
+  customerTenants                 CustomerTenant[] // 1 Customer -> N CustomerTenants
+  orders                          Order[]
+  customerPaymentMethods          CustomerPaymentMethod[] // 1 Customer -> N CustomerPaymentMethods
+  customerNotificationPreferences CustomerNotificationPreference[] // 1 Customer -> N Preferences
+  loyaltyTransactions             LoyaltyTransaction[] // 1 Customer -> N LoyaltyTransactions
 
   @@map("customers")
 }
@@ -642,6 +649,63 @@ model CustomerTenant {
   // Unique Constraint to avoid duplicate entries
   @@id([customerId, tenantId])
   @@map("customer_tenants")
+}
+
+model CustomerPaymentMethod {
+  id           String    @id @default(uuid())
+  customerId   String    @map("customer_id")
+  methodId     String    @map("method_id")
+  gatewayToken String    @map("gateway_token")
+  brand        String?
+  lastFour     String?   @map("last_four")
+  expiresAt    DateTime? @map("expires_at")
+  isDefault    Boolean   @default(false) @map("is_default")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  // FK -> PK
+  customer Customer      @relation(fields: [customerId], references: [id])
+  method   PaymentMethod @relation(fields: [methodId], references: [id])
+
+  @@map("customer_payment_methods")
+}
+
+model LoyaltyTransaction {
+  id          String   @id @default(uuid())
+  customerId  String   @map("customer_id")
+  tenantId    String   @map("tenant_id")
+  orderId     String?  @map("order_id")
+  type        String
+  points      Int
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // FK -> PK
+  customer Customer @relation(fields: [customerId], references: [id])
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  order    Order?   @relation(fields: [orderId], references: [id])
+
+  @@map("loyalty_transactions")
+}
+
+model CustomerNotificationPreference {
+  id                 String    @id @default(uuid())
+  customerId         String    @map("customer_id")
+  notificationTypeId String    @map("notification_type_id")
+  emailEnabled       Boolean   @default(true) @map("email_enabled")
+  pushEnabled        Boolean   @default(true) @map("push_enabled")
+  smsEnabled         Boolean   @default(false) @map("sms_enabled")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  // FK -> PK
+  customer         Customer         @relation(fields: [customerId], references: [id])
+  notificationType NotificationType @relation(fields: [notificationTypeId], references: [id])
+
+  @@unique([customerId, notificationTypeId])
+  @@map("customer_notification_preferences")
 }
 
 // --- Billing ---
@@ -798,8 +862,9 @@ model PaymentMethod {
   deletedAt   DateTime? @map("deleted_at")
 
   // Bindings
-  payments             Payment[]
-  tenantPaymentMethods TenantPaymentMethod[]
+  payments               Payment[]
+  tenantPaymentMethods   TenantPaymentMethod[]
+  customerPaymentMethods CustomerPaymentMethod[]
 
   @@map("payment_methods")
 }
@@ -830,7 +895,8 @@ model NotificationType {
   deletedAt   DateTime? @map("deleted_at")
 
   // Bindings
-  notifications Notification[]
+  notifications                   Notification[]
+  customerNotificationPreferences CustomerNotificationPreference[]
 
   @@map("notification_types")
 }
