@@ -218,6 +218,7 @@ CREATE TABLE "tenant_settings" (
     "loyalty_point_value" DECIMAL(10,4) NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "tenant_settings_pkey" PRIMARY KEY ("id")
 );
@@ -232,6 +233,7 @@ CREATE TABLE "opening_hours" (
     "is_open" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "opening_hours_pkey" PRIMARY KEY ("id")
 );
@@ -468,6 +470,55 @@ CREATE TABLE "customer_tenants" (
     "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "customer_tenants_pkey" PRIMARY KEY ("customer_id","tenant_id")
+);
+
+-- CreateTable
+CREATE TABLE "loyalty_transactions" (
+    "id" TEXT NOT NULL,
+    "customer_id" TEXT NOT NULL,
+    "tenant_id" TEXT NOT NULL,
+    "order_id" TEXT,
+    "type" TEXT NOT NULL,
+    "points" INTEGER NOT NULL,
+    "description" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "loyalty_transactions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "customer_notification_preferences" (
+    "id" TEXT NOT NULL,
+    "customer_id" TEXT NOT NULL,
+    "notification_type_id" TEXT NOT NULL,
+    "email_enabled" BOOLEAN NOT NULL DEFAULT true,
+    "push_enabled" BOOLEAN NOT NULL DEFAULT true,
+    "sms_enabled" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "customer_notification_preferences_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateUniqueIndex
+CREATE UNIQUE INDEX "customer_notification_preferences_customer_id_notification_type_id_key" ON "customer_notification_preferences"("customer_id","notification_type_id");
+
+-- CreateTable
+CREATE TABLE "customer_payment_methods" (
+    "id" TEXT NOT NULL,
+    "customer_id" TEXT NOT NULL,
+    "method_id" TEXT NOT NULL,
+    "gateway_token" TEXT NOT NULL,
+    "brand" TEXT,
+    "last_four" TEXT,
+    "expires_at" TIMESTAMP(3),
+    "is_default" BOOLEAN NOT NULL DEFAULT false,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
+
+    CONSTRAINT "customer_payment_methods_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -887,6 +938,27 @@ ALTER TABLE "tenant_payment_methods" ADD CONSTRAINT "tenant_payment_methods_tena
 
 -- AddForeignKey
 ALTER TABLE "tenant_payment_methods" ADD CONSTRAINT "tenant_payment_methods_method_id_fkey" FOREIGN KEY ("method_id") REFERENCES "payment_methods"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "loyalty_transactions" ADD CONSTRAINT "loyalty_transactions_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "loyalty_transactions" ADD CONSTRAINT "loyalty_transactions_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "loyalty_transactions" ADD CONSTRAINT "loyalty_transactions_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "customer_notification_preferences" ADD CONSTRAINT "customer_notification_preferences_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "customer_notification_preferences" ADD CONSTRAINT "customer_notification_preferences_notification_type_id_fkey" FOREIGN KEY ("notification_type_id") REFERENCES "notification_types"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "customer_payment_methods" ADD CONSTRAINT "customer_payment_methods_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "customer_payment_methods" ADD CONSTRAINT "customer_payment_methods_method_id_fkey" FOREIGN KEY ("method_id") REFERENCES "payment_methods"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
