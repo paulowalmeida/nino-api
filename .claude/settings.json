@@ -11,6 +11,16 @@
             "statusMessage": "Verificando tipos..."
           }
         ]
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/on-mcp-call.sh",
+            "timeout": 10
+          }
+        ]
       }
     ]
   }
