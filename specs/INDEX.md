@@ -33,7 +33,8 @@
 | loyalty-transaction | ✅ | ✅ | ✅ | ✅ |
 | invite | — | — | — | ⏳ |
 | subscription | ✅ | ✅ | ✅ | ✅ |
-| order / order-status | — | — | — | ⏳ |
+| order | ✅ | ✅ | ✅ | ✅ |
+| order-status | — | ✅ | — | ✅ |
 | payment | — | — | — | ⏳ |
 | notification | — | — | — | ⏳ |
 | billing | — | — | — | ⏳ |
