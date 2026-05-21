@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { join } from 'path'
 
 import { AuthModule } from '@auth/auth.module'
+import { CourierTenantModule } from 'src/modules/courier/modules/courier-tenant/courier-tenant.module'
 import { CompanyResponsibleModule } from '@company/modules/company-responsible/company-responsible.module'
 import { CompanyModule } from '@company/company.module'
 import { CredentialsModule } from '@credential/credential.module'
@@ -32,6 +33,7 @@ import { AppService } from './app.service'
   imports: [
     AuthModule,
     CompanyResponsibleModule,
+    CourierTenantModule,
     CompanyModule,
     ConfigModule.forRoot({
       isGlobal: true,

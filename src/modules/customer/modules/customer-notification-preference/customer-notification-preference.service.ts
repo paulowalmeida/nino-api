@@ -1,52 +1,82 @@
 import { Injectable } from '@nestjs/common'
 
-import { CustomerNotificationPreference } from '@prisma/client'
-
 import { CustomerNotificationPreferenceRepository } from './customer-notification-preference.repository'
 import { UpsertCustomerNotificationPreferenceDto } from './dtos/upsert-customer-notification-preference.dto'
+import { CustomerNotificationPreferenceFull } from './types/customer-notification-preference-full.type'
+import { CustomerNotificationPreferenceResponse } from './types/customer-notification-preference-response.type'
+
+type CreateData = UpsertCustomerNotificationPreferenceDto & {
+  customerId: string
+  notificationTypeId: string
+}
 
 @Injectable()
 export class CustomerNotificationPreferenceService {
+  private readonly include = { notificationType: true } as const
+
   constructor(
     private readonly repo: CustomerNotificationPreferenceRepository,
   ) {}
 
-  async getAll(customerId: string): Promise<CustomerNotificationPreference[]> {
-    return this.repo.findAll<CustomerNotificationPreference>({
+  private toResponse(
+    pref: CustomerNotificationPreferenceFull,
+  ): CustomerNotificationPreferenceResponse {
+    const { customerId: _, notificationTypeId: __, ...rest } = pref
+    return rest
+  }
+
+  private async getById(
+    id: string,
+  ): Promise<CustomerNotificationPreferenceResponse> {
+    const pref =
+      await this.repo.findItem<CustomerNotificationPreferenceFull>({
+        where: { id },
+        include: this.include,
+      })
+    return this.toResponse(pref)
+  }
+
+  async getAll(
+    customerId: string,
+  ): Promise<CustomerNotificationPreferenceResponse[]> {
+    const prefs = await this.repo.findAll<CustomerNotificationPreferenceFull>({
       where: { customerId },
+      include: this.include,
     })
+    return prefs.map((p) => this.toResponse(p))
   }
 
   async upsert(
     customerId: string,
     notificationTypeId: string,
     data: UpsertCustomerNotificationPreferenceDto,
-  ): Promise<CustomerNotificationPreference> {
+  ): Promise<CustomerNotificationPreferenceResponse> {
     const existing = await this.repo
-      .findItem<CustomerNotificationPreference>({
+      .findItem<CustomerNotificationPreferenceFull>({
         where: { customerId, notificationTypeId },
+        include: this.include,
       })
       .catch(() => null)
 
     if (existing) {
-      return this.repo.updateItem<
+      await this.repo.updateItem<
         UpsertCustomerNotificationPreferenceDto,
-        CustomerNotificationPreference
+        CustomerNotificationPreferenceFull
       >({
         where: {
           customerId_notificationTypeId: { customerId, notificationTypeId },
         },
         data,
       })
+      return this.getById(existing.id)
     }
 
-    return this.repo.insert<
-      UpsertCustomerNotificationPreferenceDto & {
-        customerId: string
-        notificationTypeId: string
-      },
-      CustomerNotificationPreference
-    >({ data: { ...data, customerId, notificationTypeId } })
+    const created =
+      await this.repo.insert<CreateData, CustomerNotificationPreferenceFull>({
+        data: { ...data, customerId, notificationTypeId },
+        include: this.include,
+      })
+    return this.toResponse(created)
   }
 
   async delete(

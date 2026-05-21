@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import { CustomerNotificationPreference } from '@prisma/client'
+import { CustomerNotificationPreferenceResponse } from './types/customer-notification-preference-response.type'
 
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
@@ -30,7 +30,7 @@ export class CustomerNotificationPreferenceController {
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.CUSTOMER)
   async getAll(
     @Param('customerId') customerId: string,
-  ): Promise<CustomerNotificationPreference[]> {
+  ): Promise<CustomerNotificationPreferenceResponse[]> {
     return this.service.getAll(customerId)
   }
 
@@ -40,7 +40,7 @@ export class CustomerNotificationPreferenceController {
     @Param('customerId') customerId: string,
     @Param('notificationTypeId') notificationTypeId: string,
     @Body() dto: UpsertCustomerNotificationPreferenceDto,
-  ): Promise<CustomerNotificationPreference> {
+  ): Promise<CustomerNotificationPreferenceResponse> {
     return this.service.upsert(customerId, notificationTypeId, dto)
   }
 

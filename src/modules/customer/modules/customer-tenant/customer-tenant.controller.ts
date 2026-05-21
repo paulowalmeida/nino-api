@@ -9,8 +9,6 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import { CustomerTenant } from '@prisma/client'
-
 import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
@@ -21,6 +19,7 @@ import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { CustomerTenantService } from './customer-tenant.service'
 import { CreateCustomerTenantDto } from './dtos/create-customer-tenant.dto'
 import { CustomerTenantPaginatedResponse } from './types/customer-tenant-paginated-response.type'
+import { CustomerTenantResponse } from './types/customer-tenant-response.type'
 
 @Controller('customers/:customerId/tenants')
 @UseGuards(JwtAuthGuard, RolesGuard, CustomerOwnerGuard)
@@ -41,7 +40,7 @@ export class CustomerTenantController {
   async create(
     @Param('customerId') customerId: string,
     @Body() dto: CreateCustomerTenantDto,
-  ): Promise<CustomerTenant> {
+  ): Promise<CustomerTenantResponse> {
     return this.service.create({ ...dto, customerId })
   }
 

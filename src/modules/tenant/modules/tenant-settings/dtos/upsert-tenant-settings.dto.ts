@@ -49,4 +49,8 @@ export class UpsertTenantSettingsDto {
   @Min(0)
   @IsOptional()
   loyaltyPointValue?: number
+
+  @IsBoolean()
+  @IsOptional()
+  allowSharedStaff?: boolean
 }
