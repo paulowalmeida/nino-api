@@ -39,7 +39,9 @@ describe(ProductCategoryService.name, () => {
     findItem: jest.fn().mockResolvedValue(mockCategory),
     insert: jest.fn().mockResolvedValue(mockCategory),
     updateItem: jest.fn().mockResolvedValue(mockCategory),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {

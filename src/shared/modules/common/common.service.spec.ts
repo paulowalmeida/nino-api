@@ -20,14 +20,23 @@ describe(CommonService.name, () => {
 
   const mockRepo: Pick<
     CommonRepository,
-    'findAll' | 'findAllPaginated' | 'findItem' | 'insert' | 'updateItem' | 'softDelete'
+    | 'findAll'
+    | 'findAllPaginated'
+    | 'findItem'
+    | 'insert'
+    | 'updateItem'
+    | 'softDelete'
   > = {
     findAll: jest.fn().mockResolvedValue([mockEntity]),
-    findAllPaginated: jest.fn().mockResolvedValue({ data: [mockEntity], pagination: {} }),
+    findAllPaginated: jest
+      .fn()
+      .mockResolvedValue({ data: [mockEntity], pagination: {} }),
     findItem: jest.fn().mockResolvedValue(mockEntity),
     insert: jest.fn().mockResolvedValue(mockEntity),
     updateItem: jest.fn().mockResolvedValue(mockEntity),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {

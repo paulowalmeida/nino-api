@@ -28,11 +28,10 @@ export class CustomerNotificationPreferenceService {
   private async getById(
     id: string,
   ): Promise<CustomerNotificationPreferenceResponse> {
-    const pref =
-      await this.repo.findItem<CustomerNotificationPreferenceFull>({
-        where: { id },
-        include: this.include,
-      })
+    const pref = await this.repo.findItem<CustomerNotificationPreferenceFull>({
+      where: { id },
+      include: this.include,
+    })
     return this.toResponse(pref)
   }
 
@@ -71,11 +70,13 @@ export class CustomerNotificationPreferenceService {
       return this.getById(existing.id)
     }
 
-    const created =
-      await this.repo.insert<CreateData, CustomerNotificationPreferenceFull>({
-        data: { ...data, customerId, notificationTypeId },
-        include: this.include,
-      })
+    const created = await this.repo.insert<
+      CreateData,
+      CustomerNotificationPreferenceFull
+    >({
+      data: { ...data, customerId, notificationTypeId },
+      include: this.include,
+    })
     return this.toResponse(created)
   }
 

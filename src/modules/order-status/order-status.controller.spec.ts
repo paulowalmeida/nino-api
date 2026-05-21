@@ -65,7 +65,9 @@ describe(OrderStatusController.name, () => {
 
   it('update() should update an order status', async () => {
     const result = await controller.update('status-1', { name: 'CONFIRMED' })
-    expect(mockService.update).toHaveBeenCalledWith('status-1', { name: 'CONFIRMED' })
+    expect(mockService.update).toHaveBeenCalledWith('status-1', {
+      name: 'CONFIRMED',
+    })
     expect(result).toEqual(mockEntity)
   })
 

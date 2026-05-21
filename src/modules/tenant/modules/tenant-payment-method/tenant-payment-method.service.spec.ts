@@ -18,7 +18,14 @@ describe(TenantPaymentMethodService.name, () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
-    method: { id: 'method-1', name: 'Pix', description: null, createdAt: new Date(), updatedAt: new Date(), deletedAt: null },
+    method: {
+      id: 'method-1',
+      name: 'Pix',
+      description: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    },
   }
 
   const mockResponse: TenantPaymentMethodResponse = {
@@ -30,7 +37,12 @@ describe(TenantPaymentMethodService.name, () => {
   }
 
   const mockMeta: PaginationMeta = {
-    total: 1, page: 1, size: 10, totalPages: 1, previousPage: null, nextPage: null,
+    total: 1,
+    page: 1,
+    size: 10,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
   }
 
   const include = { method: true } as const
@@ -42,7 +54,9 @@ describe(TenantPaymentMethodService.name, () => {
     findAllPaginated: jest.fn(),
     insert: jest.fn().mockResolvedValue(mockFull),
     updateItem: jest.fn().mockResolvedValue(mockFull),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -58,7 +72,10 @@ describe(TenantPaymentMethodService.name, () => {
   })
 
   it('getAll() should return paginated payment methods', async () => {
-    ;(mockRepo.findAllPaginated as jest.Mock).mockResolvedValue({ data: [mockFull], pagination: mockMeta })
+    ;(mockRepo.findAllPaginated as jest.Mock).mockResolvedValue({
+      data: [mockFull],
+      pagination: mockMeta,
+    })
     const query: PaginatedQueryDto = { page: 1, size: 10 }
     const result = await service.getAll('tenant-1', query)
     expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
@@ -86,7 +103,9 @@ describe(TenantPaymentMethodService.name, () => {
     const dto = { isActive: false }
     const result = await service.update('tenant-1', 'method-1', dto)
     expect(mockRepo.updateItem).toHaveBeenCalledWith({
-      where: { tenantId_methodId: { tenantId: 'tenant-1', methodId: 'method-1' } },
+      where: {
+        tenantId_methodId: { tenantId: 'tenant-1', methodId: 'method-1' },
+      },
       data: dto,
       include,
     })

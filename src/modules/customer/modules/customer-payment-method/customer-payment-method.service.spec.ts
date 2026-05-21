@@ -67,7 +67,9 @@ describe(CustomerPaymentMethodService.name, () => {
     findItem: jest.fn().mockResolvedValue(mockFull),
     insert: jest.fn().mockResolvedValue(mockFull),
     updateItem: jest.fn().mockResolvedValue(mockFull),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {

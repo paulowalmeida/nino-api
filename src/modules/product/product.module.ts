@@ -11,7 +11,12 @@ import { ProductService } from './product.service'
 @Module({
   imports: [ProductCategoryModule],
   controllers: [ProductController],
-  providers: [ProductService, ProductRepository, ErrorService, PaginationService],
+  providers: [
+    ProductService,
+    ProductRepository,
+    ErrorService,
+    PaginationService,
+  ],
   exports: [ProductService, ProductRepository],
 })
 export class ProductModule {}

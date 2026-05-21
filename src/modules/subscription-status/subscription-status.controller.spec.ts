@@ -42,7 +42,9 @@ describe(SubscriptionStatusController.name, () => {
       .useValue({ canActivate: () => true })
       .compile()
 
-    controller = module.get<SubscriptionStatusController>(SubscriptionStatusController)
+    controller = module.get<SubscriptionStatusController>(
+      SubscriptionStatusController,
+    )
   })
 
   it('getAll() should return entities', async () => {

@@ -59,7 +59,9 @@ describe(ProductService.name, () => {
     findItem: jest.fn().mockResolvedValue(mockProductFull),
     insert: jest.fn().mockResolvedValue(mockProductFull),
     updateItem: jest.fn().mockResolvedValue(mockProductFull),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -89,8 +91,12 @@ describe(ProductService.name, () => {
       }),
     )
     expect(result.pagination).toEqual(mockMeta)
-    expect((result.data[0] as Record<string, unknown>).categoryId).toBeUndefined()
-    expect((result.data[0] as Record<string, unknown>).deletedAt).toBeUndefined()
+    expect(
+      (result.data[0] as Record<string, unknown>).categoryId,
+    ).toBeUndefined()
+    expect(
+      (result.data[0] as Record<string, unknown>).deletedAt,
+    ).toBeUndefined()
     expect(result.data[0].category).toEqual({ id: 'cat-1', name: 'Burgers' })
   })
 

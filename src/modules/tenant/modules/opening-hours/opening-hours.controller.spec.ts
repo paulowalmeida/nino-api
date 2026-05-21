@@ -26,14 +26,21 @@ describe(OpeningHoursController.name, () => {
   }
 
   const mockMeta: PaginationMeta = {
-    total: 1, page: 1, size: 10, totalPages: 1, previousPage: null, nextPage: null,
+    total: 1,
+    page: 1,
+    size: 10,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
   }
 
   const mockService: Pick<
     OpeningHoursService,
     'getAll' | 'create' | 'update' | 'delete'
   > = {
-    getAll: jest.fn().mockResolvedValue({ data: [mockOpeningHours], pagination: mockMeta }),
+    getAll: jest
+      .fn()
+      .mockResolvedValue({ data: [mockOpeningHours], pagination: mockMeta }),
     create: jest.fn().mockResolvedValue(mockOpeningHours),
     update: jest.fn().mockResolvedValue(mockOpeningHours),
     delete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),

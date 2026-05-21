@@ -36,4 +36,4 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000
   console.log(`Nino API is running on port ${port} 🐱🐱!!`)
 }
-bootstrap()
+void bootstrap()

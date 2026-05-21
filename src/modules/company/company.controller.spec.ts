@@ -96,7 +96,10 @@ describe(CompanyController.name, () => {
   it('getByCnpj() should call getByField with cnpj', async () => {
     ;(mockService.getByField as jest.Mock).mockResolvedValue(mockCompany)
     const result = await controller.getByCnpj('12345678000190')
-    expect(mockService.getByField).toHaveBeenCalledWith('cnpj', '12345678000190')
+    expect(mockService.getByField).toHaveBeenCalledWith(
+      'cnpj',
+      '12345678000190',
+    )
     expect(result).toEqual(mockCompany)
   })
 

@@ -84,7 +84,9 @@ describe(TenantService.name, () => {
     findItem: jest.fn().mockResolvedValue(mockTenantFull),
     insert: jest.fn().mockResolvedValue(mockTenantFull),
     updateItem: jest.fn().mockResolvedValue(mockTenantFull),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -106,7 +108,9 @@ describe(TenantService.name, () => {
       expect.objectContaining({ page: 1, size: 10, where: {} }),
     )
     expect(result.pagination).toEqual(mockMeta)
-    expect((result.data[0] as Record<string, unknown>).deletedAt).toBeUndefined()
+    expect(
+      (result.data[0] as Record<string, unknown>).deletedAt,
+    ).toBeUndefined()
     expect((result.data[0] as Record<string, unknown>).statusId).toBeUndefined()
     expect(result.data[0].status.name).toBe('ACTIVE')
   })
@@ -160,7 +164,9 @@ describe(TenantService.name, () => {
   })
 
   it('update() should updateItem and return mapped TenantResponse', async () => {
-    const result = await service.update('tenant-1', { customName: 'Acme Centro' })
+    const result = await service.update('tenant-1', {
+      customName: 'Acme Centro',
+    })
     expect(mockRepo.updateItem).toHaveBeenCalledWith({
       where: { id: 'tenant-1' },
       data: { customName: 'Acme Centro' },
