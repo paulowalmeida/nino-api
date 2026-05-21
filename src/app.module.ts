@@ -20,6 +20,8 @@ import { PlanModule } from '@plan/plan.module'
 import { SessionModule } from '@session/session.module'
 import { PrismaModule } from '@shared/services/prisma/prisma.module'
 import { SubscriptionStatusModule } from '@subscription-status/subscription-status.module'
+import { OrderModule } from '@order/order.module'
+import { OrderStatusModule } from '@order-status/order-status.module'
 import { SubscriptionModule } from '@subscription/subscription.module'
 import { TenantRoleModule } from '@tenant-role/tenant-role.module'
 import { CustomerModule } from 'src/modules/customer/customer.module'
@@ -50,6 +52,8 @@ import { AppService } from './app.service'
     PlanTypeModule,
     PrismaModule,
     SessionModule,
+    OrderModule,
+    OrderStatusModule,
     SubscriptionModule,
     SubscriptionStatusModule,
     TenantRoleModule,

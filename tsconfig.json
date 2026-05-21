@@ -39,6 +39,8 @@
       "@session/*": ["src/modules/session/*"],
       "@shared/*": ["src/shared/*"],
       "@courier/*": ["src/modules/courier/*"],
+      "@order/*": ["src/modules/order/*"],
+      "@order-status/*": ["src/modules/order-status/*"],
       "@courier-tenant/*": ["src/modules/courier/modules/courier-tenant/*"],
       "@subscription/*": ["src/modules/subscription/*"],
       "@subscription-status/*": ["src/modules/subscription-status/*"],

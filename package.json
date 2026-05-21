@@ -133,6 +133,8 @@
       "^@session/(.*)$": "<rootDir>/modules/session/$1",
       "^@shared/(.*)$": "<rootDir>/shared/$1",
       "^@courier/(.*)$": "<rootDir>/modules/courier/$1",
+      "^@order/(.*)$": "<rootDir>/modules/order/$1",
+      "^@order-status/(.*)$": "<rootDir>/modules/order-status/$1",
       "^@courier-tenant/(.*)$": "<rootDir>/modules/courier/modules/courier-tenant/$1",
       "^@subscription/(.*)$": "<rootDir>/modules/subscription/$1",
       "^@subscription-status/(.*)$": "<rootDir>/modules/subscription-status/$1",
