@@ -9,4 +9,6 @@ coverage/
 .idea/
 .continue/*
 CLAUDE.md
-.claude/
+.claude/settings.local.json
+.claude/MEMORY.md
+.claude/memory/
