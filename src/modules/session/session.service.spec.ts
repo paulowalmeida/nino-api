@@ -42,7 +42,7 @@ describe(SessionService.name, () => {
     },
   } as unknown as SessionFull
 
-  const mockSessionResponse = {
+  const _mockSessionResponse = {
     id: 'session-id',
     expiresAt: mockSessionFull.expiresAt,
     ipAddress: null,

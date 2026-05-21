@@ -30,10 +30,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
     })
   }
 
-  async validate(
-    req: RefreshRequest,
-    payload: UserTokenData,
-  ): Promise<UserTokenData> {
+  validate(req: RefreshRequest, payload: UserTokenData): UserTokenData {
     const hashedRefreshToken =
       req.headers.authorization?.replace('Bearer ', '') ?? ''
     const data = { ...payload, hashedRefreshToken }

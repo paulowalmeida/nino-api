@@ -62,7 +62,9 @@ describe(CredentialsService.name, () => {
     findItem: jest.fn().mockResolvedValue(mockCredential),
     insert: jest.fn().mockResolvedValue(mockCredential),
     updateItem: jest.fn().mockResolvedValue(mockCredential),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   const mockPasswordService: jest.Mocked<

@@ -28,7 +28,9 @@ describe(ProductCategoryRepository.name, () => {
       ],
     }).compile()
 
-    repository = module.get<ProductCategoryRepository>(ProductCategoryRepository)
+    repository = module.get<ProductCategoryRepository>(
+      ProductCategoryRepository,
+    )
   })
 
   it('should be defined', () => {

@@ -42,7 +42,9 @@ describe(NotificationTypeController.name, () => {
       .useValue({ canActivate: () => true })
       .compile()
 
-    controller = module.get<NotificationTypeController>(NotificationTypeController)
+    controller = module.get<NotificationTypeController>(
+      NotificationTypeController,
+    )
   })
 
   it('getAll() should return entities', async () => {

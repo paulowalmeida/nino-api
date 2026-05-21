@@ -24,7 +24,12 @@ describe(OpeningHoursService.name, () => {
   }
 
   const mockMeta: PaginationMeta = {
-    total: 1, page: 1, size: 10, totalPages: 1, previousPage: null, nextPage: null,
+    total: 1,
+    page: 1,
+    size: 10,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
   }
 
   const mockRepo: Pick<
@@ -35,7 +40,9 @@ describe(OpeningHoursService.name, () => {
     findItem: jest.fn().mockResolvedValue(mockOpeningHours),
     insert: jest.fn().mockResolvedValue(mockOpeningHours),
     updateItem: jest.fn().mockResolvedValue(mockOpeningHours),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {

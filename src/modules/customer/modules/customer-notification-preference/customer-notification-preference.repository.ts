@@ -7,8 +7,7 @@ import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 
 @Injectable()
-export class CustomerNotificationPreferenceRepository
-  extends BaseRepository<Prisma.CustomerNotificationPreferenceDelegate> {
+export class CustomerNotificationPreferenceRepository extends BaseRepository<Prisma.CustomerNotificationPreferenceDelegate> {
   constructor(prisma: PrismaService, errorService: ErrorService) {
     super(
       errorService,

@@ -57,7 +57,10 @@ describe(CompanyBusinessCategoryService.name, () => {
   it('getByCompanyId() should call findAllPaginated with where and include', async () => {
     const paginated = { data: [mockLink], pagination: {} }
     ;(mockRepo.findAllPaginated as jest.Mock).mockResolvedValue(paginated)
-    const result = await service.getByCompanyId('company-1', { page: 1, size: 20 })
+    const result = await service.getByCompanyId('company-1', {
+      page: 1,
+      size: 20,
+    })
     expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
       where: { companyId: 'company-1' },
       include,
@@ -94,7 +97,12 @@ describe(CompanyBusinessCategoryService.name, () => {
     ;(mockRepo.updateItem as jest.Mock).mockResolvedValue(mockLink)
     const result = await service.setActive('company-1', 'cat-1', true)
     expect(mockRepo.updateItem).toHaveBeenCalledWith({
-      where: { businessCategoryId_companyId: { businessCategoryId: 'cat-1', companyId: 'company-1' } },
+      where: {
+        businessCategoryId_companyId: {
+          businessCategoryId: 'cat-1',
+          companyId: 'company-1',
+        },
+      },
       data: { isActive: true },
       include,
     })
@@ -102,10 +110,18 @@ describe(CompanyBusinessCategoryService.name, () => {
   })
 
   it('setActive() should call updateItem with isActive false', async () => {
-    ;(mockRepo.updateItem as jest.Mock).mockResolvedValue({ ...mockLink, isActive: false })
+    ;(mockRepo.updateItem as jest.Mock).mockResolvedValue({
+      ...mockLink,
+      isActive: false,
+    })
     await service.setActive('company-1', 'cat-1', false)
     expect(mockRepo.updateItem).toHaveBeenCalledWith({
-      where: { businessCategoryId_companyId: { businessCategoryId: 'cat-1', companyId: 'company-1' } },
+      where: {
+        businessCategoryId_companyId: {
+          businessCategoryId: 'cat-1',
+          companyId: 'company-1',
+        },
+      },
       data: { isActive: false },
       include,
     })

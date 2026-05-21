@@ -14,6 +14,11 @@ export class CourierTenantRepository extends BaseRepository<Prisma.CourierTenant
     paginationService: PaginationService,
     errorService: ErrorService,
   ) {
-    super(errorService, prisma.courierTenant, 'Courier Tenant', paginationService)
+    super(
+      errorService,
+      prisma.courierTenant,
+      'Courier Tenant',
+      paginationService,
+    )
   }
 }

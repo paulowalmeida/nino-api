@@ -7,9 +7,7 @@ import { ErrorService } from '@shared/services/error/error.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 
 @Injectable()
-export class CredentialRepository
-  extends BaseRepository<Prisma.CredentialDelegate>
-{
+export class CredentialRepository extends BaseRepository<Prisma.CredentialDelegate> {
   constructor(prisma: PrismaService, errorService: ErrorService) {
     super(errorService, prisma.credential, 'Credential')
   }
