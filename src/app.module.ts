@@ -6,7 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
 import { join } from 'path'
 
 import { AuthModule } from '@auth/auth.module'
-import { CourierTenantModule } from 'src/modules/courier/modules/courier-tenant/courier-tenant.module'
+import { CourierTenantModule } from '@courier-tenant/courier-tenant.module'
 import { CompanyResponsibleModule } from '@company/modules/company-responsible/company-responsible.module'
 import { CompanyModule } from '@company/company.module'
 import { CredentialsModule } from '@credential/credential.module'
@@ -20,6 +20,7 @@ import { PlanModule } from '@plan/plan.module'
 import { SessionModule } from '@session/session.module'
 import { PrismaModule } from '@shared/services/prisma/prisma.module'
 import { SubscriptionStatusModule } from '@subscription-status/subscription-status.module'
+import { SubscriptionModule } from '@subscription/subscription.module'
 import { TenantRoleModule } from '@tenant-role/tenant-role.module'
 import { CustomerModule } from 'src/modules/customer/customer.module'
 import { PaymentMethodModule } from '@payment-method/payment-method.module'
@@ -49,6 +50,7 @@ import { AppService } from './app.service'
     PlanTypeModule,
     PrismaModule,
     SessionModule,
+    SubscriptionModule,
     SubscriptionStatusModule,
     TenantRoleModule,
     CustomerModule,

@@ -32,7 +32,7 @@
 | customer-notification-preference | ✅ | ✅ | ✅ | ✅ |
 | loyalty-transaction | ✅ | ✅ | ✅ | ✅ |
 | invite | — | — | — | ⏳ |
-| subscription | — | — | — | ⏳ |
+| subscription | ✅ | ✅ | ✅ | ✅ |
 | order / order-status | — | — | — | ⏳ |
 | payment | — | — | — | ⏳ |
 | notification | — | — | — | ⏳ |
