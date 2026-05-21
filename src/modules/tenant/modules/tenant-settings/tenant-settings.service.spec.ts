@@ -22,6 +22,7 @@ describe(TenantSettingsService.name, () => {
     loyaltyEnabled: false,
     loyaltyPointsPerOrder: 0,
     loyaltyPointValue: 0 as unknown as TenantSettings['loyaltyPointValue'],
+    allowSharedStaff: true,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
