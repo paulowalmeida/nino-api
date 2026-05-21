@@ -58,6 +58,7 @@ model User {
   credentials    Credential[] // 1 User -> N UserCredentials 
   sessions       Session[] // 1 User -> N UserSessions 
   userTenants    UserTenant[] // 1 User -> N UserTenants
+  courierTenants CourierTenant[] @relation("CourierTenants") // 1 User -> N CourierTenants (como entregador)
   customer       Customer? // 1 User -> 1 Customers
   orders         Order[]        @relation("Courier") // 1 User -> N Orders (como entregador)
   sentInvites    Invite[]       @relation("InvitedBy") // 1 User -> N Invites enviados
@@ -230,6 +231,7 @@ model Tenant {
   settings            TenantSettings? // 1 Tenant -> 1 TenantSettings
   invites             Invite[] // 1 Tenant -> N Invites
   paymentMethods      TenantPaymentMethod[] // 1 Tenant -> N TenantPaymentMethods
+  courierTenants      CourierTenant[] // 1 Tenant -> N CourierTenants
 
   @@map("tenants")
 }
@@ -290,6 +292,7 @@ model TenantSettings {
   loyaltyEnabled        Boolean   @default(false) @map("loyalty_enabled")
   loyaltyPointsPerOrder Int       @default(0) @map("loyalty_points_per_order")
   loyaltyPointValue     Decimal   @default(0) @map("loyalty_point_value") @db.Decimal(10, 4) // valor monetário de 1 ponto (ex: 0.05 = R$0,05)
+  allowSharedStaff      Boolean   @default(true) @map("allow_shared_staff") // permite colaborador vinculado a outros tenants
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
   deletedAt             DateTime? @map("deleted_at")
@@ -337,6 +340,22 @@ model UserTenant {
   // Unique Constraint to avoid duplicate entries
   @@id([userId, tenantId])
   @@map("user_tenants")
+}
+
+model CourierTenant {
+  courierId String    @map("courier_id")
+  tenantId  String    @map("tenant_id")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // FK -> PK
+  courier User   @relation("CourierTenants", fields: [courierId], references: [id], onDelete: Cascade)
+  tenant  Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@id([courierId, tenantId])
+  @@map("courier_tenants")
 }
 
 model Invite {

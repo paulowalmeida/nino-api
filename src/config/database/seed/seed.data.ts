@@ -23,7 +23,6 @@ export const globalRoles = [
 export const tenantRoles = [
   { name: TenantRole.OWNER, description: 'Proprietário da unidade' },
   { name: TenantRole.MANAGER, description: 'Gerente' },
-  { name: TenantRole.CASHIER, description: 'Operador de caixa' },
   { name: TenantRole.STAFF, description: 'Funcionário' },
 ]
 

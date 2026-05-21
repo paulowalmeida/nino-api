@@ -1,23 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
-import { Company } from '@prisma/client'
-
 import { CompanyController } from './company.controller'
 import { CompanyService } from './company.service'
 import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
+import { CompanyResponse } from './types/company-response.type'
 
 describe(CompanyController.name, () => {
   let controller: CompanyController
 
-  const mockCompany: Company = {
+  const mockCompany: CompanyResponse = {
     id: 'uuid-1',
     name: 'Acme Corp',
     cnpj: '12345678000190',
     legalName: null,
     legalNature: null,
     stateRegistration: null,
-    ownerId: 'owner-1',
-    responsibleId: 'responsible-1',
     zipCode: null,
     street: null,
     number: null,
@@ -30,6 +27,16 @@ describe(CompanyController.name, () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
+    responsible: {
+      id: 'responsible-1',
+      name: 'John Doe',
+      cpf: '12345678900',
+      email: 'john@example.com',
+      phone: '11999999999',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    },
   }
 
   const mockPaginated: CompanyPaginatedResponse = {
@@ -46,7 +53,13 @@ describe(CompanyController.name, () => {
 
   const mockService: Pick<
     CompanyService,
-    'getAll' | 'getById' | 'getByField' | 'create' | 'update' | 'delete' | 'setActive'
+    | 'getAll'
+    | 'getById'
+    | 'getByField'
+    | 'create'
+    | 'update'
+    | 'delete'
+    | 'setActive'
   > = {
     getAll: jest.fn(),
     getById: jest.fn(),
@@ -106,20 +119,28 @@ describe(CompanyController.name, () => {
   })
 
   it('delete() should return success message', async () => {
-    ;(mockService.delete as jest.Mock).mockResolvedValue({ message: 'Deleted successfully' })
+    ;(mockService.delete as jest.Mock).mockResolvedValue({
+      message: 'Deleted successfully',
+    })
     const result = await controller.delete('uuid-1')
     expect(result).toEqual({ message: 'Deleted successfully' })
   })
 
   it('activate() should call setActive with true', async () => {
-    ;(mockService.setActive as jest.Mock).mockResolvedValue({ ...mockCompany, isActive: true })
+    ;(mockService.setActive as jest.Mock).mockResolvedValue({
+      ...mockCompany,
+      isActive: true,
+    })
     const result = await controller.activate('uuid-1')
     expect(mockService.setActive).toHaveBeenCalledWith('uuid-1', true)
     expect(result.isActive).toBe(true)
   })
 
   it('deactivate() should call setActive with false', async () => {
-    ;(mockService.setActive as jest.Mock).mockResolvedValue({ ...mockCompany, isActive: false })
+    ;(mockService.setActive as jest.Mock).mockResolvedValue({
+      ...mockCompany,
+      isActive: false,
+    })
     const result = await controller.deactivate('uuid-1')
     expect(mockService.setActive).toHaveBeenCalledWith('uuid-1', false)
     expect(result.isActive).toBe(false)

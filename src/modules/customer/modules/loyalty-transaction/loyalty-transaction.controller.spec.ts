@@ -1,7 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
-import { LoyaltyTransaction } from '@prisma/client'
-
 import { LoyaltyTransactionType } from '@shared/enums/loyalty-transaction-type.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
@@ -10,20 +8,46 @@ import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { LoyaltyTransactionController } from './loyalty-transaction.controller'
 import { LoyaltyTransactionService } from './loyalty-transaction.service'
 import { LoyaltyTransactionPaginatedResponse } from './types/loyalty-transaction-paginated-response.type'
+import { LoyaltyTransactionResponse } from './types/loyalty-transaction-response.type'
 import { CreateLoyaltyTransactionDto } from './dtos/create-loyalty-transaction.dto'
 
 describe(LoyaltyTransactionController.name, () => {
   let controller: LoyaltyTransactionController
 
-  const mockTransaction: LoyaltyTransaction = {
+  const mockTenant = {
+    id: 'tenant-1',
+    customName: null,
+    slug: 'tenant-1',
+    logoUrl: null,
+    favicon: null,
+    primaryColor: null,
+    secondaryColor: null,
+    customDomain: null,
+    companyId: 'company-1',
+    statusId: 'status-1',
+    typeId: 'type-1',
+    timezone: 'America/Sao_Paulo',
+    zipCode: '01310-100',
+    street: 'Av. Paulista',
+    number: '1000',
+    complement: null,
+    neighborhood: 'Bela Vista',
+    city: 'São Paulo',
+    state: 'SP',
+    country: 'BR',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+  }
+
+  const mockTransaction: LoyaltyTransactionResponse = {
     id: 'tx-1',
-    customerId: 'customer-1',
-    tenantId: 'tenant-1',
     orderId: null,
     type: 'EARN',
     points: 100,
     description: null,
     createdAt: new Date(),
+    tenant: mockTenant,
   }
 
   const mockPaginated: LoyaltyTransactionPaginatedResponse = {

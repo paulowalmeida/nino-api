@@ -11,17 +11,17 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import { Company } from '@prisma/client'
-
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+
 import { CompanyService } from './company.service'
 import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
 import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
+import { CompanyResponse } from './types/company-response.type'
 
 @Controller('companies')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -36,19 +36,19 @@ export class CompanyController {
 
   @Get(':id')
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
-  getById(@Param('id') id: string): Promise<Company> {
+  getById(@Param('id') id: string): Promise<CompanyResponse> {
     return this.service.getById(id)
   }
 
   @Get('cnpj/:cnpj')
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
-  getByCnpj(@Param('cnpj') cnpj: string): Promise<Company> {
+  getByCnpj(@Param('cnpj') cnpj: string): Promise<CompanyResponse> {
     return this.service.getByField('cnpj', cnpj)
   }
 
   @Post()
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
-  create(@Body() body: CreateCompanyDto): Promise<Company> {
+  create(@Body() body: CreateCompanyDto): Promise<CompanyResponse> {
     return this.service.create(body)
   }
 
@@ -57,7 +57,7 @@ export class CompanyController {
   update(
     @Param('id') id: string,
     @Body() body: UpdateCompanyDto,
-  ): Promise<Company> {
+  ): Promise<CompanyResponse> {
     return this.service.update(id, body)
   }
 
@@ -69,13 +69,13 @@ export class CompanyController {
 
   @Patch(':id/activate')
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
-  activate(@Param('id') id: string): Promise<Company> {
+  activate(@Param('id') id: string): Promise<CompanyResponse> {
     return this.service.setActive(id, true)
   }
 
   @Patch(':id/deactivate')
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
-  deactivate(@Param('id') id: string): Promise<Company> {
+  deactivate(@Param('id') id: string): Promise<CompanyResponse> {
     return this.service.setActive(id, false)
   }
 }

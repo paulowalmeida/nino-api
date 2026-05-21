@@ -8,8 +8,6 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
-import { LoyaltyTransaction } from '@prisma/client'
-
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
@@ -20,6 +18,7 @@ import { LoyaltyTransactionService } from './loyalty-transaction.service'
 import { CreateLoyaltyTransactionDto } from './dtos/create-loyalty-transaction.dto'
 import { LoyaltyTransactionQueryDto } from './dtos/loyalty-transaction-query.dto'
 import { LoyaltyTransactionPaginatedResponse } from './types/loyalty-transaction-paginated-response.type'
+import { LoyaltyTransactionResponse } from './types/loyalty-transaction-response.type'
 
 @Controller('customers/:customerId/loyalty-transactions')
 @UseGuards(JwtAuthGuard, RolesGuard, CustomerOwnerGuard)
@@ -40,7 +39,7 @@ export class LoyaltyTransactionController {
   async create(
     @Param('customerId') customerId: string,
     @Body() dto: CreateLoyaltyTransactionDto,
-  ): Promise<LoyaltyTransaction> {
+  ): Promise<LoyaltyTransactionResponse> {
     return this.service.create(customerId, dto)
   }
 }
