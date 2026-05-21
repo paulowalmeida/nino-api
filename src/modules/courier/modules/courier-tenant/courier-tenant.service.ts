@@ -41,7 +41,10 @@ export class CourierTenantService {
   }
 
   async create(data: CreateCourierTenantDto): Promise<CourierTenantResponse> {
-    const saved = await this.repo.insert<CreateCourierTenantDto, CourierTenantFull>({
+    const saved = await this.repo.insert<
+      CreateCourierTenantDto,
+      CourierTenantFull
+    >({
       data,
       include: this.include,
     })
@@ -57,7 +60,10 @@ export class CourierTenantService {
       include: this.include,
       page: query.page,
       size: query.size,
-      order: { target: query.target ?? 'createdAt', direction: query.direction ?? 'asc' },
+      order: {
+        target: query.target ?? 'createdAt',
+        direction: query.direction ?? 'asc',
+      },
     })
     return { ...result, data: result.data.map((i) => this.toResponse(i)) }
   }
@@ -71,12 +77,18 @@ export class CourierTenantService {
       include: this.include,
       page: query.page,
       size: query.size,
-      order: { target: query.target ?? 'createdAt', direction: query.direction ?? 'asc' },
+      order: {
+        target: query.target ?? 'createdAt',
+        direction: query.direction ?? 'asc',
+      },
     })
     return { ...result, data: result.data.map((i) => this.toResponse(i)) }
   }
 
-  async delete(courierId: string, tenantId: string): Promise<{ message: string }> {
+  async delete(
+    courierId: string,
+    tenantId: string,
+  ): Promise<{ message: string }> {
     return this.repo.softDelete({ courierId_tenantId: { courierId, tenantId } })
   }
 }
