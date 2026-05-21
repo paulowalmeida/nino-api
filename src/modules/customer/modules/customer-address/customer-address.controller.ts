@@ -6,20 +6,23 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 
 import { CustomerAddress } from '@prisma/client'
 
 import { Roles } from '@shared/decorators/roles.decorator'
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+import { PaginatedResponse } from '@shared/types/paginated-response.type'
 
-import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
+import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
+import { CustomerAddressService } from './customer-address.service'
 import { CreateCustomerAddressDto } from './dtos/create-customer-address.dto'
 import { UpdateCustomerAddressDto } from './dtos/update-customer-address.dto'
-import { CustomerAddressService } from './customer-address.service'
 
 @Controller('customers/:customerId/addresses')
 @UseGuards(JwtAuthGuard, RolesGuard, CustomerOwnerGuard)
@@ -30,8 +33,9 @@ export class CustomerAddressController {
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.CUSTOMER)
   async getAll(
     @Param('customerId') customerId: string,
-  ): Promise<CustomerAddress[]> {
-    return this.service.getAll(customerId)
+    @Query() query: PaginatedQueryDto,
+  ): Promise<PaginatedResponse<CustomerAddress>> {
+    return this.service.getAll(customerId, query)
   }
 
   @Post()

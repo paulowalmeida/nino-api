@@ -1,2 +1,0 @@
--- RenameIndex
-ALTER INDEX "customer_notification_preferences_customer_id_notification_type" RENAME TO "customer_notification_preferences_customer_id_notification__key";

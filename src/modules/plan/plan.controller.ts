@@ -13,6 +13,7 @@ import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+
 import { CreatePlanDto } from './dtos/create-plan.dto'
 import { UpdatePlanDto } from './dtos/update-plan.dto'
 import { PlanService } from './plan.service'
@@ -21,24 +22,24 @@ import { PlanResponse } from './types/plan.response.type'
 @Controller('plans')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PlanController {
-  constructor(private readonly planService: PlanService) {}
+  constructor(private readonly service: PlanService) {}
 
   @Post()
   @Roles(GlobalRole.ADMIN)
   async create(@Body() createDto: CreatePlanDto): Promise<PlanResponse> {
-    return await this.planService.create(createDto)
+    return this.service.create(createDto)
   }
 
   @Get()
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   async getAll(): Promise<PlanResponse[]> {
-    return await this.planService.getAll()
+    return this.service.getAll()
   }
 
   @Get(':id')
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   async getById(@Param('id') id: string): Promise<PlanResponse> {
-    return await this.planService.getById(id)
+    return this.service.getById(id)
   }
 
   @Patch(':id')
@@ -47,12 +48,12 @@ export class PlanController {
     @Param('id') id: string,
     @Body() updateDto: UpdatePlanDto,
   ): Promise<PlanResponse> {
-    return this.planService.update(id, updateDto)
+    return this.service.update(id, updateDto)
   }
 
   @Delete(':id')
   @Roles(GlobalRole.ADMIN)
   async delete(@Param('id') id: string): Promise<{ message: string }> {
-    return this.planService.delete(id)
+    return this.service.delete(id)
   }
 }

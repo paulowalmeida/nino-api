@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+import { PaginationMeta } from '@shared/types/pagination-meta.type'
 
-import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
+import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { CustomerPaymentMethodController } from './customer-payment-method.controller'
 import { CustomerPaymentMethodService } from './customer-payment-method.service'
 import { CustomerPaymentMethodResponse } from './types/customer-payment-method-response.type'
@@ -24,11 +26,22 @@ describe(CustomerPaymentMethodController.name, () => {
     method: { name: 'Cartão de Crédito', description: null },
   }
 
+  const mockMeta: PaginationMeta = {
+    total: 1,
+    page: 1,
+    size: 10,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
+  }
+
   const mockService: Pick<
     CustomerPaymentMethodService,
     'getAll' | 'getById' | 'create' | 'update' | 'delete'
   > = {
-    getAll: jest.fn().mockResolvedValue([mockResponse]),
+    getAll: jest
+      .fn()
+      .mockResolvedValue({ data: [mockResponse], pagination: mockMeta }),
     getById: jest.fn().mockResolvedValue(mockResponse),
     create: jest.fn().mockResolvedValue(mockResponse),
     update: jest.fn().mockResolvedValue(mockResponse),
@@ -56,10 +69,12 @@ describe(CustomerPaymentMethodController.name, () => {
     )
   })
 
-  it('getAll() should return payment methods for customer', async () => {
-    const result = await controller.getAll('customer-1')
-    expect(mockService.getAll).toHaveBeenCalledWith('customer-1')
-    expect(result).toEqual([mockResponse])
+  it('getAll() should return paginated payment methods for customer', async () => {
+    const query: PaginatedQueryDto = { page: 1, size: 10 }
+    const result = await controller.getAll('customer-1', query)
+    expect(mockService.getAll).toHaveBeenCalledWith('customer-1', query)
+    expect(result.data).toEqual([mockResponse])
+    expect(result.pagination).toEqual(mockMeta)
   })
 
   it('getById() should return a payment method by id', async () => {
@@ -68,10 +83,13 @@ describe(CustomerPaymentMethodController.name, () => {
     expect(result).toEqual(mockResponse)
   })
 
-  it('create() should create with customerId from param', async () => {
+  it('create() should merge customerId into dto', async () => {
     const dto = { methodId: 'method-1', gatewayToken: 'tok_xxx' }
     const result = await controller.create('customer-1', dto)
-    expect(mockService.create).toHaveBeenCalledWith('customer-1', dto)
+    expect(mockService.create).toHaveBeenCalledWith({
+      ...dto,
+      customerId: 'customer-1',
+    })
     expect(result).toEqual(mockResponse)
   })
 

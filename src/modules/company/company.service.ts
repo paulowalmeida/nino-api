@@ -2,34 +2,54 @@ import { Injectable } from '@nestjs/common'
 
 import { Company } from '@prisma/client'
 
-import { BaseService } from '@shared/services/base/base.service'
 import { CompanyRepository } from './company.repository'
-import { CompanyQueryDto } from './dto/company-query.dto'
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
 import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
 
 @Injectable()
-export class CompanyService extends BaseService<
-  Company,
-  CreateCompanyDto,
-  UpdateCompanyDto,
-  CompanyQueryDto,
-  CompanyPaginatedResponse
-> {
-  constructor(private repo: CompanyRepository) {
-    super(repo)
+export class CompanyService {
+  constructor(private readonly repo: CompanyRepository) {}
+
+  async getAll(params?: PaginatedQueryDto): Promise<CompanyPaginatedResponse> {
+    return this.repo.findAllPaginated<Company>({
+      page: params?.page,
+      size: params?.size,
+      order: {
+        target: params?.target ?? 'name',
+        direction: params?.direction ?? 'asc',
+      },
+    })
   }
 
-  async getByCnpj(cnpj: string): Promise<Company> {
-    return this.repo.getByCnpj(cnpj)
+  async getById(id: string): Promise<Company> {
+    return this.repo.findItem<Company>({ where: { id } })
   }
 
-  async activate(id: string): Promise<Company> {
-    return this.repo.activate(id)
+  async getByField<V>(field: string, value: V): Promise<Company> {
+    return this.repo.findItem<Company>({ where: { [field]: value } })
   }
 
-  async deactivate(id: string): Promise<Company> {
-    return this.repo.deactivate(id)
+  async create(data: CreateCompanyDto): Promise<Company> {
+    return this.repo.insert<CreateCompanyDto, Company>({ data })
+  }
+
+  async update(id: string, data: UpdateCompanyDto): Promise<Company> {
+    return this.repo.updateItem<UpdateCompanyDto, Company>({
+      where: { id },
+      data,
+    })
+  }
+
+  async delete(id: string): Promise<{ message: string }> {
+    return this.repo.softDelete({ id })
+  }
+
+  async setActive(id: string, isActive: boolean): Promise<Company> {
+    return this.repo.updateItem<{ isActive: boolean }, Company>({
+      where: { id },
+      data: { isActive },
+    })
   }
 }

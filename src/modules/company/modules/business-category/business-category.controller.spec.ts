@@ -2,7 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { BusinessCategory } from '@prisma/client'
 
-import { BusinessCategoryQueryDto } from './dtos/business-category-query.dto'
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
+
 import { BusinessCategoryController } from './business-category.controller'
 import { BusinessCategoryService } from './business-category.service'
 import { BusinessCategoryPaginatedResponse } from './types/business-category-paginated-response.type'
@@ -23,7 +24,7 @@ describe(BusinessCategoryController.name, () => {
     data: [mockRecord],
     pagination: {
       page: 1,
-      size: 20,
+      size: 10,
       total: 1,
       totalPages: 1,
       previousPage: null,
@@ -45,9 +46,7 @@ describe(BusinessCategoryController.name, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BusinessCategoryController],
-      providers: [
-        { provide: BusinessCategoryService, useValue: mockService },
-      ],
+      providers: [{ provide: BusinessCategoryService, useValue: mockService }],
     }).compile()
 
     controller = module.get<BusinessCategoryController>(
@@ -60,7 +59,7 @@ describe(BusinessCategoryController.name, () => {
   })
 
   it('getAll() should return paginated response', async () => {
-    const query: BusinessCategoryQueryDto = { page: 1, size: 20 }
+    const query: PaginatedQueryDto = { page: 1, size: 20, direction: 'asc' }
     ;(mockService.getAll as jest.Mock).mockResolvedValue(mockPaginated)
     const result = await controller.getAll(query)
     expect(result).toEqual(mockPaginated)
@@ -90,6 +89,8 @@ describe(BusinessCategoryController.name, () => {
       message: 'Business Category deleted successfully',
     })
     const result = await controller.delete('uuid-1')
-    expect(result).toEqual({ message: 'Business Category deleted successfully' })
+    expect(result).toEqual({
+      message: 'Business Category deleted successfully',
+    })
   })
 })

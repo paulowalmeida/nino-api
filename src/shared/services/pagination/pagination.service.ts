@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
 
-import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { PaginatedResponse } from '@shared/types/paginated-response.type'
 import { PaginationMeta } from '@shared/types/pagination-meta.type'
 
@@ -16,7 +15,7 @@ export class PaginationService {
    * @param query - `{ page, size }` — defaults to page 1, size 20.
    * @returns `{ skip, take }` ready to pass to `prisma.model.findMany`.
    */
-  getPaginationParams(query: PaginatedQueryDto): {
+  getPaginationParams(query: { page?: number; size?: number }): {
     skip: number
     take: number
   } {
@@ -30,7 +29,7 @@ export class PaginationService {
    * @param query - `{ page, size }` used for this request.
    * @returns `PaginationMeta` with `totalPages`, `previousPage`, and `nextPage`.
    */
-  build(total: number, query: PaginatedQueryDto): PaginationMeta {
+  build(total: number, query: { page?: number; size?: number }): PaginationMeta {
     const { page = 1, size = 20 } = query
     const totalPages = Math.ceil(total / size)
     return {
@@ -54,7 +53,7 @@ export class PaginationService {
   paginate<T>(
     data: T[],
     total: number,
-    query: PaginatedQueryDto,
+    query: { page?: number; size?: number },
   ): PaginatedResponse<T> {
     return { data, pagination: this.build(total, query) }
   }

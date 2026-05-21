@@ -1,6 +1,8 @@
+import { Order } from './order.type'
+
 export type FindMany = {
   where?: Record<string, unknown>
   ignoreDeleted?: boolean
-  orderBy?: Record<string, unknown>
+  order?: Order
   include?: Record<string, unknown>
 }

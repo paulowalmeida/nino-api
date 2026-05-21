@@ -28,18 +28,20 @@ describe(CompanyBusinessCategoryService.name, () => {
     businessCategory: mockCategory,
   }
 
-  const getByCompanyId = jest.fn()
-  const create = jest.fn()
-  const deleteFn = jest.fn()
-  const activate = jest.fn()
-  const deactivate = jest.fn()
+  const include = { businessCategory: true }
 
   const mockRepo: Pick<
     CompanyBusinessCategoryRepository,
-    'getByCompanyId' | 'create' | 'delete' | 'activate' | 'deactivate'
-  > = { getByCompanyId, create, delete: deleteFn, activate, deactivate }
+    'findAllPaginated' | 'insert' | 'softDelete' | 'updateItem'
+  > = {
+    findAllPaginated: jest.fn(),
+    insert: jest.fn(),
+    softDelete: jest.fn(),
+    updateItem: jest.fn(),
+  }
 
   beforeEach(async () => {
+    jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CompanyBusinessCategoryService,
@@ -52,50 +54,60 @@ describe(CompanyBusinessCategoryService.name, () => {
     )
   })
 
-  afterEach(() => jest.clearAllMocks())
-
-  describe('getByCompanyId()', () => {
-    it('should delegate to repo and return result', async () => {
-      getByCompanyId.mockResolvedValue([mockLink])
-      expect(await service.getByCompanyId('company-1')).toEqual([mockLink])
-      expect(getByCompanyId).toHaveBeenCalledWith('company-1')
+  it('getByCompanyId() should call findAllPaginated with where and include', async () => {
+    const paginated = { data: [mockLink], pagination: {} }
+    ;(mockRepo.findAllPaginated as jest.Mock).mockResolvedValue(paginated)
+    const result = await service.getByCompanyId('company-1', { page: 1, size: 20 })
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      where: { companyId: 'company-1' },
+      include,
+      page: 1,
+      size: 20,
     })
+    expect(result).toEqual(paginated)
   })
 
-  describe('link()', () => {
-    it('should call repo.create with dto and return result', async () => {
-      create.mockResolvedValue(mockLink)
-      expect(await service.link('company-1', 'cat-1')).toEqual(mockLink)
-      expect(create).toHaveBeenCalledWith('company-1', {
+  it('link() should call insert with companyId, businessCategoryId and include', async () => {
+    ;(mockRepo.insert as jest.Mock).mockResolvedValue(mockLink)
+    const result = await service.link('company-1', 'cat-1')
+    expect(mockRepo.insert).toHaveBeenCalledWith({
+      data: { companyId: 'company-1', businessCategoryId: 'cat-1' },
+      include,
+    })
+    expect(result).toEqual(mockLink)
+  })
+
+  it('unlink() should call softDelete with composite key', async () => {
+    const message = { message: 'Deleted successfully' }
+    ;(mockRepo.softDelete as jest.Mock).mockResolvedValue(message)
+    const result = await service.unlink('company-1', 'cat-1')
+    expect(mockRepo.softDelete).toHaveBeenCalledWith({
+      businessCategoryId_companyId: {
         businessCategoryId: 'cat-1',
-      })
+        companyId: 'company-1',
+      },
     })
+    expect(result).toEqual(message)
   })
 
-  describe('unlink()', () => {
-    it('should delegate to repo.delete and return message', async () => {
-      const message = { message: 'Company Business Category unlinked successfully' }
-      deleteFn.mockResolvedValue(message)
-      expect(await service.unlink('company-1', 'cat-1')).toEqual(message)
-      expect(deleteFn).toHaveBeenCalledWith('company-1', 'cat-1')
+  it('setActive() should call updateItem with isActive true', async () => {
+    ;(mockRepo.updateItem as jest.Mock).mockResolvedValue(mockLink)
+    const result = await service.setActive('company-1', 'cat-1', true)
+    expect(mockRepo.updateItem).toHaveBeenCalledWith({
+      where: { businessCategoryId_companyId: { businessCategoryId: 'cat-1', companyId: 'company-1' } },
+      data: { isActive: true },
+      include,
     })
+    expect(result).toEqual(mockLink)
   })
 
-  describe('activate()', () => {
-    it('should delegate to repo.activate and return result', async () => {
-      const activated = { ...mockLink, isActive: true }
-      activate.mockResolvedValue(activated)
-      expect(await service.activate('company-1', 'cat-1')).toEqual(activated)
-      expect(activate).toHaveBeenCalledWith('company-1', 'cat-1')
-    })
-  })
-
-  describe('deactivate()', () => {
-    it('should delegate to repo.deactivate and return result', async () => {
-      const deactivated = { ...mockLink, isActive: false }
-      deactivate.mockResolvedValue(deactivated)
-      expect(await service.deactivate('company-1', 'cat-1')).toEqual(deactivated)
-      expect(deactivate).toHaveBeenCalledWith('company-1', 'cat-1')
+  it('setActive() should call updateItem with isActive false', async () => {
+    ;(mockRepo.updateItem as jest.Mock).mockResolvedValue({ ...mockLink, isActive: false })
+    await service.setActive('company-1', 'cat-1', false)
+    expect(mockRepo.updateItem).toHaveBeenCalledWith({
+      where: { businessCategoryId_companyId: { businessCategoryId: 'cat-1', companyId: 'company-1' } },
+      data: { isActive: false },
+      include,
     })
   })
 })

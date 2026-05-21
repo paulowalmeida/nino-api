@@ -1,39 +1,40 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
-import { TenantType } from '@prisma/client'
-
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
-import { CreateTenantTypeDto } from './dtos/create-tenant-type.dto'
-import { UpdateTenantTypeDto } from './dtos/update-tenant-type.dto'
+import { CommonService } from '@shared/modules/common/common.service'
+import { CommonEntity } from '@shared/modules/common/types/common-entity.type'
+
 import { TenantTypeController } from './tenant-type.controller'
-import { TenantTypeService } from './tenant-type.service'
 
 describe(TenantTypeController.name, () => {
   let controller: TenantTypeController
-  let service: TenantTypeService
 
-  const mockRecord: Omit<TenantType, 'deletedAt'> = {
+  const mockEntity: CommonEntity = {
     id: 'uuid-1',
-    name: 'RESIDENTIAL',
-    description: 'Residential tenant',
+    name: 'TEST',
+    description: null,
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
   }
 
-  const mockService = {
-    getAll: jest.fn(),
-    getById: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
+  const mockService: Pick<
+    CommonService,
+    'getAll' | 'getByField' | 'create' | 'update' | 'delete'
+  > = {
+    getAll: jest.fn().mockResolvedValue([mockEntity]),
+    getByField: jest.fn().mockResolvedValue(mockEntity),
+    create: jest.fn().mockResolvedValue(mockEntity),
+    update: jest.fn().mockResolvedValue(mockEntity),
+    delete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
     jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TenantTypeController],
-      providers: [{ provide: TenantTypeService, useValue: mockService }],
+      providers: [{ provide: CommonService, useValue: mockService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -42,45 +43,37 @@ describe(TenantTypeController.name, () => {
       .compile()
 
     controller = module.get<TenantTypeController>(TenantTypeController)
-    service = module.get<TenantTypeService>(TenantTypeService)
   })
 
-  it('getAll() should return all tenant types', async () => {
-    mockService.getAll.mockResolvedValue([mockRecord])
-    const result = await controller.getAll()
-    expect(service.getAll).toHaveBeenCalled()
-    expect(result).toEqual([mockRecord])
+  it('getAll() should return entities', async () => {
+    const result = await controller.getAll({})
+    expect(mockService.getAll).toHaveBeenCalledWith(undefined)
+    expect(result).toEqual([mockEntity])
   })
 
-  it('getById() should return tenant type by id', async () => {
-    mockService.getById.mockResolvedValue(mockRecord)
+  it('getById() should return entity by id', async () => {
     const result = await controller.getById('uuid-1')
-    expect(service.getById).toHaveBeenCalledWith('uuid-1')
-    expect(result).toEqual(mockRecord)
+    expect(mockService.getByField).toHaveBeenCalledWith('id', 'uuid-1')
+    expect(result).toEqual(mockEntity)
   })
 
-  it('create() should create and return tenant type', async () => {
-    const dto: CreateTenantTypeDto = { name: 'COMMERCIAL', description: 'x' }
-    mockService.create.mockResolvedValue({ ...mockRecord, ...dto })
+  it('create() should create entity', async () => {
+    const dto = { name: 'NEW' }
     const result = await controller.create(dto)
-    expect(service.create).toHaveBeenCalledWith(dto)
-    expect(result.name).toBe('COMMERCIAL')
+    expect(mockService.create).toHaveBeenCalledWith(dto)
+    expect(result).toEqual(mockEntity)
   })
 
-  it('update() should update and return tenant type', async () => {
-    const dto: UpdateTenantTypeDto = { description: 'Updated' }
-    const updated = { ...mockRecord, ...dto }
-    mockService.update.mockResolvedValue(updated)
+  it('update() should update entity', async () => {
+    const dto = { description: 'Updated' }
     const result = await controller.update('uuid-1', dto)
-    expect(service.update).toHaveBeenCalledWith('uuid-1', dto)
-    expect(result).toEqual(updated)
+    expect(mockService.update).toHaveBeenCalledWith('uuid-1', dto)
+    expect(result).toEqual(mockEntity)
   })
 
-  it('delete() should delete and return success message', async () => {
-    const deleteResponse = { message: 'Deleted successfully' }
-    mockService.delete.mockResolvedValue(deleteResponse)
+  it('delete() should delete entity', async () => {
     const result = await controller.delete('uuid-1')
-    expect(service.delete).toHaveBeenCalledWith('uuid-1')
-    expect(result).toEqual(deleteResponse)
+    expect(mockService.delete).toHaveBeenCalledWith('uuid-1')
+    expect(result).toEqual({ message: 'Deleted successfully' })
   })
 })

@@ -1,73 +1,142 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { UserService } from './user.service'
+
+import { PaginationMeta } from '@shared/types/pagination-meta.type'
+
 import { UserRepository } from './user.repository'
+import { UserService } from './user.service'
+import { CreateUserDto } from './dtos/create-user.dto'
+import { UserFull } from './types/user-full.type'
+import { UserResponse } from './types/user-response.type'
 
-describe('UserService', () => {
+describe(UserService.name, () => {
   let service: UserService
-  let repository: UserRepository
 
-  const mockUser = { id: 'user-id', name: 'John Doe', globalRoleId: 'role-id' }
+  const createdAt = new Date()
+  const updatedAt = new Date()
+
+  const mockUserFull = {
+    id: 'user-id',
+    name: 'John Doe',
+    phone: null,
+    isActive: true,
+    lastLoginAt: null,
+    locale: null,
+    timezone: null,
+    globalRoleId: 'role-id',
+    createdAt,
+    updatedAt,
+    deletedAt: null,
+    globalRole: { id: 'role-id', name: 'ADMIN' },
+    credentials: [],
+  } as unknown as UserFull
+
+  const mockUserResponse = {
+    id: 'user-id',
+    name: 'John Doe',
+    phone: null,
+    isActive: true,
+    lastLoginAt: null,
+    locale: null,
+    timezone: null,
+    createdAt,
+    updatedAt,
+    role: { id: 'role-id', name: 'ADMIN' },
+    credentials: [],
+  } as unknown as UserResponse
+
+  const mockMeta: PaginationMeta = {
+    total: 1,
+    page: 1,
+    size: 10,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
+  }
+
+  const mockRepo: Pick<
+    UserRepository,
+    'findAllPaginated' | 'findAll' | 'findItem' | 'insert' | 'updateItem' | 'softDelete'
+  > = {
+    findAllPaginated: jest
+      .fn()
+      .mockResolvedValue({ data: [mockUserFull], pagination: mockMeta }),
+    findAll: jest.fn().mockResolvedValue([mockUserFull]),
+    findItem: jest.fn().mockResolvedValue(mockUserFull),
+    insert: jest.fn().mockResolvedValue(mockUserFull),
+    updateItem: jest.fn().mockResolvedValue(mockUserFull),
+    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+  }
 
   beforeEach(async () => {
+    jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
-        {
-          provide: UserRepository,
-          useValue: {
-            create: jest.fn().mockResolvedValue(mockUser),
-            getAll: jest.fn().mockResolvedValue({
-              data: [mockUser],
-              pagination: { page: 1, size: 20, total: 1, totalPages: 1 },
-            }),
-            getById: jest.fn().mockResolvedValue(mockUser),
-            getByCompanyId: jest.fn().mockResolvedValue([mockUser]),
-            update: jest.fn().mockResolvedValue(undefined),
-            delete: jest.fn().mockResolvedValue(undefined),
-          },
-        },
+        { provide: UserRepository, useValue: mockRepo },
       ],
     }).compile()
 
     service = module.get<UserService>(UserService)
-    repository = module.get<UserRepository>(UserRepository)
   })
 
-  it('should create a user', async () => {
-    const dto = { name: 'John Doe', globalRoleId: 'role-id' }
+  it('create() should insert and return mapped UserResponse', async () => {
+    const dto: CreateUserDto = { name: 'John Doe', globalRoleId: 'role-id' }
     const result = await service.create(dto)
-    expect(repository.create).toHaveBeenCalledWith(dto)
-    expect(result).toEqual(mockUser)
+    expect(mockRepo.insert).toHaveBeenCalledWith({
+      data: dto,
+      include: { globalRole: true, credentials: true },
+    })
+    expect((result as Record<string, unknown>).deletedAt).toBeUndefined()
+    expect((result as Record<string, unknown>).globalRoleId).toBeUndefined()
   })
 
-  it('should get all users with pagination', async () => {
-    const query = { page: 1, size: 20 }
-    const result = await service.getAll(query)
-    expect(repository.getAll).toHaveBeenCalledWith(query)
-    expect(result.data).toEqual([mockUser])
-    expect(result.pagination.total).toBe(1)
+  it('getAll() should return paginated mapped UserResponse', async () => {
+    const query = { page: 1, size: 10, orderBy: 'name' }
+    const result = await service.getAll(query as never)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { target: 'name', direction: 'asc' },
+        page: 1,
+        size: 10,
+      }),
+    )
+    expect(result.pagination).toEqual(mockMeta)
+    expect((result.data[0] as Record<string, unknown>).deletedAt).toBeUndefined()
   })
 
-  it('should find a user by id', async () => {
+  it('getById() should return mapped UserResponse', async () => {
     const result = await service.getById('user-id')
-    expect(repository.getById).toHaveBeenCalledWith('user-id')
-    expect(result).toEqual(mockUser)
+    expect(mockRepo.findItem).toHaveBeenCalledWith({
+      where: { id: 'user-id' },
+      include: { globalRole: true, credentials: true },
+    })
+    expect((result as Record<string, unknown>).globalRoleId).toBeUndefined()
   })
 
-  it('should find users by companyId', async () => {
+  it('getByCompanyId() should return mapped UserResponse[]', async () => {
     const result = await service.getByCompanyId('company-id')
-    expect(repository.getByCompanyId).toHaveBeenCalledWith('company-id')
-    expect(result).toEqual([mockUser])
+    expect(mockRepo.findAll).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userTenants: { some: { tenant: { companyId: 'company-id' } } } },
+      }),
+    )
+    expect(result).toHaveLength(1)
+    expect((result[0] as Record<string, unknown>).deletedAt).toBeUndefined()
   })
 
-  it('should update a user', async () => {
-    const dto = { name: 'Jane Doe' }
-    await service.update('user-id', dto)
-    expect(repository.update).toHaveBeenCalledWith('user-id', dto)
+  it('update() should updateItem and return mapped UserResponse', async () => {
+    const result = await service.update('user-id', { name: 'Jane' })
+    expect(mockRepo.updateItem).toHaveBeenCalledWith({
+      where: { id: 'user-id' },
+      data: { name: 'Jane' },
+      include: { globalRole: true, credentials: true },
+    })
+    expect(result).toEqual(mockUserResponse)
   })
 
-  it('should delete a user', async () => {
-    await service.delete('user-id')
-    expect(repository.delete).toHaveBeenCalledWith('user-id')
+  it('delete() should call softDelete with id object', async () => {
+    const result = await service.delete('user-id')
+    expect(mockRepo.softDelete).toHaveBeenCalledWith({ id: 'user-id' })
+    expect(result).toEqual({ message: 'Deleted successfully' })
   })
 })

@@ -8,19 +8,19 @@
 * [4. 🖥️ Stack Técnico Detalhado](#4-️-stack-técnico-detalhado)
 * [5. 📁 Estrutura de Pastas e Arquitetura de Módulos](#5--estrutura-de-pastas-e-arquitetura-de-módulos)
 * [6. 🗄️ Topologia do Banco de Dados e Entidades](#6-️-topologia-do-banco-de-dados-e-entidades)
-* [7. 🔐 Segurança, Autenticação e Autorização](#7--segurança-autenticação-e-autorização)
-* [8. 🛡️ Guards por Role (RBAC)](#8-️-guards-por-role-rbac)
-* [9. 🛣️ Endpoints da API](#9-️-endpoints-da-api)
-* [10. 🏛️ Padrões Arquiteturais](#10-️-padrões-arquiteturais)
-* [11. ✍️ Convenções de Escrita](#11-️-convenções-de-escrita)
-* [12. 🧪 Padrões de Teste](#12--padrões-de-teste)
-* [13. 🔄 Fluxos Principais](#13--fluxos-principais)
-* [14. 🔧 Trade-offs & Decisões Arquiteturais](#14--trade-offs--decisões-arquiteturais)
-* [15. 📊 Status dos Módulos](#15--status-dos-módulos)
-* [16. 🚀 Próximas Features (Roadmap)](#16--próximas-features-roadmap)
-* [17. 🛠️ Variáveis de Ambiente](#17-️-variáveis-de-ambiente)
-* [17. 🛠️ Variáveis de Ambiente](#17-️-variáveis-de-ambiente)
-* [18. ☁️ Infraestrutura & Hospedagem](#18-️-infraestrutura--hospedagem)
+* [7. 📦 Catálogo de Módulos](#7--catálogo-de-módulos)
+* [8. 🔐 Segurança, Autenticação e Autorização](#8--segurança-autenticação-e-autorização)
+* [9. 🛡️ Guards por Role (RBAC)](#9-️-guards-por-role-rbac)
+* [10. 🛣️ Endpoints da API](#10-️-endpoints-da-api)
+* [11. 🏛️ Padrões Arquiteturais](#11-️-padrões-arquiteturais)
+* [12. ✍️ Convenções de Escrita](#12-️-convenções-de-escrita)
+* [13. 🧪 Padrões de Teste](#13--padrões-de-teste)
+* [14. 🔄 Fluxos Principais](#14--fluxos-principais)
+* [15. 🔧 Trade-offs & Decisões Arquiteturais](#15--trade-offs--decisões-arquiteturais)
+* [16. 📊 Status dos Módulos](#16--status-dos-módulos)
+* [17. 🚀 Próximas Features (Roadmap)](#17--próximas-features-roadmap)
+* [18. 🛠️ Variáveis de Ambiente](#18-️-variáveis-de-ambiente)
+* [19. ☁️ Infraestrutura & Hospedagem](#19-️-infraestrutura--hospedagem)
 * [20. 🐳 Docker & Local Development](#20--docker--local-development)
 * [21. 📚 Referências & Documentação](#21--referências--documentação)
 * [22. 🤝 Contribuição & Commits](#22--contribuição--commits)
@@ -274,234 +274,339 @@ Para clareza dos agentes de IA e programadores, os seguintes componentes **não*
 
 ## 5. 📁 Estrutura de Pastas e Arquitetura de Módulos
 
-O projeto adota uma arquitetura estrita de **Feature Modules** (Modularização por Domínio). Cada diretório dentro de `src/` opera como um micro-ecossistema auto-contido, encapsulando seu próprio Controller, Service, Repository, DTOs e Tipos. Navegações relativas confusas (`../../../`) são evitadas através de Path Aliases configurados no TypeScript.
-
-Abaixo está a radiografia completa e exaustiva do repositório:
+O projeto adota **Feature Modules** por domínio. Cada diretório em `src/modules/` encapsula Controller, Service, Repository, DTOs e Tipos. Path Aliases no TypeScript eliminam imports relativos confusos.
 
 ```text
 nino-api/
 ├── src/
-│   ├── main.ts                          # Entry point (Bootstrap, Global Pipes, Swagger, Throttler)
-│   ├── app.module.ts                    # Root module (importa todos os Feature Modules)
-│   ├── app.controller.ts                # Rotas base globais
-│   ├── app.service.ts                   # Lógicas globais base
+│   ├── main.ts                    # Entry point (Bootstrap, Swagger, Throttler)
+│   ├── app.module.ts              # Root module
+│   ├── app.controller.ts
+│   ├── app.service.ts
 │   │
-│   ├── config/
-│   │   └── database/                    # PrismaService e seed
+│   ├── config/database/           # PrismaService e seed
 │   │
-│   ├── mocks/                           # 🧪 Utilitários para Desenvolvimento e Testes
-│   │   ├── cnpj/                        # Mock de geração e validação de CNPJ
-│   │   ├── user/                        # Mock de injeção de usuários para E2E
-│   │   └── data/                        # user.data.mock.ts
+│   ├── mocks/                     # 🧪 Utilitários de desenvolvimento
+│   │   ├── mocks.module.ts
+│   │   ├── cnpj/                  # Geração de CNPJs aleatórios válidos
+│   │   ├── data/                  # user.data.mock.ts
+│   │   └── user/                  # Injeção de usuários fake
 │   │
-│   ├── modules/                         # Feature Modules (domínios da aplicação)
-│   │   │
-│   │   ├── auth/                        # 🔐 Autenticação
-│   │   │   ├── auth.module.ts
-│   │   │   ├── auth.controller.ts       # GET /auth/me, POST /login, /register, /refresh, /logout
-│   │   │   ├── auth.service.ts
-│   │   │   ├── jwt-refresh.guard.ts
-│   │   │   ├── jwt-refresh.strategy.ts
-│   │   │   ├── dtos/                    # login-request, register-request, change-password
-│   │   │   └── types/                   # tokens.type, login-response.type
-│   │   │
-│   │   ├── company/                     # 🏢 Empresas (Clientes do SaaS)
-│   │   │   ├── company.module.ts
-│   │   │   ├── company.controller.ts    # CRUD + activate/deactivate
-│   │   │   ├── company.service.ts
-│   │   │   ├── company.repository.ts
-│   │   │   ├── dto/
-│   │   │   ├── types/
-│   │   │   └── modules/
-│   │   │       ├── business-category/           # Categorias de negócio
-│   │   │       ├── company-business-category/   # Vínculo empresa ↔ categoria
-│   │   │       └── company-responsible/         # Representante legal da empresa
-│   │   │
-│   │   ├── credential/                  # 🔑 Credenciais (Preparado para OAuth)
-│   │   │   ├── credential.module.ts
-│   │   │   ├── credential.controller.ts
-│   │   │   ├── credential.service.ts
-│   │   │   ├── credential.repository.ts
-│   │   │   ├── dto/
-│   │   │   └── types/
-│   │   │
-│   │   ├── health/                      # ❤️ Health Check
-│   │   │   └── health.controller.ts
-│   │   │
-│   │   ├── invoice/                     # 🧾 Faturas
-│   │   │   └── modules/
-│   │   │       └── invoice-status/      # PENDING, PAID, VOID
-│   │   │
-│   │   ├── notification/                # 🔔 Notificações
-│   │   │   └── modules/
-│   │   │       └── notification-type/   # SYSTEM, BILLING, ORDER
-│   │   │
-│   │   ├── plan/                        # 💳 Catálogo Comercial
-│   │   │   ├── plan.module.ts
-│   │   │   ├── plan.controller.ts
-│   │   │   ├── plan.service.ts
-│   │   │   ├── plan.repository.ts
-│   │   │   ├── dtos/
-│   │   │   ├── types/
-│   │   │   └── modules/
-│   │   │       └── plan-type/           # MONTHLY, YEARLY
-│   │   │
-│   │   ├── role/                        # 🛡️ RBAC
-│   │   │   └── modules/
-│   │   │       ├── global-role/         # Roles de plataforma (ADMIN_NINO, OWNER, ...)
-│   │   │       └── tenant-role/         # Roles operacionais (MANAGER, KITCHEN, ...)
-│   │   │
-│   │   ├── session/                     # 📱 Sessões e Refresh Tokens
-│   │   │   ├── session.module.ts
-│   │   │   ├── session.controller.ts
-│   │   │   ├── session.service.ts
-│   │   │   ├── session.repository.ts
+│   ├── modules/
+│   │   ├── auth/                  # 🔐 Autenticação
 │   │   │   ├── dtos/
 │   │   │   └── types/
 │   │   │
-│   │   ├── subscription/                # 📑 Assinaturas
+│   │   ├── company/               # 🏢 Empresas clientes do SaaS
+│   │   │   ├── dto/
+│   │   │   ├── types/
 │   │   │   └── modules/
-│   │   │       └── subscription-status/ # TRIAL, ACTIVE, PAST_DUE, CANCELED
+│   │   │       ├── business-category/
+│   │   │       ├── company-business-category/
+│   │   │       └── company-responsible/
 │   │   │
-│   │   ├── tenant/                      # 🏪 Lojas Whitelabel
+│   │   ├── customer/              # 👤 Consumidores Finais
+│   │   │   ├── dtos/
+│   │   │   ├── types/
 │   │   │   └── modules/
-│   │   │       └── tenant-status/       # CONFIGURING, ACTIVE, MAINTENANCE
+│   │   │       ├── customer-address/
+│   │   │       ├── customer-notification-preference/
+│   │   │       ├── customer-payment-method/
+│   │   │       ├── customer-tenant/
+│   │   │       └── loyalty-transaction/
 │   │   │
-│   │   └── user/                        # 👥 Usuários Operadores
-│   │       ├── user.module.ts
-│   │       ├── user.controller.ts
-│   │       ├── user.service.ts
-│   │       ├── user.repository.ts
+│   │   ├── global-role/           # 🛡️ Roles de plataforma — lookup
+│   │   ├── health/                # ❤️ Health Check
+│   │   ├── invoice-status/        # 📋 Status de fatura — lookup
+│   │   ├── notification-type/     # 🔔 Tipos de notificação — lookup
+│   │   │
+│   │   ├── payment-method/        # 💳 Métodos de pagamento — lookup
+│   │   │   └── dtos/
+│   │   │
+│   │   ├── plan/                  # 📦 Catálogo Comercial do SaaS
+│   │   │   ├── dtos/
+│   │   │   ├── types/
+│   │   │   └── modules/plan-type/ # Periodicidade — lookup
+│   │   │
+│   │   ├── product/               # 🍕 Cardápio
+│   │   │   ├── dtos/
+│   │   │   ├── types/
+│   │   │   └── modules/
+│   │   │       └── product-category/
+│   │   │
+│   │   ├── session/               # 📱 Sessões e Refresh Tokens
+│   │   │   ├── dtos/
+│   │   │   └── types/
+│   │   │
+│   │   ├── subscription-status/   # 📑 Status de assinatura — lookup
+│   │   ├── tenant-role/           # 🛡️ Roles operacionais por loja — lookup
+│   │   │
+│   │   ├── tenant/                # 🏪 Lojas Whitelabel
+│   │   │   ├── dtos/
+│   │   │   ├── types/
+│   │   │   └── modules/
+│   │   │       ├── opening-hours/
+│   │   │       ├── tenant-payment-method/
+│   │   │       ├── tenant-phone/
+│   │   │       ├── tenant-settings/
+│   │   │       ├── tenant-status/         # lookup
+│   │   │       └── tenant-type/           # lookup
+│   │   │
+│   │   └── user/                  # 👥 Usuários Operadores
 │   │       ├── dtos/
 │   │       ├── types/
 │   │       └── modules/
-│   │           └── user-tenant/         # Vínculo usuário ↔ tenant
+│   │           ├── credential/    # 🔑 Credenciais (local + OAuth ready)
+│   │           └── user-tenant/   # Vínculo usuário ↔ tenant
 │   │
-│   └── shared/                          # 🛠️ Core Transversal (Recursos Globais)
-│       ├── decorators/                  # @Roles e outros decorators customizados
-│       ├── dtos/                        # DTOs compartilhados (ex: paginação)
-│       ├── enums/                       # GlobalRole, TenantRole, enums de status
-│       ├── guards/                      # JwtAuthGuard, RolesGuard
-│       ├── interceptors/                # Interceptor de contexto do Tenant
-│       ├── interfaces/                  # IBaseRepository e contratos compartilhados
-│       ├── repositories/                # BaseRepository<T>
-│       ├── services/                    # ErrorService, PasswordService, TokenService
-│       ├── strategies/                  # jwt-auth.strategy.ts
-│       ├── types/                       # AuthRequest e types globais
-│       └── validators/                  # CnpjValidator (custom class-validator)
+│   └── shared/                    # 🛠️ Core Transversal
+│       ├── decorators/            # @Roles e decorators customizados
+│       ├── dtos/                  # PaginatedQueryDto
+│       ├── enums/                 # GlobalRole, TenantRole, status enums
+│       ├── guards/                # JwtAuthGuard, RolesGuard
+│       ├── interceptors/          # LoggingInterceptor
+│       ├── interfaces/            # IBaseRepository, IBaseModel
+│       ├── modules/common/        # CommonModule.forFeature() — lookup tables
+│       ├── repositories/base/     # BaseRepository<MT> abstrato
+│       ├── services/
+│       │   ├── error/             # ErrorService (Prisma → NestJS exceptions)
+│       │   ├── helpers/cnpj/      # CnpjService
+│       │   ├── pagination/        # PaginationService
+│       │   ├── password/          # PasswordService (bcrypt)
+│       │   ├── prisma/            # PrismaModule + PrismaService
+│       │   └── token/             # TokenService (JWT)
+│       ├── strategies/            # JwtAuthStrategy (Passport)
+│       ├── types/                 # AuthRequest, PaginatedResponse, tipos do BaseRepository
+│       └── validators/            # CnpjValidator (class-validator custom)
 │
-├── prisma/                              # 📜 Schema e migrations Prisma
+├── prisma/
 │   ├── schema.prisma
 │   └── migrations/
 │
-├── test/                                # 🚥 Testes End-to-End
-│   ├── app.e2e-spec.ts
-│   └── jest-e2e.json
-│
-├── collections/                         # 🗂️ Coleções de API (Insomnia/Postman)
-│   ├── auth.collection.yaml
-│   ├── business-category.collection.yaml
-│   ├── company-business-category.collection.yaml
-│   ├── company-responsible.collection.yaml
-│   ├── company.collection.yaml
-│   ├── global-role.collection.yaml
-│   ├── invoice-status.collection.yaml
-│   ├── notification-type.collection.yaml
-│   ├── onboarding.collection.yaml
-│   ├── plan-type.collection.yaml
-│   ├── plan.collection.yaml
-│   ├── session.collection.yaml
-│   ├── subscription-status.collection.yaml
-│   ├── tenant-role.collection.yaml
-│   ├── tenant-status.collection.yaml
-│   ├── user-tenant.collection.yaml
-│   └── user.collection.yaml
-│
-└── (raiz)                               # docker-compose.yml, .env, package.json,
-                                         # tsconfig.json, eslint.config.mjs, nest-cli.json
+├── test/                          # 🚥 Testes E2E
+├── collections/                   # 🗂️ Coleções Insomnia/Postman
+└── (raiz)  # docker-compose.yml, .env, package.json, tsconfig.json, eslint.config.mjs
 ```
+
 ---
 
 ## 6. 🗄️ Topologia do Banco de Dados e Entidades
 
-A modelagem de dados é definida no `prisma/schema.prisma`. Abaixo está o detalhamento de cada entidade do sistema, seu propósito de negócio e como elas se relacionam.
+A modelagem é definida no `prisma/schema.prisma`. Colunas de infraestrutura padrão (`id`, `createdAt`, `updatedAt`, `deletedAt`) são omitidas por estarem padronizadas em todas as entidades.
 
-*(Nota: Colunas de infraestrutura padrão como `id`, `description`, `createdAt` e `updatedAt` são omitidas desta documentação por já estarem padronizadas em todas as entidades nas camadas base do código).*
+### 6.1 Core B2B (SaaS)
 
-### 6.1 Schema Global B2B (`public`)
-Este schema centraliza o motor do SaaS. Ele gerencia assinaturas, empresas, segurança e o roteamento de lojas. Consumidores finais nunca interagem com os dados armazenados aqui.
+#### 6.1.1 Lookup Tables (Tabelas de Domínio)
+Gerenciadas pelo Admin Nino. Referência imutável para o restante do sistema.
+- **`GlobalRole`**: Roles de plataforma — `ADMIN`, `SUPPORT`, `MERCHANT`.
+- **`TenantRole`**: Roles operacionais por loja — `OWNER`, `MANAGER`, `CASHIER`, `KITCHEN`, `WAITER`, `DELIVERY_MAN`.
+- **`TenantStatus`**: Estado operacional da loja — `CONFIGURING`, `ACTIVE`, `MAINTENANCE`, `SUSPENDED`.
+- **`TenantType`**: Tipo de estabelecimento (ex: Restaurante, Padaria).
+- **`SubscriptionStatus`**: Ciclo da assinatura — `TRIAL`, `ACTIVE`, `PAST_DUE`, `CANCELED`.
+- **`InvoiceStatus`**: Ciclo de fatura — `PENDING`, `PAID`, `VOID`.
+- **`PaymentStatus`**: Estado de um pagamento — `PENDING`, `APPROVED`, `FAILED`.
+- **`PaymentMethod`**: Métodos disponíveis na plataforma — `PIX`, `CREDIT_CARD`, `CASH`.
+- **`PlanType`**: Periodicidade — `MONTHLY`, `YEARLY`.
+- **`NotificationType`**: Classifica alertas — `SYSTEM`, `BILLING`, `ORDER`.
 
-#### 6.1.1 Entidades de Domínio e Status (Auxiliares de Negócio)
-Estas tabelas definem as regras de estado e permissões do sistema.
-- **`GlobalRole`**: Roles de plataforma (ex: `ADMIN_NINO`, `OWNER`). Vinculado ao `User` para controle de acesso B2B.
-- **`TenantRole`**: Roles operacionais por loja (ex: `MANAGER`, `KITCHEN`, `WAITER`, `DELIVERY_MAN`). Vinculado ao `UserTenant`.
-- **`TenantStatus`**: Dita o estado operacional de uma unidade whitelabel (`CONFIGURING`, `ACTIVE`, `MAINTENANCE`, `SUSPENDED`).
-- **`TenantType`**: Categoriza o tipo de estabelecimento (ex: restaurante, padaria, lanchonete).
-- **`SubscriptionStatus`**: Define se a empresa está em `TRIAL`, `ACTIVE`, `PAST_DUE` ou `CANCELED`.
-- **`InvoiceStatus`**: Rastreia o ciclo de vida de uma cobrança (`PENDING`, `PAID`, `VOID`).
-- **`PaymentStatus`**: Estado de um pagamento específico (ex: `PENDING`, `APPROVED`, `FAILED`).
-- **`PaymentMethod`**: Métodos de pagamento disponíveis na plataforma (ex: `PIX`, `CREDIT_CARD`).
-- **`PlanType`**: Periodicidade da cobrança (`MONTHLY`, `YEARLY`).
-- **`NotificationType`**: Classifica alertas do painel (`SYSTEM`, `BILLING`, `ORDER`).
+#### 6.1.2 Empresas e Faturamento
+- **`Company`**: Raiz do cliente pagante. `companyName`, `cnpj` (Unique), `legalName`, `stateRegistration`. Flag `isActive` age como master switch: se `false`, toda a árvore de usuários e lojas perde acesso.
+- **`CompanyResponsible`**: Representante legal 1:1 com `Company`. `name`, `cpf` (Unique), `email`, `phone`.
+- **`BusinessCategory`**: Segmentos de mercado. Vínculo via `CompanyBusinessCategory` (N:M).
+- **`Plan`**: Catálogo de planos. `name`, `slug` (Unique), `price`, `maxTenants`, `maxProducts`, `maxOrders`.
+- **`Subscription`**: Contrato vigente 1:1 com `Company`. Liga a um `Plan` e a um `SubscriptionStatus`.
+- **`Invoice`**: Fatura de assinatura vinculada à `Company`.
 
-#### 6.1.2 Entidades do Core B2B (Clientes e Faturamento)
-- **`Company`**: A raiz de um cliente pagante.
-  - *Campos de Negócio:* `companyName`, `cnpj` (Unique), `legalName`, `stateRegistration`.
-  - *Comportamento:* A coluna `isActive` funciona como um Master Switch. Se for `false`, toda a árvore de usuários e lojas perde acesso à API.
-  - *Relacionamentos:* Única dona da `Subscription` e do `CompanyResponsible`. Agrupa múltiplos `User`, `Tenant` e `CompanyBusinessCategory`.
-- **`CompanyResponsible`**: O representante legal perante o SaaS.
-  - *Campos de Negócio:* `name`, `cpf` (Unique), `email`, `phone`.
-  - *Comportamento:* Vinculada 1:1 com a `Company`. Deletada em cascata se a empresa for destruída.
-- **`BusinessCategory`**: Categorias de segmento de negócio disponíveis na plataforma (ex: Restaurante, Pizzaria, Padaria).
-- **`CompanyBusinessCategory`**: Tabela de junção entre `Company` e `BusinessCategory`. Permite que uma empresa seja classificada em múltiplas categorias.
-- **`Plan`**: O catálogo de produtos do SaaS.
-  - *Campos de Negócio:* `name`, `slug` (Unique), `price`.
-  - *Travas Lógicas:* `maxTenants`, `maxProducts` e `maxOrders`. O `PlanService` lê estes valores para barrar criação de recursos além do limite do plano.
-
-#### 6.1.3 Entidades de Segurança, Autenticação e Acesso
-- **`User`**: O operador humano (ou de sistema).
-  - *Campos de Negócio:* `isActive`, `lastLoginAt`, `locale`, `timezone`.
-  - *Relação Crítica:* Possui chave estrangeira `globalRoleId`.
-  - *A Regra SetNull:* A ligação com `Company` (`companyId`) é **opcional**, permitindo usuários "Suporte Nino" sem vínculo a uma empresa específica.
-- **`Credential`**: A blindagem de acesso.
-  - *Campos de Negócio:* `email` (Unique), `password` (Hashed), `provider` (padrão: `local`), `providerId`.
-  - *Restrição:* Chave única composta por `userId` + `provider`. Pronto para OAuth sem quebrar o banco.
-- **`Session`**: O rastreio ativo de segurança.
-  - *Campos de Negócio:* `refreshToken` (Unique e criptografado), `ipAddress`, `userAgent`, `expiresAt`.
-  - *Comportamento:* Gerado a cada login. Permite expiração forçada, auditoria e token rotation.
-- **`UserTenant`**: Vínculo entre `User` e `Tenant`. Carrega o `tenantRoleId` do operador naquela loja específica.
+#### 6.1.3 Segurança e Acesso
+- **`User`**: Operador humano do sistema. `isActive`, `lastLoginAt`, `locale`, `timezone`. Vínculo opcional com `Company` (permite usuários "Suporte Nino").
+- **`Credential`**: Email + senha (hashed). Chave única composta `userId + provider`. Pronto para OAuth.
+- **`Session`**: Sessão ativa por dispositivo. `refreshToken` (hashed), `ipAddress`, `userAgent`, `expiresAt`. Permite logout remoto.
+- **`UserTenant`**: Vínculo `User` ↔ `Tenant` com `TenantRole` do operador naquela loja.
 - **`Invite`**: Convite para um usuário ingressar em um `Tenant`.
 
-#### 6.1.4 Entidades do Produto SaaS (White-Label)
-- **`Tenant`**: A vitrine operacional (a "Loja" em si).
-  - *Campos Visuais/Identidade:* `slug` (Unique), `logoUrl`, `favicon`, `primaryColor`, `secondaryColor`.
-  - *Configuração de Rede:* `customDomain` (Unique, Nullable).
-  - *Arquitetura:* O interceptor lê o `customDomain` ou `slug` da requisição HTTP para resolver o `tenantId` antes de qualquer operação.
-- **`TenantPhone`**: Telefones de contato do Tenant.
-- **`TenantSettings`**: Configurações operacionais do Tenant (ex: tempo de entrega, raio de entrega, taxa mínima).
-- **`TenantPaymentMethod`**: Métodos de pagamento habilitados por Tenant.
-- **`OpeningHours`**: Horários de funcionamento do Tenant por dia da semana.
-- **`Subscription`**: O contrato vigente.
-  - *Campos de Negócio:* `startedAt`, `expiresAt`.
-  - *Relacionamentos:* Amarração 1:1 com `Company`. Liga-se a um `Plan` e a um `SubscriptionStatus`.
+#### 6.1.4 Tenant (Loja Whitelabel)
+- **`Tenant`**: A loja em si. `slug` (Unique), `logoUrl`, `favicon`, `primaryColor`, `secondaryColor`, `customDomain` (Unique, Nullable).
+- **`TenantSettings`**: Configurações operacionais 1:1 com `Tenant`. `deliveryFee`, `minOrderAmount`, `deliveryRadius`, `isDeliveryEnabled`, `isPickupEnabled`, `requireAccount`, `requireCpf`, `allowGuestOrder`, `loyaltyEnabled`, `loyaltyPointsPerOrder`, `loyaltyPointValue`.
+- **`TenantPhone`**: Telefones de contato da loja (N por tenant).
+- **`TenantPaymentMethod`**: Junção `Tenant` ↔ `PaymentMethod` com flag `isActive`.
+- **`OpeningHours`**: Horários por dia da semana (0=Dom a 6=Sáb). `openTime`, `closeTime`, `isOpen`.
 
 ---
 
 ### 6.2 Entidades Operacionais (isoladas por `tenantId`)
-Todas as entidades abaixo residem no schema `public` mas são sempre filtradas por `tenantId` na camada de repositório. **Nenhuma query retorna dados de outro Tenant.**
+Todas filtradas por `tenantId` na camada de repositório. Nenhuma query retorna dados de outro Tenant.
 
-- **`ProductCategory`**: Categorias do cardápio da loja.
-- **`Product`** / **`ProductImage`**: Produto do cardápio e suas imagens.
-- **`ProductModifier`** / **`ProductModifierOption`** / **`ProductModifierMap`**: Opcionais do produto (ex: tamanho, borda) e o vínculo com cada produto.
-- **`Customer`** / **`CustomerAddress`** / **`CustomerTenant`**: O consumidor final e seus endereços. `CustomerTenant` registra o vínculo com cada loja visitada (e pontos de fidelidade).
-- **`Order`** / **`OrderItem`** / **`OrderItemModifier`**: O pedido e seus itens. O `unitPrice` é congelado no momento da compra para preservar o histórico financeiro.
-- **`OrderStatus`** / **`OrderStatusHistory`**: Rastreio do ciclo de vida do pedido.
-- **`Payment`** / **`PaymentStatus`** / **`PaymentMethod`**: Ciclo de vida financeiro de um pagamento.
-- **`Invoice`**: Fatura gerada para a `Company` referente à assinatura do SaaS.
-- **`Notification`**: Alertas disparados para usuários (classificados por `NotificationType`).
+- **`ProductCategory`** / **`Product`** / **`ProductImage`**: Cardápio da loja e imagens.
+- **`ProductModifier`** / **`ProductModifierOption`** / **`ProductModifierMap`**: Opcionais do produto (tamanho, borda, etc.).
+- **`Customer`** / **`CustomerAddress`** / **`CustomerTenant`**: Consumidor final, endereços e vínculo por loja (com `loyaltyPoints`).
+- **`CustomerPaymentMethod`**: Métodos de pagamento salvos pelo consumidor.
+- **`CustomerNotificationPreference`**: Preferências de alerta do consumidor por tipo.
+- **`LoyaltyTransaction`**: Histórico de crédito/débito de pontos de fidelidade.
+- **`Order`** / **`OrderItem`** / **`OrderItemModifier`**: Pedido e itens. `unitPrice` congelado no momento da compra.
+- **`OrderStatus`** / **`OrderStatusHistory`**: Ciclo de vida do pedido.
+- **`Payment`**: Pagamento vinculado ao pedido. Liga a `PaymentStatus` e `PaymentMethod`.
+- **`Notification`**: Alertas disparados para usuários, classificados por `NotificationType`.
 
 ---
-## 7. 🔐 Segurança, Autenticação e Autorização
+## 7. 📦 Catálogo de Módulos
+
+Descrição funcional de cada módulo implementado no projeto. Módulos marcados como sub-módulo ficam dentro do diretório `modules/` do módulo pai.
+
+---
+
+### Módulos de Plataforma (SaaS)
+
+#### `auth`
+Autenticação central da API. Emite e renova Access Tokens JWT (15 min) e Refresh Tokens (7 dias, hasheados no banco). Fluxos: login, register, refresh, logout e `me`. Usa `JwtAuthStrategy` e `JwtRefreshStrategy` via Passport. Integra `UserService`, `CredentialsService`, `SessionService` e `GlobalRoleModule` para lookup de roles no registro.
+
+#### `user`
+Usuários operadores do sistema (donos de empresa, suporte Nino, etc.). Gerencia CRUD de `User` com vínculo a `GlobalRole` e `Company`. Retorna perfil completo incluindo role e credenciais (sem senha). Sub-módulos: `credential`, `user-tenant`.
+
+#### `user` → `credential`
+Credenciais de acesso de um usuário. Suporta provider `local` (email/senha) e está preparado para OAuth (campo `provider` + `providerCode`). Hash de senha via `PasswordService`. Operações: create, getAll paginado por userId, getById, getByEmail, update, delete, changePassword.
+
+#### `user` → `user-tenant`
+Tabela de junção entre `User` e `Tenant` com papel operacional (`TenantRole`). Registra qual usuário opera em qual loja e com qual função. Suporta múltiplos tenants por usuário. Operações: create, getByUserId (paginado), getByTenantId (paginado), delete (soft, por chave composta).
+
+#### `session`
+Rastreamento de sessões ativas por dispositivo. Cada login gera uma `Session` com `refreshToken` hasheado, IP e user-agent. Permite logout remoto e "logout de todos os dispositivos" via deleção em massa por `userId`.
+
+#### `company`
+Empresas clientes do SaaS (Nino B2B). Cada `Company` é a raiz de um cliente pagante — agrupa tenants, usuários, assinatura e responsável legal. Possui activate/deactivate (master switch que bloqueia todos os filhos). Sub-módulos: `business-category`, `company-business-category`, `company-responsible`.
+
+#### `company` → `company-responsible`
+Representante legal da empresa perante o SaaS. Dados PJ: `name`, `cpf`, `email`, `phone`. Relação 1:1 com `Company`. Busca por `id` ou por CPF (`/doc/:doc`).
+
+#### `company` → `business-category`
+Categorias de segmento de mercado disponíveis na plataforma (ex: Restaurante, Pizzaria, Padaria). Lookup table gerenciada pelo Admin. Usada para classificar empresas no cadastro.
+
+#### `company` → `company-business-category`
+Tabela de junção entre `Company` e `BusinessCategory`. Permite que uma empresa pertença a múltiplas categorias. Operações: listar por empresa, vincular, desvincular, ativar e desativar vínculo.
+
+#### `plan`
+Catálogo comercial de planos do SaaS. Cada plano define limites físicos (`maxTenants`, `maxProducts`, `maxOrders`), preço e flag de suporte prioritário. Sub-módulo: `plan-type`.
+
+#### `plan` → `plan-type`
+Periodicidade de cobrança do plano (`MONTHLY`, `YEARLY`). Lookup table gerenciada pelo Admin.
+
+---
+
+### Módulos de Lookup (Tabelas de Domínio)
+
+Todos esses módulos usam `CommonModule.forFeature(modelKey, entityName)` que instancia um `CommonRepository` e `CommonService` genéricos. São gerenciados exclusivamente pelo Admin Nino e servem como referência imutável para o restante do sistema.
+
+#### `global-role`
+Roles de plataforma: `ADMIN`, `SUPPORT`, `MERCHANT`. Controla o nível de acesso B2B de cada `User` na API.
+
+#### `tenant-role`
+Roles operacionais por loja: `OWNER`, `MANAGER`, `CASHIER`, `KITCHEN`, `WAITER`, `DELIVERY_MAN`. Atribuído via `UserTenant` a cada operador de uma loja específica.
+
+#### `tenant-status`
+Estado operacional de uma loja: `CONFIGURING`, `ACTIVE`, `MAINTENANCE`, `SUSPENDED`. Determina se a vitrine está acessível ao consumidor final.
+
+#### `tenant-type`
+Tipo de estabelecimento (ex: Restaurante, Padaria, Lanchonete). Categoriza o tenant no cadastro.
+
+#### `subscription-status`
+Estado da assinatura de uma empresa: `TRIAL`, `ACTIVE`, `PAST_DUE`, `CANCELED`. Controla o acesso ao painel e à vitrine do restaurante conforme o ciclo de faturamento.
+
+#### `invoice-status`
+Ciclo de vida de uma fatura SaaS: `PENDING`, `PAID`, `VOID`. Rastreia cobranças da assinatura.
+
+#### `payment-method`
+Métodos de pagamento disponíveis na plataforma (ex: `PIX`, `CREDIT_CARD`, `CASH`). Catálogo que os tenants habilitam individualmente.
+
+#### `notification-type`
+Classifica alertas disparados no painel: `SYSTEM`, `BILLING`, `ORDER`.
+
+---
+
+### Módulos de Tenant (Operacional por Loja)
+
+#### `tenant`
+A loja whitelabel em si. Agrupa identidade visual (`slug`, `logoUrl`, `primaryColor`), domínio customizado (`customDomain`) e status operacional. Sub-módulos: `opening-hours`, `tenant-payment-method`, `tenant-phone`, `tenant-settings`, `tenant-status`, `tenant-type`.
+
+#### `tenant` → `opening-hours`
+Horários de funcionamento da loja por dia da semana (0 = Domingo a 6 = Sábado). Campos: `openTime`, `closeTime`, `isOpen`. Listagem ordenada por `dayOfWeek`.
+
+#### `tenant` → `tenant-payment-method`
+Métodos de pagamento habilitados especificamente para uma loja. Tabela de junção entre `Tenant` e `PaymentMethod` com flag `isActive`. Soft delete por chave composta `tenantId_methodId`.
+
+#### `tenant` → `tenant-phone`
+Telefones de contato de uma loja. Suporta múltiplos números por tenant. CRUD completo com paginação.
+
+#### `tenant` → `tenant-settings`
+Configurações operacionais da loja: taxa de entrega (`deliveryFee`), valor mínimo de pedido (`minOrderAmount`), raio de entrega (`deliveryRadius`), flags de delivery/pickup, programa de fidelidade. Operação via upsert: cria na primeira vez, atualiza nas seguintes.
+
+---
+
+### Módulos de Customer (Consumidor Final)
+
+#### `customer`
+Consumidor final das lojas. Dados pessoais do cliente do restaurante. Sub-módulos: `customer-address`, `customer-notification-preference`, `customer-payment-method`, `customer-tenant`, `loyalty-transaction`.
+
+#### `customer` → `customer-address`
+Endereços de entrega salvos pelo consumidor. Vínculo direto com `Customer`.
+
+#### `customer` → `customer-tenant`
+Vínculo entre consumidor e loja — registra qual cliente já frequentou qual estabelecimento e acumula pontos de fidelidade (`loyaltyPoints`).
+
+#### `customer` → `customer-payment-method`
+Métodos de pagamento salvos pelo consumidor (ex: cartões tokenizados). Vínculo entre `Customer` e `PaymentMethod`.
+
+#### `customer` → `customer-notification-preference`
+Preferências de notificação do consumidor por tipo (`NotificationType`). Controla quais alertas o cliente deseja receber.
+
+#### `customer` → `loyalty-transaction`
+Histórico de transações do programa de fidelidade (crédito/débito de pontos). Cada entrada registra `points`, `type` e referência ao pedido gerador.
+
+---
+
+### Módulos de Produto
+
+#### `product`
+Produtos do cardápio da loja. Contém `name`, `description`, `price`, `isActive`, vínculo com `ProductCategory` e imagens. Sub-módulo: `product-category`.
+
+#### `product` → `product-category`
+Categorias do cardápio de uma loja (ex: Entradas, Pratos Principais, Sobremesas). Scoped por `tenantId`, ordenadas por `position`.
+
+---
+
+### Infraestrutura Compartilhada (`shared/`)
+
+#### `shared/repositories/BaseRepository`
+Classe abstrata genérica que todo repository herda. Provê: `findAll`, `findAllPaginated`, `findItem`, `exists`, `insert`, `updateItem`, `softDelete`, `deleteMany`. Integra `ErrorService` (mapeamento Prisma → NestJS) e `PaginationService`.
+
+#### `shared/modules/CommonModule`
+Módulo dinâmico reutilizável para entidades de lookup. `CommonModule.forFeature(modelKey, entityName)` instancia um `CommonRepository` e `CommonService` genéricos, evitando código duplicado nos 8+ módulos de tabela de domínio.
+
+#### `shared/services/ErrorService`
+Mapeia erros Prisma para exceções NestJS: `P2025 → NotFoundException`, `P2002 → ConflictException`, `P2003/P2014 → BadRequestException`. Exceções `HttpException` são relançadas diretamente.
+
+#### `shared/services/PasswordService`
+Hash e comparação de senhas via `bcrypt`. Centraliza toda operação criptográfica de credenciais.
+
+#### `shared/services/TokenService`
+Geração e verificação de Access Tokens e Refresh Tokens JWT. Usa `JWT_SECRET` e `JWT_REFRESH_SECRET` do ambiente.
+
+#### `shared/services/PaginationService`
+Calcula metadados de paginação (`total`, `totalPages`, `previousPage`, `nextPage`) a partir de contagem Prisma e parâmetros de query.
+
+#### `health`
+Endpoint `GET /health` via `@nestjs/terminus`. Verifica disponibilidade da API e conexão com o banco de dados.
+
+#### `mocks`
+Endpoints de suporte ao desenvolvimento. Gera CNPJs válidos aleatórios e dados de usuários fake para facilitar testes manuais e E2E.
+
+---
+
+**Última atualização:** Maio 2026  
+**Desenvolvedor:** Paulo (Solo)  
+**Status:** MVP em desenvolvimento — ~55% concluído
+
+**85 endpoints implementados em 17 módulos funcionais e modulares!** 🎉
+
+## 8. 🔐 Segurança, Autenticação e Autorização
 
 O ecossistema de acesso do Nino foi desenhado sob uma arquitetura *Stateless* para rotas operacionais, combinada com uma validação *Stateful* para renovação de credenciais. Todo o fluxo de autenticação ocorre no schema global (`public`), garantindo que o acesso B2B seja validado antes de qualquer roteamento dinâmico para os schemas de Tenants.
 
@@ -529,7 +634,7 @@ A interface interna do sistema (`user-token.data.type.ts`) define o contrato est
 }
 ```
 
-## 8. 🛡️ Guards por Role (RBAC)
+## 9. 🛡️ Guards por Role (RBAC)
 
 O acesso a cada endpoint é controlado pela combinação de `JwtAuthGuard` + `RolesGuard`. O role do usuário é extraído diretamente do payload do JWT (`role`), sem consulta adicional ao banco.
 
@@ -622,7 +727,7 @@ export class UserController {
 
 ---
 
-## 9. 🛣️ Endpoints da API
+## 10. 🛣️ Endpoints da API
 Todos os endpoints (exceto auth e mocks) usam `@UseGuards(JwtAuthGuard, RolesGuard)`. As permissões por endpoint estão detalhadas na seção 8.
 
 ### 9.1 Autenticação (`src/modules/auth/auth.controller.ts`)
@@ -752,7 +857,7 @@ Todos os endpoints (exceto auth e mocks) usam `@UseGuards(JwtAuthGuard, RolesGua
 
 ---
 
-## 10. 🏛️ Padrões Arquiteturais
+## 11. 🏛️ Padrões Arquiteturais
 
 ### 1. **Repository Pattern**
 
@@ -915,7 +1020,7 @@ Aliases disponíveis: `@auth`, `@company`, `@company-responsible`, `@business-ca
 
 ---
 
-## 11. ✍️ Convenções de Escrita
+## 12. ✍️ Convenções de Escrita
 
 ### Complexidade Ciclomática Máxima 5
 
@@ -1020,7 +1125,7 @@ async create(dto: CreatePlanDto): Promise<Plan> {
 
 ---
 
-## 12. 🧪 Padrões de Teste
+## 13. 🧪 Padrões de Teste
 
 ### Estrutura: AAA (Arrange, Act, Assert)
 
@@ -1055,7 +1160,7 @@ Todo teste segue: monta dados → executa → verifica.
 
 ---
 
-## 13. 🔄 Fluxos Principais
+## 14. 🔄 Fluxos Principais
 
 ### Fluxo 1: Login
 
@@ -1109,7 +1214,7 @@ PATCH /users/:id (+ JwtAuthGuard + RolesGuard)
 
 ---
 
-## 14. 🔧 Trade-offs & Decisões Arquiteturais
+## 15. 🔧 Trade-offs & Decisões Arquiteturais
 
 | Decisão                | Escolha                     | Motivo                                                    | Alternativa                                                    |
 | ---------------------- | --------------------------- | --------------------------------------------------------- | -------------------------------------------------------------- |
@@ -1127,7 +1232,7 @@ PATCH /users/:id (+ JwtAuthGuard + RolesGuard)
 
 ---
 
-## 15. 📊 Status dos Módulos
+## 16. 📊 Status dos Módulos
 
 | Módulo                        | Status           | Endpoints | Progresso |
 | ----------------------------- | ---------------- | --------- | --------- |
@@ -1171,7 +1276,7 @@ PATCH /users/:id (+ JwtAuthGuard + RolesGuard)
 
 ---
 
-## 16. 🚀 Próximas Features (Roadmap)
+## 17. 🚀 Próximas Features (Roadmap)
 
 ### Curto Prazo (1-2 semanas)
 
@@ -1204,7 +1309,7 @@ PATCH /users/:id (+ JwtAuthGuard + RolesGuard)
 
 ---
 
-## 17. 🛠️ Variáveis de Ambiente
+## 18. 🛠️ Variáveis de Ambiente
 
 ```env
 # Docker
@@ -1251,7 +1356,7 @@ R2_BUCKET_NAME=nino-files
 
 ---
 
-## 18. ☁️ Infraestrutura & Hospedagem
+## 19. ☁️ Infraestrutura & Hospedagem
 
 ### Plataforma: Fly.io
 
@@ -1382,8 +1487,4 @@ Dúvidas sobre código? Consulte:
 
 ---
 
-**Última atualização:** Maio 2026  
-**Desenvolvedor:** Paulo (Solo)  
-**Status:** MVP em desenvolvimento — ~55% concluído
-
-**85 endpoints implementados em 17 módulos funcionais e modulares!** 🎉
+---

@@ -18,12 +18,10 @@ import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 import { CompanyService } from './company.service'
-import { CompanyQueryDto } from './dto/company-query.dto'
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { CreateCompanyDto } from './dto/create-company.dto'
 import { UpdateCompanyDto } from './dto/update-company.dto'
-import {
-  CompanyPaginatedResponse,
-} from './types/company-paginated-response.type'
+import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
 
 @Controller('companies')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,7 +30,7 @@ export class CompanyController {
 
   @Get()
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
-  getAll(@Query() query: CompanyQueryDto): Promise<CompanyPaginatedResponse> {
+  getAll(@Query() query: PaginatedQueryDto): Promise<CompanyPaginatedResponse> {
     return this.service.getAll(query)
   }
 
@@ -45,7 +43,7 @@ export class CompanyController {
   @Get('cnpj/:cnpj')
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   getByCnpj(@Param('cnpj') cnpj: string): Promise<Company> {
-    return this.service.getByCnpj(cnpj)
+    return this.service.getByField('cnpj', cnpj)
   }
 
   @Post()
@@ -72,12 +70,12 @@ export class CompanyController {
   @Patch(':id/activate')
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
   activate(@Param('id') id: string): Promise<Company> {
-    return this.service.activate(id)
+    return this.service.setActive(id, true)
   }
 
   @Patch(':id/deactivate')
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
   deactivate(@Param('id') id: string): Promise<Company> {
-    return this.service.deactivate(id)
+    return this.service.setActive(id, false)
   }
 }

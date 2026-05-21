@@ -1,21 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { Plan } from '@prisma/client'
+
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+
 import { CreatePlanDto } from './dtos/create-plan.dto'
 import { UpdatePlanDto } from './dtos/update-plan.dto'
 import { PlanController } from './plan.controller'
 import { PlanService } from './plan.service'
+import { PlanResponse } from './types/plan.response.type'
 
 describe(PlanController.name, () => {
   let controller: PlanController
-  let service: PlanService
 
-  const mockPlan = {
+  const mockPlan: PlanResponse = {
     id: 'uuid-1',
     name: 'Pro',
     slug: 'pro',
-    price: 99.9,
+    price: 99.9 as unknown as Plan['price'],
     maxTenants: 5,
     maxProducts: 100,
     maxOrders: 500,
@@ -26,12 +29,15 @@ describe(PlanController.name, () => {
     type: { name: 'BASIC' },
   }
 
-  const mockService = {
-    create: jest.fn(),
-    getAll: jest.fn(),
-    getById: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
+  const mockService: Pick<
+    PlanService,
+    'getAll' | 'getById' | 'create' | 'update' | 'delete'
+  > = {
+    create: jest.fn().mockResolvedValue(mockPlan),
+    getAll: jest.fn().mockResolvedValue([mockPlan]),
+    getById: jest.fn().mockResolvedValue(mockPlan),
+    update: jest.fn().mockResolvedValue(mockPlan),
+    delete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -48,7 +54,6 @@ describe(PlanController.name, () => {
       .compile()
 
     controller = module.get<PlanController>(PlanController)
-    service = module.get<PlanService>(PlanService)
   })
 
   it('create() should create a plan', async () => {
@@ -61,50 +66,33 @@ describe(PlanController.name, () => {
       maxProducts: 100,
       maxOrders: 500,
     }
-    mockService.create.mockResolvedValue(mockPlan)
-
     const result = await controller.create(dto)
-
+    expect(mockService.create).toHaveBeenCalledWith(dto)
     expect(result).toEqual(mockPlan)
-    expect(service.create).toHaveBeenCalledWith(dto)
   })
 
   it('getAll() should return all plans', async () => {
-    mockService.getAll.mockResolvedValue([mockPlan])
-
     const result = await controller.getAll()
-
+    expect(mockService.getAll).toHaveBeenCalled()
     expect(result).toEqual([mockPlan])
-    expect(service.getAll).toHaveBeenCalled()
   })
 
   it('getById() should return a plan by id', async () => {
-    mockService.getById.mockResolvedValue(mockPlan)
-
     const result = await controller.getById('uuid-1')
-
+    expect(mockService.getById).toHaveBeenCalledWith('uuid-1')
     expect(result).toEqual(mockPlan)
-    expect(service.getById).toHaveBeenCalledWith('uuid-1')
   })
 
   it('update() should update a plan and return the updated entity', async () => {
     const dto: UpdatePlanDto = { name: 'New Pro' }
-    mockService.update.mockResolvedValue(mockPlan)
-
     const result = await controller.update('uuid-1', dto)
-
-    expect(service.update).toHaveBeenCalledWith('uuid-1', dto)
-    expect(service.getById).not.toHaveBeenCalled()
+    expect(mockService.update).toHaveBeenCalledWith('uuid-1', dto)
     expect(result).toEqual(mockPlan)
   })
 
   it('delete() should delete a plan and return a success message', async () => {
-    const deleteResponse = { message: 'Deleted successfully' }
-    mockService.delete.mockResolvedValue(deleteResponse)
-
     const result = await controller.delete('uuid-1')
-
-    expect(service.delete).toHaveBeenCalledWith('uuid-1')
-    expect(result).toEqual(deleteResponse)
+    expect(mockService.delete).toHaveBeenCalledWith('uuid-1')
+    expect(result).toEqual({ message: 'Deleted successfully' })
   })
 })

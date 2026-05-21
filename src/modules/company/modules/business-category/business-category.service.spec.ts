@@ -17,15 +17,19 @@ describe(BusinessCategoryService.name, () => {
     deletedAt: null,
   }
 
-  const mockRepo = {
-    getAll: jest.fn(),
-    getById: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
+  const mockRepo: Pick<
+    BusinessCategoryRepository,
+    'findAllPaginated' | 'findItem' | 'insert' | 'updateItem' | 'softDelete'
+  > = {
+    findAllPaginated: jest.fn().mockResolvedValue({ data: [mockRecord], total: 1 }),
+    findItem: jest.fn().mockResolvedValue(mockRecord),
+    insert: jest.fn().mockResolvedValue(mockRecord),
+    updateItem: jest.fn().mockResolvedValue(mockRecord),
+    softDelete: jest.fn().mockResolvedValue({ message: 'Business Category deleted successfully' }),
   }
 
   beforeEach(async () => {
+    jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BusinessCategoryService,
@@ -36,40 +40,51 @@ describe(BusinessCategoryService.name, () => {
     service = module.get<BusinessCategoryService>(BusinessCategoryService)
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
+  it('getAll() should call findAllPaginated without order when target is absent', async () => {
+    const result = await service.getAll({})
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      page: undefined,
+      size: undefined,
+      order: undefined,
+    })
+    expect(result).toEqual({ data: [mockRecord], total: 1 })
   })
 
-  it('getAll() should return array', async () => {
-    mockRepo.getAll.mockResolvedValue([mockRecord])
-    const result = await service.getAll({})
-    expect(result).toEqual([mockRecord])
+  it('getAll() should pass order when target is provided', async () => {
+    await service.getAll({ target: 'name', direction: 'desc' })
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      page: undefined,
+      size: undefined,
+      order: { target: 'name', direction: 'desc' },
+    })
   })
 
   it('getById() should return record by id', async () => {
-    mockRepo.getById.mockResolvedValue(mockRecord)
     const result = await service.getById('uuid-1')
+    expect(mockRepo.findItem).toHaveBeenCalledWith({ where: { id: 'uuid-1' } })
     expect(result).toEqual(mockRecord)
   })
 
   it('create() should create and return record', async () => {
-    mockRepo.create.mockResolvedValue(mockRecord)
-    const result = await service.create({ name: 'Pizzaria' })
+    const dto = { name: 'Pizzaria' }
+    const result = await service.create(dto)
+    expect(mockRepo.insert).toHaveBeenCalledWith({ data: dto })
     expect(result).toEqual(mockRecord)
   })
 
   it('update() should update and return record', async () => {
-    const updated: BusinessCategory = { ...mockRecord, description: 'Updated' }
-    mockRepo.update.mockResolvedValue(updated)
-    const result = await service.update('uuid-1', { description: 'Updated' })
-    expect(result).toEqual(updated)
+    const dto = { description: 'Updated' }
+    const result = await service.update('uuid-1', dto)
+    expect(mockRepo.updateItem).toHaveBeenCalledWith({
+      where: { id: 'uuid-1' },
+      data: dto,
+    })
+    expect(result).toEqual(mockRecord)
   })
 
   it('delete() should return success message', async () => {
-    mockRepo.delete.mockResolvedValue({
-      message: 'Business Category deleted successfully',
-    })
     const result = await service.delete('uuid-1')
+    expect(mockRepo.softDelete).toHaveBeenCalledWith({ id: 'uuid-1' })
     expect(result).toEqual({ message: 'Business Category deleted successfully' })
   })
 })

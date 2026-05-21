@@ -15,14 +15,16 @@ import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 
-import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
-import { UpsertCustomerNotificationPreferenceDto } from './dtos/upsert-customer-notification-preference.dto'
+import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { CustomerNotificationPreferenceService } from './customer-notification-preference.service'
+import { UpsertCustomerNotificationPreferenceDto } from './dtos/upsert-customer-notification-preference.dto'
 
 @Controller('customers/:customerId/notification-preferences')
 @UseGuards(JwtAuthGuard, RolesGuard, CustomerOwnerGuard)
 export class CustomerNotificationPreferenceController {
-  constructor(private readonly service: CustomerNotificationPreferenceService) {}
+  constructor(
+    private readonly service: CustomerNotificationPreferenceService,
+  ) {}
 
   @Get()
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.CUSTOMER)

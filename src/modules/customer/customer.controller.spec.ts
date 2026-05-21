@@ -22,7 +22,14 @@ describe(CustomerController.name, () => {
 
   const mockPaginated: CustomerPaginatedResponse = {
     data: [mockResponse],
-    pagination: { total: 1, page: 1, size: 10, pages: 1 },
+    pagination: {
+      total: 1,
+      page: 1,
+      size: 10,
+      totalPages: 1,
+      previousPage: null,
+      nextPage: null,
+    },
   }
 
   const mockService: Pick<

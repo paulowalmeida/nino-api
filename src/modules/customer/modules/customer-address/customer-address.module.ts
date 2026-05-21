@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common'
 
 import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 
-import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
+import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { CustomerAddressController } from './customer-address.controller'
 import { CustomerAddressRepository } from './customer-address.repository'
 import { CustomerAddressService } from './customer-address.service'
@@ -14,6 +15,7 @@ import { CustomerAddressService } from './customer-address.service'
     CustomerAddressRepository,
     CustomerOwnerGuard,
     ErrorService,
+    PaginationService,
   ],
   exports: [CustomerAddressService],
 })

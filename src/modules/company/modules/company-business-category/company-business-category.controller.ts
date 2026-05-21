@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 
@@ -15,7 +16,10 @@ import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 
+import { PaginatedResponse } from '@shared/types/paginated-response.type'
+
 import { CompanyBusinessCategoryService } from './company-business-category.service'
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { CreateCompanyBusinessCategoryDto } from './dtos/create-company-business-category.dto'
 import { CompanyBusinessCategoryWithCategory } from './types/company-business-category-with-category.type'
 
@@ -28,8 +32,9 @@ export class CompanyBusinessCategoryController {
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   getByCompanyId(
     @Param('companyId') companyId: string,
-  ): Promise<CompanyBusinessCategoryWithCategory[]> {
-    return this.service.getByCompanyId(companyId)
+    @Query() query: PaginatedQueryDto,
+  ): Promise<PaginatedResponse<CompanyBusinessCategoryWithCategory>> {
+    return this.service.getByCompanyId(companyId, query)
   }
 
   @Post()
@@ -57,7 +62,7 @@ export class CompanyBusinessCategoryController {
     @Param('companyId') companyId: string,
     @Param('businessCategoryId') businessCategoryId: string,
   ): Promise<CompanyBusinessCategoryWithCategory> {
-    return this.service.activate(companyId, businessCategoryId)
+    return this.service.setActive(companyId, businessCategoryId, true)
   }
 
   @Patch(':businessCategoryId/deactivate')
@@ -66,6 +71,6 @@ export class CompanyBusinessCategoryController {
     @Param('companyId') companyId: string,
     @Param('businessCategoryId') businessCategoryId: string,
   ): Promise<CompanyBusinessCategoryWithCategory> {
-    return this.service.deactivate(companyId, businessCategoryId)
+    return this.service.setActive(companyId, businessCategoryId, false)
   }
 }

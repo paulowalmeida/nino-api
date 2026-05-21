@@ -11,7 +11,10 @@ describe(AuthController.name, () => {
   let service: AuthService
 
   const mockUser = { id: 'u1', globalRoleId: 'r1' }
-  const mockTokens = { accessToken: 'access-token', refreshToken: 'refresh-token' }
+  const mockTokens = {
+    accessToken: 'access-token',
+    refreshToken: 'refresh-token',
+  }
 
   const mockReq = () => ({
     ip: '127.0.0.1',
@@ -50,18 +53,32 @@ describe(AuthController.name, () => {
   })
 
   it('should login and return user + tokens', async () => {
-    jest.spyOn(service, 'login').mockResolvedValue({ user: mockUser, tokens: mockTokens } as any)
+    jest
+      .spyOn(service, 'login')
+      .mockResolvedValue({ user: mockUser, tokens: mockTokens } as any)
     const req = mockReq()
 
-    const result = await controller.login({ email: 'a@a.com', password: '123' }, req as any)
+    const result = await controller.login(
+      { email: 'a@a.com', password: '123' },
+      req as any,
+    )
 
-    expect(service.login).toHaveBeenCalledWith({ email: 'a@a.com', password: '123' }, req.ip, req.headers['user-agent'])
+    expect(service.login).toHaveBeenCalledWith(
+      { email: 'a@a.com', password: '123' },
+      req.ip,
+      req.headers['user-agent'],
+    )
     expect(result).toEqual({ user: mockUser, tokens: mockTokens })
   })
 
   it('should register and return the created user', async () => {
     jest.spyOn(service, 'register').mockResolvedValue(mockUser as any)
-    const dto = { name: 'N', email: 'a@a.com', password: '123', globalRole: GlobalRole.ADMIN }
+    const dto = {
+      name: 'N',
+      email: 'a@a.com',
+      password: '123',
+      globalRole: GlobalRole.ADMIN,
+    }
 
     const result = await controller.register(dto)
 
@@ -73,16 +90,25 @@ describe(AuthController.name, () => {
     jest.spyOn(service, 'refresh').mockResolvedValue(mockTokens)
     const req = mockReq()
 
-    const result = await controller.refresh(`Bearer ${mockTokens.refreshToken}`, req as any)
+    const result = await controller.refresh(
+      `Bearer ${mockTokens.refreshToken}`,
+      req as any,
+    )
 
-    expect(service.refresh).toHaveBeenCalledWith(mockTokens.refreshToken, req.ip, req.headers['user-agent'])
+    expect(service.refresh).toHaveBeenCalledWith(
+      mockTokens.refreshToken,
+      req.ip,
+      req.headers['user-agent'],
+    )
     expect(result).toEqual({ tokens: mockTokens })
   })
 
   it('should throw UnauthorizedException when authorization header is missing', async () => {
     const req = mockReq()
 
-    await expect(controller.refresh(undefined, req as any)).rejects.toThrow(UnauthorizedException)
+    await expect(controller.refresh(undefined, req as any)).rejects.toThrow(
+      UnauthorizedException,
+    )
     expect(service.refresh).not.toHaveBeenCalled()
   })
 

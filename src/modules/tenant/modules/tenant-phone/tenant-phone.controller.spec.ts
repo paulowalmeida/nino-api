@@ -2,8 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { TenantPhone } from '@prisma/client'
 
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+import { PaginationMeta } from '@shared/types/pagination-meta.type'
 
 import { TenantPhoneController } from './tenant-phone.controller'
 import { TenantPhoneService } from './tenant-phone.service'
@@ -20,11 +22,22 @@ describe(TenantPhoneController.name, () => {
     deletedAt: null,
   }
 
+  const mockMeta: PaginationMeta = {
+    total: 1,
+    page: 1,
+    size: 10,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
+  }
+
   const mockService: Pick<
     TenantPhoneService,
     'getAll' | 'create' | 'update' | 'delete'
   > = {
-    getAll: jest.fn().mockResolvedValue([mockPhone]),
+    getAll: jest
+      .fn()
+      .mockResolvedValue({ data: [mockPhone], pagination: mockMeta }),
     create: jest.fn().mockResolvedValue(mockPhone),
     update: jest.fn().mockResolvedValue(mockPhone),
     delete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
@@ -45,10 +58,12 @@ describe(TenantPhoneController.name, () => {
     controller = module.get<TenantPhoneController>(TenantPhoneController)
   })
 
-  it('getAll() should return phones for tenant', async () => {
-    const result = await controller.getAll('tenant-1')
-    expect(mockService.getAll).toHaveBeenCalledWith('tenant-1')
-    expect(result).toEqual([mockPhone])
+  it('getAll() should return paginated phones for tenant', async () => {
+    const query: PaginatedQueryDto = { page: 1, size: 10 }
+    const result = await controller.getAll('tenant-1', query)
+    expect(mockService.getAll).toHaveBeenCalledWith('tenant-1', query)
+    expect(result.data).toEqual([mockPhone])
+    expect(result.pagination).toEqual(mockMeta)
   })
 
   it('create() should inject tenantId from param', async () => {

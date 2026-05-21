@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
-import { BusinessCategory, CompanyBusinessCategory } from '@prisma/client'
+import { BusinessCategory } from '@prisma/client'
 
-import { CompanyBusinessCategoryWithCategory } from './types/company-business-category-with-category.type'
 import { CompanyBusinessCategoryController } from './company-business-category.controller'
 import { CompanyBusinessCategoryService } from './company-business-category.service'
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
+import { CompanyBusinessCategoryWithCategory } from './types/company-business-category-with-category.type'
 
 describe(CompanyBusinessCategoryController.name, () => {
   let controller: CompanyBusinessCategoryController
@@ -30,13 +31,12 @@ describe(CompanyBusinessCategoryController.name, () => {
 
   const mockService: Pick<
     CompanyBusinessCategoryService,
-    'getByCompanyId' | 'link' | 'unlink' | 'activate' | 'deactivate'
+    'getByCompanyId' | 'link' | 'unlink' | 'setActive'
   > = {
     getByCompanyId: jest.fn(),
     link: jest.fn(),
     unlink: jest.fn(),
-    activate: jest.fn(),
-    deactivate: jest.fn(),
+    setActive: jest.fn(),
   }
 
   beforeEach(async () => {
@@ -56,10 +56,12 @@ describe(CompanyBusinessCategoryController.name, () => {
     jest.clearAllMocks()
   })
 
-  it('getByCompanyId() should return array of links', async () => {
-    ;(mockService.getByCompanyId as jest.Mock).mockResolvedValue([mockLink])
-    const result = await controller.getByCompanyId('company-1')
-    expect(result).toEqual([mockLink])
+  it('getByCompanyId() should return paginated links', async () => {
+    const query: PaginatedQueryDto = { page: 1, size: 20 }
+    const paginated = { data: [mockLink], pagination: {} }
+    ;(mockService.getByCompanyId as jest.Mock).mockResolvedValue(paginated)
+    const result = await controller.getByCompanyId('company-1', query)
+    expect(result).toEqual(paginated)
   })
 
   it('link() should return created link', async () => {
@@ -80,21 +82,31 @@ describe(CompanyBusinessCategoryController.name, () => {
     })
   })
 
-  it('activate() should return link with isActive true', async () => {
-    ;(mockService.activate as jest.Mock).mockResolvedValue({
+  it('activate() should call service.setActive with true', async () => {
+    ;(mockService.setActive as jest.Mock).mockResolvedValue({
       ...mockLink,
       isActive: true,
     })
     const result = await controller.activate('company-1', 'cat-1')
+    expect(mockService.setActive).toHaveBeenCalledWith(
+      'company-1',
+      'cat-1',
+      true,
+    )
     expect(result.isActive).toBe(true)
   })
 
-  it('deactivate() should return link with isActive false', async () => {
-    ;(mockService.deactivate as jest.Mock).mockResolvedValue({
+  it('deactivate() should call service.setActive with false', async () => {
+    ;(mockService.setActive as jest.Mock).mockResolvedValue({
       ...mockLink,
       isActive: false,
     })
     const result = await controller.deactivate('company-1', 'cat-1')
+    expect(mockService.setActive).toHaveBeenCalledWith(
+      'company-1',
+      'cat-1',
+      false,
+    )
     expect(result.isActive).toBe(false)
   })
 })

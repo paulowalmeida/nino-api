@@ -1,138 +1,127 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { Company } from '@prisma/client'
+
 import { CompanyController } from './company.controller'
 import { CompanyService } from './company.service'
+import { CompanyPaginatedResponse } from './types/company-paginated-response.type'
 
 describe(CompanyController.name, () => {
   let controller: CompanyController
-  let service: CompanyService
 
-  const mockCompany = {
+  const mockCompany: Company = {
     id: 'uuid-1',
     name: 'Acme Corp',
     cnpj: '12345678000190',
     legalName: null,
-    stateRegistration: null,
     legalNature: null,
+    stateRegistration: null,
+    ownerId: 'owner-1',
+    responsibleId: 'responsible-1',
+    zipCode: null,
+    street: null,
+    number: null,
+    complement: null,
+    neighborhood: null,
+    city: null,
+    state: null,
+    country: 'BR',
     isActive: true,
     createdAt: new Date(),
     updatedAt: new Date(),
+    deletedAt: null,
   }
 
-  const mockService = {
-    getAll: jest
-      .fn()
-      .mockResolvedValue({
-        data: [mockCompany],
-        pagination: {
-          page: 1,
-          size: 20,
-          total: 1,
-          totalPages: 1,
-          previousPage: null,
-          nextPage: null,
-        },
-      }),
+  const mockPaginated: CompanyPaginatedResponse = {
+    data: [mockCompany],
+    pagination: {
+      page: 1,
+      size: 20,
+      total: 1,
+      totalPages: 1,
+      previousPage: null,
+      nextPage: null,
+    },
+  }
+
+  const mockService: Pick<
+    CompanyService,
+    'getAll' | 'getById' | 'getByField' | 'create' | 'update' | 'delete' | 'setActive'
+  > = {
+    getAll: jest.fn(),
     getById: jest.fn(),
-    getByCnpj: jest.fn(),
+    getByField: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
-    activate: jest.fn(),
-    deactivate: jest.fn(),
+    setActive: jest.fn(),
   }
 
   beforeEach(async () => {
     jest.clearAllMocks()
-
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CompanyController],
       providers: [{ provide: CompanyService, useValue: mockService }],
     }).compile()
 
     controller = module.get<CompanyController>(CompanyController)
-    service = module.get<CompanyService>(CompanyService)
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
+  it('getAll() should return paginated companies', async () => {
+    ;(mockService.getAll as jest.Mock).mockResolvedValue(mockPaginated)
+    const result = await controller.getAll({ page: 1, size: 20 })
+    expect(result).toEqual(mockPaginated)
   })
 
-  it('should return paginated companies', async () => {
-    const query = { page: 1, size: 20 }
-
-    const result = await controller.getAll(query as any)
-
-    expect(result.data).toEqual([mockCompany])
-    expect(service.getAll).toHaveBeenCalledWith(query)
-  })
-
-  it('should return company by id', async () => {
-    mockService.getById.mockResolvedValue(mockCompany)
-
+  it('getById() should return company by id', async () => {
+    ;(mockService.getById as jest.Mock).mockResolvedValue(mockCompany)
     const result = await controller.getById('uuid-1')
-
+    expect(mockService.getById).toHaveBeenCalledWith('uuid-1')
     expect(result).toEqual(mockCompany)
-    expect(service.getById).toHaveBeenCalledWith('uuid-1')
   })
 
-  it('should return company by cnpj', async () => {
-    mockService.getByCnpj.mockResolvedValue(mockCompany)
-
+  it('getByCnpj() should call getByField with cnpj', async () => {
+    ;(mockService.getByField as jest.Mock).mockResolvedValue(mockCompany)
     const result = await controller.getByCnpj('12345678000190')
-
+    expect(mockService.getByField).toHaveBeenCalledWith('cnpj', '12345678000190')
     expect(result).toEqual(mockCompany)
-    expect(service.getByCnpj).toHaveBeenCalledWith('12345678000190')
   })
 
-  it('should create a new company', async () => {
-    const createData = { name: 'New Corp', cnpj: '98765432000100' }
-    mockService.create.mockResolvedValue({ ...mockCompany, ...createData })
-
-    const result = await controller.create(createData as any)
-
-    expect(result.name).toBe('New Corp')
-    expect(service.create).toHaveBeenCalledWith(createData)
-  })
-
-  it('should update company', async () => {
-    const updateData = { name: 'Updated Corp' }
-    mockService.update.mockResolvedValue({ ...mockCompany, ...updateData })
-
-    const result = await controller.update('uuid-1', updateData as any)
-
-    expect(result.name).toBe('Updated Corp')
-    expect(service.update).toHaveBeenCalledWith('uuid-1', updateData)
-  })
-
-  it('should delete company', async () => {
-    mockService.delete.mockResolvedValue({
-      message: 'Company deleted successfully',
+  it('create() should return created company', async () => {
+    ;(mockService.create as jest.Mock).mockResolvedValue(mockCompany)
+    const result = await controller.create({
+      name: 'Acme Corp',
+      cnpj: '12345678000190',
+      ownerId: 'owner-1',
+      responsibleId: 'responsible-1',
     })
+    expect(result).toEqual(mockCompany)
+  })
 
+  it('update() should return updated company', async () => {
+    const updated = { ...mockCompany, name: 'Updated Corp' }
+    ;(mockService.update as jest.Mock).mockResolvedValue(updated)
+    const result = await controller.update('uuid-1', { name: 'Updated Corp' })
+    expect(result).toEqual(updated)
+  })
+
+  it('delete() should return success message', async () => {
+    ;(mockService.delete as jest.Mock).mockResolvedValue({ message: 'Deleted successfully' })
     const result = await controller.delete('uuid-1')
-
-    expect(result).toEqual({ message: 'Company deleted successfully' })
-    expect(service.delete).toHaveBeenCalledWith('uuid-1')
+    expect(result).toEqual({ message: 'Deleted successfully' })
   })
 
-  it('should activate company', async () => {
-    const activated = { ...mockCompany, isActive: true }
-    mockService.activate.mockResolvedValue(activated)
-
+  it('activate() should call setActive with true', async () => {
+    ;(mockService.setActive as jest.Mock).mockResolvedValue({ ...mockCompany, isActive: true })
     const result = await controller.activate('uuid-1')
-
+    expect(mockService.setActive).toHaveBeenCalledWith('uuid-1', true)
     expect(result.isActive).toBe(true)
-    expect(service.activate).toHaveBeenCalledWith('uuid-1')
   })
 
-  it('should deactivate company', async () => {
-    const deactivated = { ...mockCompany, isActive: false }
-    mockService.deactivate.mockResolvedValue(deactivated)
-
+  it('deactivate() should call setActive with false', async () => {
+    ;(mockService.setActive as jest.Mock).mockResolvedValue({ ...mockCompany, isActive: false })
     const result = await controller.deactivate('uuid-1')
-
+    expect(mockService.setActive).toHaveBeenCalledWith('uuid-1', false)
     expect(result.isActive).toBe(false)
-    expect(service.deactivate).toHaveBeenCalledWith('uuid-1')
   })
 })

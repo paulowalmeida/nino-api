@@ -1,144 +1,167 @@
-import { ConflictException, NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { PaginationMeta } from '@shared/types/pagination-meta.type'
+
+import { UserTenantQueryDto } from './dtos/user-tenant-query.dto'
+import { UserTenantFull } from './types/user-tenant-full.type'
+import { UserTenantResponse } from './types/user-tenant.response.type'
 import { UserTenantRepository } from './user-tenant.repository'
 import { UserTenantService } from './user-tenant.service'
 
 describe(UserTenantService.name, () => {
   let service: UserTenantService
-  let repository: UserTenantRepository
 
-  const mockUserTenantResponse = {
-    tenantId: 'tenant-uuid-1',
+  const mockFull: UserTenantFull = {
+    userId: 'user-1',
+    tenantId: 'tenant-1',
+    tenantRoleId: 'role-1',
     isCurrent: false,
     createdAt: new Date(),
     updatedAt: new Date(),
     deletedAt: null,
-    tenantRole: { id: 'role-uuid-1', name: 'OWNER' },
+    tenantRole: {
+      id: 'role-1',
+      name: 'OWNER',
+      description: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      deletedAt: null,
+    },
     user: {
-      id: 'user-uuid-1',
+      id: 'user-1',
       name: 'Paulo',
       phone: null,
       isActive: true,
       lastLoginAt: null,
       locale: null,
       timezone: null,
+      globalRoleId: 'global-role-1',
       createdAt: new Date(),
       updatedAt: new Date(),
-      role: { id: 'global-role-id', name: 'MERCHANT' },
+      deletedAt: null,
+      globalRole: {
+        id: 'global-role-1',
+        name: 'MERCHANT',
+        description: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      },
       credentials: [],
     },
   }
 
-  const mockRepository = {
-    create: jest.fn(),
-    getByUserId: jest.fn(),
-    getByTenantId: jest.fn(),
-    delete: jest.fn(),
+  const mockResponse: UserTenantResponse = {
+    tenantId: 'tenant-1',
+    isCurrent: false,
+    createdAt: mockFull.createdAt,
+    updatedAt: mockFull.updatedAt,
+    deletedAt: null,
+    tenantRole: mockFull.tenantRole,
+    user: {
+      id: 'user-1',
+      name: 'Paulo',
+      phone: null,
+      isActive: true,
+      lastLoginAt: null,
+      locale: null,
+      timezone: null,
+      createdAt: mockFull.user.createdAt,
+      updatedAt: mockFull.user.updatedAt,
+      role: mockFull.user.globalRole,
+      credentials: [],
+    },
+  }
+
+  const mockMeta: PaginationMeta = {
+    total: 1,
+    page: 1,
+    size: 20,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
+  }
+
+  const include = {
+    tenantRole: true,
+    user: { include: { globalRole: true, credentials: true } },
+  } as const
+
+  const mockRepo: Pick<
+    UserTenantRepository,
+    'findAllPaginated' | 'insert' | 'softDelete'
+  > = {
+    findAllPaginated: jest.fn(),
+    insert: jest.fn().mockResolvedValue(mockFull),
+    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
+    jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserTenantService,
-        { provide: UserTenantRepository, useValue: mockRepository },
+        { provide: UserTenantRepository, useValue: mockRepo },
       ],
     }).compile()
 
     service = module.get<UserTenantService>(UserTenantService)
-    repository = module.get<UserTenantRepository>(UserTenantRepository)
   })
 
-  afterEach(() => jest.clearAllMocks())
-
-  it('create() should create and return UserTenantResponse', async () => {
-    mockRepository.create.mockResolvedValue(mockUserTenantResponse)
+  it('create() should insert and return mapped response', async () => {
     const dto = {
-      userId: 'user-uuid-1',
-      tenantId: 'tenant-uuid-1',
-      tenantRoleId: 'role-uuid-1',
+      userId: 'user-1',
+      tenantId: 'tenant-1',
+      tenantRoleId: 'role-1',
     }
-
     const result = await service.create(dto)
-
-    expect(result).toEqual(mockUserTenantResponse)
-    expect(repository.create).toHaveBeenCalledWith(dto)
+    expect(mockRepo.insert).toHaveBeenCalledWith({ data: dto, include })
+    expect(result).toEqual(mockResponse)
   })
 
-  it('create() should throw ConflictException if already linked', async () => {
-    mockRepository.create.mockRejectedValue(
-      new ConflictException('User is already linked to this tenant'),
-    )
-
-    await expect(
-      service.create({
-        userId: 'user-uuid-1',
-        tenantId: 'tenant-uuid-1',
-        tenantRoleId: 'role-uuid-1',
-      }),
-    ).rejects.toThrow(ConflictException)
-  })
-
-  it('getByUserId() should return paginated list for a user', async () => {
-    const paginated = {
-      data: [mockUserTenantResponse],
-      pagination: {
-        page: 1,
-        size: 20,
-        total: 1,
-        totalPages: 1,
-        previousPage: null,
-        nextPage: null,
-      },
-    }
-    mockRepository.getByUserId.mockResolvedValue(paginated)
-    const query = { page: 1, size: 20 }
-
-    const result = await service.getByUserId('user-uuid-1', query)
-
-    expect(result).toEqual(paginated)
-    expect(repository.getByUserId).toHaveBeenCalledWith('user-uuid-1', query)
-  })
-
-  it('getByTenantId() should return paginated list for a tenant', async () => {
-    const paginated = {
-      data: [mockUserTenantResponse],
-      pagination: {
-        page: 1,
-        size: 20,
-        total: 1,
-        totalPages: 1,
-        previousPage: null,
-        nextPage: null,
-      },
-    }
-    mockRepository.getByTenantId.mockResolvedValue(paginated)
-    const query = { page: 1, size: 20 }
-
-    const result = await service.getByTenantId('tenant-uuid-1', query)
-
-    expect(result).toEqual(paginated)
-    expect(repository.getByTenantId).toHaveBeenCalledWith('tenant-uuid-1', query)
-  })
-
-  it('delete() should remove link and return message', async () => {
-    mockRepository.delete.mockResolvedValue({
-      message: 'UserTenant link removed successfully',
+  it('getByUserId() should return paginated user-tenant list', async () => {
+    ;(mockRepo.findAllPaginated as jest.Mock).mockResolvedValue({
+      data: [mockFull],
+      pagination: mockMeta,
     })
-
-    const result = await service.delete('user-uuid-1', 'tenant-uuid-1')
-
-    expect(result).toEqual({ message: 'UserTenant link removed successfully' })
-    expect(repository.delete).toHaveBeenCalledWith('user-uuid-1', 'tenant-uuid-1')
+    const query: UserTenantQueryDto = { page: 1, size: 20 }
+    const result = await service.getByUserId('user-1', query)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      page: 1,
+      size: 20,
+      where: { userId: 'user-1' },
+      order: { target: 'createdAt', direction: 'asc' },
+      include,
+      ignoreDeleted: true,
+    })
+    expect(result.data).toEqual([mockResponse])
+    expect(result.pagination).toEqual(mockMeta)
   })
 
-  it('delete() should throw NotFoundException if not found', async () => {
-    mockRepository.delete.mockRejectedValue(
-      new NotFoundException('UserTenant link not found'),
-    )
+  it('getByTenantId() should return paginated user-tenant list', async () => {
+    ;(mockRepo.findAllPaginated as jest.Mock).mockResolvedValue({
+      data: [mockFull],
+      pagination: mockMeta,
+    })
+    const query: UserTenantQueryDto = { page: 1, size: 20 }
+    const result = await service.getByTenantId('tenant-1', query)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      page: 1,
+      size: 20,
+      where: { tenantId: 'tenant-1' },
+      order: { target: 'createdAt', direction: 'asc' },
+      include,
+      ignoreDeleted: true,
+    })
+    expect(result.data).toEqual([mockResponse])
+    expect(result.pagination).toEqual(mockMeta)
+  })
 
-    await expect(
-      service.delete('user-uuid-1', 'tenant-uuid-1'),
-    ).rejects.toThrow(NotFoundException)
+  it('delete() should softDelete via composite key', async () => {
+    const result = await service.delete('user-1', 'tenant-1')
+    expect(mockRepo.softDelete).toHaveBeenCalledWith({
+      userId_tenantId: { userId: 'user-1', tenantId: 'tenant-1' },
+    })
+    expect(result).toEqual({ message: 'Deleted successfully' })
   })
 })

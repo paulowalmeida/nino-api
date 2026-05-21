@@ -4,10 +4,13 @@ import { CustomerAddress } from '@prisma/client'
 
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+import { PaginationMeta } from '@shared/types/pagination-meta.type'
+import { PaginatedResponse } from '@shared/types/paginated-response.type'
 
-import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
+import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { CustomerAddressController } from './customer-address.controller'
 import { CustomerAddressService } from './customer-address.service'
+import { CreateCustomerAddressDto } from './dtos/create-customer-address.dto'
 
 describe(CustomerAddressController.name, () => {
   let controller: CustomerAddressController
@@ -29,12 +32,25 @@ describe(CustomerAddressController.name, () => {
     deletedAt: null,
   }
 
+  const mockMeta: PaginationMeta = {
+    total: 1,
+    page: 1,
+    size: 10,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
+  }
+
+  const mockPaginated: PaginatedResponse<CustomerAddress> = {
+    data: [mockAddress],
+    pagination: mockMeta,
+  }
+
   const mockService: Pick<
     CustomerAddressService,
-    'getAll' | 'getById' | 'create' | 'update' | 'delete'
+    'getAll' | 'create' | 'update' | 'delete'
   > = {
-    getAll: jest.fn().mockResolvedValue([mockAddress]),
-    getById: jest.fn().mockResolvedValue(mockAddress),
+    getAll: jest.fn().mockResolvedValue(mockPaginated),
     create: jest.fn().mockResolvedValue(mockAddress),
     update: jest.fn().mockResolvedValue(mockAddress),
     delete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
@@ -59,10 +75,11 @@ describe(CustomerAddressController.name, () => {
     )
   })
 
-  it('getAll() should return addresses for a customer', async () => {
-    const result = await controller.getAll('customer-1')
-    expect(mockService.getAll).toHaveBeenCalledWith('customer-1')
-    expect(result).toEqual([mockAddress])
+  it('getAll() should return paginated addresses for a customer', async () => {
+    const query = { page: 1, size: 10 }
+    const result = await controller.getAll('customer-1', query)
+    expect(mockService.getAll).toHaveBeenCalledWith('customer-1', query)
+    expect(result).toEqual(mockPaginated)
   })
 
   it('create() should inject customerId from param', async () => {
@@ -73,6 +90,7 @@ describe(CustomerAddressController.name, () => {
       neighborhood: 'Bela Vista',
       city: 'São Paulo',
       state: 'SP',
+      customerId: 'customer-1',
     }
     const result = await controller.create('customer-1', dto)
     expect(mockService.create).toHaveBeenCalledWith({

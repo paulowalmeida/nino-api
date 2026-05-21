@@ -14,6 +14,7 @@ import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+
 import { CreateUserDto } from './dtos/create-user.dto'
 import { UpdateUserDto } from './dtos/update-user.dto'
 import { UserQueryDto } from './dtos/user-query.dto'
@@ -24,24 +25,24 @@ import { UserService } from './user.service'
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly service: UserService) {}
 
   @Post()
   @Roles(GlobalRole.ADMIN)
   async create(@Body() createDto: CreateUserDto): Promise<UserResponse> {
-    return await this.userService.create(createDto)
+    return this.service.create(createDto)
   }
 
   @Get()
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
   async getAll(@Query() query: UserQueryDto): Promise<UserPaginatedResponse> {
-    return await this.userService.getAll(query)
+    return this.service.getAll(query)
   }
 
   @Get(':id')
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   async getById(@Param('id') id: string): Promise<UserResponse> {
-    return await this.userService.getById(id)
+    return this.service.getById(id)
   }
 
   @Get('company/:companyId')
@@ -49,7 +50,7 @@ export class UserController {
   async getByCompanyId(
     @Param('companyId') companyId: string,
   ): Promise<UserResponse[]> {
-    return await this.userService.getByCompanyId(companyId)
+    return this.service.getByCompanyId(companyId)
   }
 
   @Patch(':id')
@@ -58,12 +59,12 @@ export class UserController {
     @Param('id') id: string,
     @Body() updateDto: UpdateUserDto,
   ): Promise<UserResponse> {
-    return this.userService.update(id, updateDto)
+    return this.service.update(id, updateDto)
   }
 
   @Delete(':id')
   @Roles(GlobalRole.ADMIN)
   async delete(@Param('id') id: string): Promise<{ message: string }> {
-    return this.userService.delete(id)
+    return this.service.delete(id)
   }
 }
