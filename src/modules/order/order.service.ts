@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common'
 
-import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
-
 import { OrderRepository } from './order.repository'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { QueryOrderDto } from './dtos/query-order.dto'
