@@ -16,9 +16,9 @@ import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 
 import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
+import { LoyaltyTransactionService } from './loyalty-transaction.service'
 import { CreateLoyaltyTransactionDto } from './dtos/create-loyalty-transaction.dto'
 import { LoyaltyTransactionQueryDto } from './dtos/loyalty-transaction-query.dto'
-import { LoyaltyTransactionService } from './loyalty-transaction.service'
 import { LoyaltyTransactionPaginatedResponse } from './types/loyalty-transaction-paginated-response.type'
 
 @Controller('customers/:customerId/loyalty-transactions')

@@ -1,21 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common'
 
 @Injectable()
 export class CnpjMockService {
   getOne() {
-    return { cnpj: CnpjMockService.generateFakeCnpj() };
+    return { cnpj: CnpjMockService.generateFakeCnpj() }
   }
 
   findMany(count: number) {
     // Mesma trava de segurança para não explodir a memória
     const safeCount = count ?? 10
-    
+
     return Array.from({ length: safeCount }, () => ({
       cnpj: CnpjMockService.generateFakeCnpj(),
-    }));
+    }))
   }
 
-   static generateFakeCnpj = (): string => {
+  static generateFakeCnpj = (): string => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
     const nums = '0123456789'
 

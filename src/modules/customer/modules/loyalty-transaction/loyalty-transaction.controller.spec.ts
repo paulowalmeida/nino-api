@@ -2,13 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { LoyaltyTransaction } from '@prisma/client'
 
+import { LoyaltyTransactionType } from '@shared/enums/loyalty-transaction-type.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 
-import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
+import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { LoyaltyTransactionController } from './loyalty-transaction.controller'
 import { LoyaltyTransactionService } from './loyalty-transaction.service'
 import { LoyaltyTransactionPaginatedResponse } from './types/loyalty-transaction-paginated-response.type'
+import { CreateLoyaltyTransactionDto } from './dtos/create-loyalty-transaction.dto'
 
 describe(LoyaltyTransactionController.name, () => {
   let controller: LoyaltyTransactionController
@@ -26,7 +28,14 @@ describe(LoyaltyTransactionController.name, () => {
 
   const mockPaginated: LoyaltyTransactionPaginatedResponse = {
     data: [mockTransaction],
-    pagination: { total: 1, page: 1, size: 20, pages: 1 },
+    pagination: {
+      total: 1,
+      page: 1,
+      size: 20,
+      totalPages: 1,
+      previousPage: null,
+      nextPage: null,
+    },
   }
 
   const mockService: Pick<LoyaltyTransactionService, 'getAll' | 'create'> = {
@@ -63,7 +72,11 @@ describe(LoyaltyTransactionController.name, () => {
   })
 
   it('create() should create a loyalty transaction', async () => {
-    const dto = { tenantId: 'tenant-1', type: 'EARN', points: 100 }
+    const dto: CreateLoyaltyTransactionDto = {
+      tenantId: 'tenant-1',
+      type: LoyaltyTransactionType.EARN,
+      points: 100,
+    }
     const result = await controller.create('customer-1', dto)
     expect(mockService.create).toHaveBeenCalledWith('customer-1', dto)
     expect(result).toEqual(mockTransaction)

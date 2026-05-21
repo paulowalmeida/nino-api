@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { OpeningHours } from '@prisma/client'
 
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
+import { PaginationMeta } from '@shared/types/pagination-meta.type'
+
 import { OpeningHoursRepository } from './opening-hours.repository'
 import { OpeningHoursService } from './opening-hours.service'
 
@@ -20,15 +23,19 @@ describe(OpeningHoursService.name, () => {
     deletedAt: null,
   }
 
+  const mockMeta: PaginationMeta = {
+    total: 1, page: 1, size: 10, totalPages: 1, previousPage: null, nextPage: null,
+  }
+
   const mockRepo: Pick<
     OpeningHoursRepository,
-    'getAll' | 'getById' | 'create' | 'update' | 'delete'
+    'findAllPaginated' | 'findItem' | 'insert' | 'updateItem' | 'softDelete'
   > = {
-    getAll: jest.fn().mockResolvedValue([mockOpeningHours]),
-    getById: jest.fn().mockResolvedValue(mockOpeningHours),
-    create: jest.fn().mockResolvedValue(mockOpeningHours),
-    update: jest.fn().mockResolvedValue(mockOpeningHours),
-    delete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    findAllPaginated: jest.fn(),
+    findItem: jest.fn().mockResolvedValue(mockOpeningHours),
+    insert: jest.fn().mockResolvedValue(mockOpeningHours),
+    updateItem: jest.fn().mockResolvedValue(mockOpeningHours),
+    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -43,19 +50,30 @@ describe(OpeningHoursService.name, () => {
     service = module.get<OpeningHoursService>(OpeningHoursService)
   })
 
-  it('getAll() should delegate to repository', async () => {
-    const result = await service.getAll('tenant-1')
-    expect(mockRepo.getAll).toHaveBeenCalledWith('tenant-1')
-    expect(result).toEqual([mockOpeningHours])
+  it('getAll() should return paginated opening hours ordered by day', async () => {
+    ;(mockRepo.findAllPaginated as jest.Mock).mockResolvedValue({
+      data: [mockOpeningHours],
+      pagination: mockMeta,
+    })
+    const query: PaginatedQueryDto = { page: 1, size: 10 }
+    const result = await service.getAll('tenant-1', query)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1' },
+      order: { target: 'dayOfWeek', direction: 'asc' },
+      page: 1,
+      size: 10,
+    })
+    expect(result.data).toEqual([mockOpeningHours])
+    expect(result.pagination).toEqual(mockMeta)
   })
 
-  it('getById() should delegate to repository', async () => {
+  it('getById() should return opening hours by id', async () => {
     const result = await service.getById('oh-1')
-    expect(mockRepo.getById).toHaveBeenCalledWith('oh-1')
+    expect(mockRepo.findItem).toHaveBeenCalledWith({ where: { id: 'oh-1' } })
     expect(result).toEqual(mockOpeningHours)
   })
 
-  it('create() should delegate to repository', async () => {
+  it('create() should create opening hours', async () => {
     const dto = {
       tenantId: 'tenant-1',
       dayOfWeek: 1,
@@ -63,20 +81,23 @@ describe(OpeningHoursService.name, () => {
       closeTime: '18:00',
     }
     const result = await service.create(dto)
-    expect(mockRepo.create).toHaveBeenCalledWith(dto)
+    expect(mockRepo.insert).toHaveBeenCalledWith({ data: dto })
     expect(result).toEqual(mockOpeningHours)
   })
 
-  it('update() should delegate to repository', async () => {
+  it('update() should update opening hours', async () => {
     const dto = { isOpen: false }
     const result = await service.update('oh-1', dto)
-    expect(mockRepo.update).toHaveBeenCalledWith('oh-1', dto)
+    expect(mockRepo.updateItem).toHaveBeenCalledWith({
+      where: { id: 'oh-1' },
+      data: dto,
+    })
     expect(result).toEqual(mockOpeningHours)
   })
 
-  it('delete() should delegate to repository', async () => {
+  it('delete() should soft delete with id object', async () => {
     const result = await service.delete('oh-1')
-    expect(mockRepo.delete).toHaveBeenCalledWith('oh-1')
+    expect(mockRepo.softDelete).toHaveBeenCalledWith({ id: 'oh-1' })
     expect(result).toEqual({ message: 'Deleted successfully' })
   })
 })

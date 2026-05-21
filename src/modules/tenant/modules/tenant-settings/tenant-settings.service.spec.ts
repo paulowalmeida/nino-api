@@ -29,11 +29,13 @@ describe(TenantSettingsService.name, () => {
 
   const mockRepo: Pick<
     TenantSettingsRepository,
-    'getByTenantId' | 'upsert' | 'delete'
+    'findItem' | 'exists' | 'insert' | 'updateItem' | 'softDelete'
   > = {
-    getByTenantId: jest.fn().mockResolvedValue(mockSettings),
-    upsert: jest.fn().mockResolvedValue(mockSettings),
-    delete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    findItem: jest.fn().mockResolvedValue(mockSettings),
+    exists: jest.fn(),
+    insert: jest.fn().mockResolvedValue(mockSettings),
+    updateItem: jest.fn().mockResolvedValue(mockSettings),
+    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -48,22 +50,41 @@ describe(TenantSettingsService.name, () => {
     service = module.get<TenantSettingsService>(TenantSettingsService)
   })
 
-  it('getByTenantId() should delegate to repository', async () => {
+  it('getByTenantId() should find settings by tenantId', async () => {
     const result = await service.getByTenantId('tenant-1')
-    expect(mockRepo.getByTenantId).toHaveBeenCalledWith('tenant-1')
+    expect(mockRepo.findItem).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1' },
+    })
     expect(result).toEqual(mockSettings)
   })
 
-  it('upsert() should delegate to repository', async () => {
+  it('upsert() should update when settings already exist', async () => {
+    ;(mockRepo.exists as jest.Mock).mockResolvedValue(true)
     const dto = { isDeliveryEnabled: false }
     const result = await service.upsert('tenant-1', dto)
-    expect(mockRepo.upsert).toHaveBeenCalledWith('tenant-1', dto)
+    expect(mockRepo.exists).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1' },
+    })
+    expect(mockRepo.updateItem).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1' },
+      data: dto,
+    })
     expect(result).toEqual(mockSettings)
   })
 
-  it('delete() should delegate to repository', async () => {
+  it('upsert() should insert when settings do not exist', async () => {
+    ;(mockRepo.exists as jest.Mock).mockResolvedValue(false)
+    const dto = { isDeliveryEnabled: true }
+    const result = await service.upsert('tenant-1', dto)
+    expect(mockRepo.insert).toHaveBeenCalledWith({
+      data: { tenantId: 'tenant-1', ...dto },
+    })
+    expect(result).toEqual(mockSettings)
+  })
+
+  it('delete() should soft delete with id object', async () => {
     const result = await service.delete('settings-1')
-    expect(mockRepo.delete).toHaveBeenCalledWith('settings-1')
+    expect(mockRepo.softDelete).toHaveBeenCalledWith({ id: 'settings-1' })
     expect(result).toEqual({ message: 'Deleted successfully' })
   })
 })

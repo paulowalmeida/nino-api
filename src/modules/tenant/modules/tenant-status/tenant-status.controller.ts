@@ -6,53 +6,54 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common'
-
-import { TenantStatus } from '@prisma/client'
 
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
-import { CreateTenantStatusDto } from './dtos/create-tenant-status.dto'
-import { UpdateTenantStatusDto } from './dtos/update-tenant-status.dto'
-import { TenantStatusService } from './tenant-status.service'
+import { CommonQueryDto } from '@shared/modules/common/dtos/common-query.dto'
+import { CreateCommonDto } from '@shared/modules/common/dtos/create-common.dto'
+import { UpdateCommonDto } from '@shared/modules/common/dtos/update-common.dto'
+import { CommonService } from '@shared/modules/common/common.service'
+import { CommonEntity } from '@shared/modules/common/types/common-entity.type'
 
 @Controller('tenant-statuses')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class TenantStatusController {
-  constructor(private service: TenantStatusService) {}
+  constructor(private readonly service: CommonService) {}
 
-  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   @Get()
-  async getAll(): Promise<TenantStatus[]> {
-    return this.service.getAll()
-  }
-
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
-  @Get(':id')
-  async getById(@Param('id') id: string): Promise<TenantStatus> {
-    return this.service.getById(id)
+  async getAll(@Query() query: CommonQueryDto): Promise<CommonEntity[]> {
+    return this.service.getAll(query.order)
   }
 
-  @Roles(GlobalRole.ADMIN)
+  @Get(':id')
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
+  async getById(@Param('id') id: string): Promise<CommonEntity> {
+    return this.service.getByField('id', id)
+  }
+
   @Post()
-  async create(@Body() body: CreateTenantStatusDto): Promise<TenantStatus> {
+  @Roles(GlobalRole.ADMIN)
+  async create(@Body() body: CreateCommonDto): Promise<CommonEntity> {
     return this.service.create(body)
   }
 
-  @Roles(GlobalRole.ADMIN)
   @Put(':id')
+  @Roles(GlobalRole.ADMIN)
   async update(
     @Param('id') id: string,
-    @Body() body: UpdateTenantStatusDto,
-  ): Promise<TenantStatus> {
+    @Body() body: UpdateCommonDto,
+  ): Promise<CommonEntity> {
     return this.service.update(id, body)
   }
 
-  @Roles(GlobalRole.ADMIN)
   @Delete(':id')
+  @Roles(GlobalRole.ADMIN)
   async delete(@Param('id') id: string): Promise<{ message: string }> {
     return this.service.delete(id)
   }

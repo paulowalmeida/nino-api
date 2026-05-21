@@ -16,7 +16,7 @@ import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
-import { BusinessCategoryQueryDto } from './dtos/business-category-query.dto'
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { CreateBusinessCategoryDto } from './dtos/create-business-category.dto'
 import { UpdateBusinessCategoryDto } from './dtos/update-business-category.dto'
 import { BusinessCategoryService } from './business-category.service'
@@ -30,7 +30,7 @@ export class BusinessCategoryController {
   @Get()
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   getAll(
-    @Query() query: BusinessCategoryQueryDto,
+    @Query() query: PaginatedQueryDto,
   ): Promise<BusinessCategoryPaginatedResponse> {
     return this.service.getAll(query)
   }
@@ -43,9 +43,7 @@ export class BusinessCategoryController {
 
   @Post()
   @Roles(GlobalRole.ADMIN)
-  create(
-    @Body() body: CreateBusinessCategoryDto,
-  ): Promise<BusinessCategory> {
+  create(@Body() body: CreateBusinessCategoryDto): Promise<BusinessCategory> {
     return this.service.create(body)
   }
 

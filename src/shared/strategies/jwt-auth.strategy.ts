@@ -34,8 +34,7 @@ export class JwtAuthStrategy extends PassportStrategy(Strategy) {
     payloadDecoded: UserTokenData,
   ): Promise<UserTokenData> {
     try {
-      const user = await this.userRepository.getById(payloadDecoded.sub)
-      if (!user) throw new UnauthorizedException('Token inválido.')
+      await this.userRepository.findItem({ where: { id: payloadDecoded.sub } })
     } catch {
       throw new UnauthorizedException('Token inválido.')
     }

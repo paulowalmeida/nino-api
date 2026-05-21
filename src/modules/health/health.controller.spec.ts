@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { HealthCheckService } from '@nestjs/terminus'
 
 import { PrismaService } from '@shared/services/prisma/prisma.service'
+
 import { HealthController } from './health.controller'
 
 describe(HealthController.name, () => {

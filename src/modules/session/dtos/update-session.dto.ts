@@ -6,6 +6,14 @@ export class UpdateSessionDto {
   refreshToken?: string
 
   @IsOptional()
+  @IsString()
+  ipAddress?: string
+
+  @IsOptional()
+  @IsString()
+  userAgent?: string
+
+  @IsOptional()
   @IsDateString()
   expiresAt?: Date | string
 }

@@ -6,54 +6,55 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common'
-
-import { PlanType } from '@prisma/client'
 
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
-import { CreatePlanTypeDto } from './dtos/create-plan-type.dto'
-import { UpdatePlanTypeDto } from './dtos/update-plan-type.dto'
-import { PlanTypeService } from './plan-type.service'
+import { CommonQueryDto } from '@shared/modules/common/dtos/common-query.dto'
+import { CreateCommonDto } from '@shared/modules/common/dtos/create-common.dto'
+import { UpdateCommonDto } from '@shared/modules/common/dtos/update-common.dto'
+import { CommonService } from '@shared/modules/common/common.service'
+import { CommonEntity } from '@shared/modules/common/types/common-entity.type'
 
 @Controller('plan-types')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class PlanTypeController {
-  constructor(private service: PlanTypeService) {}
+  constructor(private readonly service: CommonService) {}
 
-  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   @Get()
-  getAll(): Promise<PlanType[]> {
-    return this.service.getAll()
-  }
-
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
-  @Get(':id')
-  getById(@Param('id') id: string): Promise<PlanType> {
-    return this.service.getById(id)
+  async getAll(@Query() query: CommonQueryDto): Promise<CommonEntity[]> {
+    return this.service.getAll(query.order)
   }
 
-  @Roles(GlobalRole.ADMIN)
+  @Get(':id')
+  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
+  async getById(@Param('id') id: string): Promise<CommonEntity> {
+    return this.service.getByField('id', id)
+  }
+
   @Post()
-  create(@Body() body: CreatePlanTypeDto): Promise<PlanType> {
+  @Roles(GlobalRole.ADMIN)
+  async create(@Body() body: CreateCommonDto): Promise<CommonEntity> {
     return this.service.create(body)
   }
 
-  @Roles(GlobalRole.ADMIN)
   @Put(':id')
-  update(
+  @Roles(GlobalRole.ADMIN)
+  async update(
     @Param('id') id: string,
-    @Body() body: UpdatePlanTypeDto,
-  ): Promise<PlanType> {
+    @Body() body: UpdateCommonDto,
+  ): Promise<CommonEntity> {
     return this.service.update(id, body)
   }
 
-  @Roles(GlobalRole.ADMIN)
   @Delete(':id')
-  delete(@Param('id') id: string): Promise<{ message: string }> {
+  @Roles(GlobalRole.ADMIN)
+  async delete(@Param('id') id: string): Promise<{ message: string }> {
     return this.service.delete(id)
   }
 }

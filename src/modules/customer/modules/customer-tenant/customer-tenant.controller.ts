@@ -5,19 +5,22 @@ import {
   Get,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 
 import { CustomerTenant } from '@prisma/client'
 
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 
-import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
-import { CreateCustomerTenantDto } from './dtos/create-customer-tenant.dto'
+import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { CustomerTenantService } from './customer-tenant.service'
+import { CreateCustomerTenantDto } from './dtos/create-customer-tenant.dto'
+import { CustomerTenantPaginatedResponse } from './types/customer-tenant-paginated-response.type'
 
 @Controller('customers/:customerId/tenants')
 @UseGuards(JwtAuthGuard, RolesGuard, CustomerOwnerGuard)
@@ -28,8 +31,9 @@ export class CustomerTenantController {
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.CUSTOMER)
   async getAll(
     @Param('customerId') customerId: string,
-  ): Promise<CustomerTenant[]> {
-    return this.service.getAll(customerId)
+    @Query() query: PaginatedQueryDto,
+  ): Promise<CustomerTenantPaginatedResponse> {
+    return this.service.getAll(customerId, query)
   }
 
   @Post()

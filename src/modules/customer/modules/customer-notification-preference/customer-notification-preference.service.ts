@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common'
 
 import { CustomerNotificationPreference } from '@prisma/client'
 
-import { UpsertCustomerNotificationPreferenceDto } from './dtos/upsert-customer-notification-preference.dto'
 import { CustomerNotificationPreferenceRepository } from './customer-notification-preference.repository'
+import { UpsertCustomerNotificationPreferenceDto } from './dtos/upsert-customer-notification-preference.dto'
 
 @Injectable()
 export class CustomerNotificationPreferenceService {
@@ -11,10 +11,10 @@ export class CustomerNotificationPreferenceService {
     private readonly repo: CustomerNotificationPreferenceRepository,
   ) {}
 
-  async getAll(
-    customerId: string,
-  ): Promise<CustomerNotificationPreference[]> {
-    return this.repo.getAll(customerId)
+  async getAll(customerId: string): Promise<CustomerNotificationPreference[]> {
+    return this.repo.findAll<CustomerNotificationPreference>({
+      where: { customerId },
+    })
   }
 
   async upsert(
@@ -22,13 +22,39 @@ export class CustomerNotificationPreferenceService {
     notificationTypeId: string,
     data: UpsertCustomerNotificationPreferenceDto,
   ): Promise<CustomerNotificationPreference> {
-    return this.repo.upsert(customerId, notificationTypeId, data)
+    const existing = await this.repo
+      .findItem<CustomerNotificationPreference>({
+        where: { customerId, notificationTypeId },
+      })
+      .catch(() => null)
+
+    if (existing) {
+      return this.repo.updateItem<
+        UpsertCustomerNotificationPreferenceDto,
+        CustomerNotificationPreference
+      >({
+        where: {
+          customerId_notificationTypeId: { customerId, notificationTypeId },
+        },
+        data,
+      })
+    }
+
+    return this.repo.insert<
+      UpsertCustomerNotificationPreferenceDto & {
+        customerId: string
+        notificationTypeId: string
+      },
+      CustomerNotificationPreference
+    >({ data: { ...data, customerId, notificationTypeId } })
   }
 
   async delete(
     customerId: string,
     notificationTypeId: string,
   ): Promise<{ message: string }> {
-    return this.repo.delete(customerId, notificationTypeId)
+    return this.repo.softDelete({
+      customerId_notificationTypeId: { customerId, notificationTypeId },
+    })
   }
 }

@@ -1,26 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { Company } from '@prisma/client'
+
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
+import { PaginationMeta } from '@shared/types/pagination-meta.type'
+
 import { CompanyResponsibleRepository } from './company-responsible.repository'
 import { CompanyResponsibleService } from './company-responsible.service'
-import { CreateCompanyResponsibleDto } from './dto/create-company-responsible.dto'
-import { UpdateCompanyResponsibleDto } from './dto/update-company-responsible.dto'
+import { CompanyResponsibleWithCompanies } from './types/company-responsible-with-companies.type'
+import { CompanyResponsibleResponse } from './types/company-responsible.type'
 
 describe(CompanyResponsibleService.name, () => {
   let service: CompanyResponsibleService
-  let repository: CompanyResponsibleRepository
 
-  const mockResponsible = {
-    id: '123',
-    name: 'John Doe',
-    cpf: '12345678900',
-    email: 'john@example.com',
-    phone: '11999999999',
+  const mockCompany: Company = {
+    id: 'company-1',
+    name: 'Acme',
     cnpj: '12345678000190',
     legalName: null,
     legalNature: null,
     stateRegistration: null,
     ownerId: 'owner-1',
-    responsibleId: null,
+    responsibleId: 'responsible-1',
     zipCode: null,
     street: null,
     number: null,
@@ -35,119 +36,143 @@ describe(CompanyResponsibleService.name, () => {
     deletedAt: null,
   }
 
-  const mockRepository = {
-    getAll: jest.fn(),
-    getById: jest.fn(),
-    getByCpf: jest.fn(),
-    existsByCpf: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
+  const mockRaw: CompanyResponsibleWithCompanies = {
+    id: 'uuid-1',
+    name: 'John Doe',
+    cpf: '12345678900',
+    email: 'john@example.com',
+    phone: '11999999999',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    companies: [mockCompany],
+  }
+
+  const mockResponse: CompanyResponsibleResponse = {
+    id: 'uuid-1',
+    name: 'John Doe',
+    cpf: '12345678900',
+    email: 'john@example.com',
+    phone: '11999999999',
+    createdAt: mockRaw.createdAt,
+    updatedAt: mockRaw.updatedAt,
+    companies: [mockCompany],
+  }
+
+  const mockMeta: PaginationMeta = {
+    total: 1,
+    page: 1,
+    size: 10,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
+  }
+
+  const include = { companies: true }
+
+  const mockRepo: Pick<
+    CompanyResponsibleRepository,
+    | 'findAllPaginated'
+    | 'findItem'
+    | 'exists'
+    | 'insert'
+    | 'updateItem'
+    | 'softDelete'
+  > = {
+    findAllPaginated: jest.fn(),
+    findItem: jest.fn(),
+    exists: jest.fn(),
+    insert: jest.fn(),
+    updateItem: jest.fn(),
+    softDelete: jest.fn(),
   }
 
   beforeEach(async () => {
+    jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CompanyResponsibleService,
-        {
-          provide: CompanyResponsibleRepository,
-          useValue: mockRepository,
-        },
+        { provide: CompanyResponsibleRepository, useValue: mockRepo },
       ],
     }).compile()
 
     service = module.get<CompanyResponsibleService>(CompanyResponsibleService)
-    repository = module.get<CompanyResponsibleRepository>(
-      CompanyResponsibleRepository,
-    )
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
+  it('getAll() should return paginated responsibles without deletedAt', async () => {
+    ;(mockRepo.findAllPaginated as jest.Mock).mockResolvedValue({
+      data: [mockRaw],
+      pagination: mockMeta,
+    })
+    const query: PaginatedQueryDto = { page: 1, size: 10 }
+    const result = await service.getAll(query)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      page: 1,
+      size: 10,
+      order: { target: 'name', direction: 'asc' },
+      include,
+    })
+    expect(result.data).toEqual([mockResponse])
+    expect(result.pagination).toEqual(mockMeta)
   })
 
-  it('should return array of company responsibles', async () => {
-    mockRepository.getAll.mockResolvedValue([mockResponsible])
-
-    const result = await service.getAll()
-
-    expect(result).toEqual([mockResponsible])
-    expect(repository.getAll).toHaveBeenCalledTimes(1)
+  it('getByField() should return responsible by field', async () => {
+    ;(mockRepo.findItem as jest.Mock).mockResolvedValue(mockRaw)
+    const result = await service.getByField('id', 'uuid-1')
+    expect(mockRepo.findItem).toHaveBeenCalledWith({
+      where: { id: 'uuid-1' },
+      include,
+    })
+    expect(result).toEqual(mockResponse)
   })
 
-  it('should return company responsible by id', async () => {
-    mockRepository.getById.mockResolvedValue(mockResponsible)
-
-    const result = await service.getById('123')
-
-    expect(result).toEqual(mockResponsible)
-    expect(repository.getById).toHaveBeenCalledWith('123')
-  })
-
-  it('should return company responsible by cpf', async () => {
-    mockRepository.getByCpf.mockResolvedValue(mockResponsible)
-
-    const result = await service.getByCpf('12345678900')
-
-    expect(result).toEqual(mockResponsible)
-    expect(repository.getByCpf).toHaveBeenCalledWith('12345678900')
-  })
-
-  it('should return existing responsible when CPF already exists on create', async () => {
-    const dto: CreateCompanyResponsibleDto = {
+  it('create() should return existing when CPF already exists', async () => {
+    ;(mockRepo.exists as jest.Mock).mockResolvedValue(true)
+    ;(mockRepo.findItem as jest.Mock).mockResolvedValue(mockRaw)
+    const dto = {
       name: 'John Doe',
       cpf: '12345678900',
       email: 'john@example.com',
       phone: '11999999999',
     }
-    mockRepository.existsByCpf.mockResolvedValue(true)
-    mockRepository.getByCpf.mockResolvedValue(mockResponsible)
-
     const result = await service.create(dto)
-
-    expect(result).toEqual(mockResponsible)
-    expect(repository.existsByCpf).toHaveBeenCalledWith(dto.cpf)
-    expect(repository.getByCpf).toHaveBeenCalledWith(dto.cpf)
-    expect(repository.create).not.toHaveBeenCalled()
+    expect(mockRepo.exists).toHaveBeenCalledWith({
+      where: { cpf: '12345678900' },
+    })
+    expect(mockRepo.insert).not.toHaveBeenCalled()
+    expect(result).toEqual(mockResponse)
   })
 
-  it('should create new responsible when CPF does not exist', async () => {
-    const dto: CreateCompanyResponsibleDto = {
-      name: 'Jane Doe',
-      cpf: '99988877700',
-      email: 'jane@example.com',
-      phone: '11988888888',
+  it('create() should insert when CPF does not exist', async () => {
+    ;(mockRepo.exists as jest.Mock).mockResolvedValue(false)
+    ;(mockRepo.insert as jest.Mock).mockResolvedValue(mockRaw)
+    const dto = {
+      name: 'John Doe',
+      cpf: '12345678900',
+      email: 'john@example.com',
+      phone: '11999999999',
     }
-    mockRepository.existsByCpf.mockResolvedValue(false)
-    mockRepository.create.mockResolvedValue({ ...mockResponsible, ...dto })
-
     const result = await service.create(dto)
-
-    expect(repository.existsByCpf).toHaveBeenCalledWith(dto.cpf)
-    expect(repository.create).toHaveBeenCalledWith(dto)
-    expect(repository.getByCpf).not.toHaveBeenCalled()
-    expect(result.cpf).toBe(dto.cpf)
+    expect(mockRepo.insert).toHaveBeenCalledWith({ data: dto, include })
+    expect(result).toEqual(mockResponse)
   })
 
-  it('should update company responsible', async () => {
-    const dto: UpdateCompanyResponsibleDto = { name: 'Jane Doe' }
-    const updated = { ...mockResponsible, name: 'Jane Doe' }
-    mockRepository.update.mockResolvedValue(updated)
-
-    const result = await service.update('123', dto)
-
-    expect(result).toEqual(updated)
-    expect(repository.update).toHaveBeenCalledWith('123', dto)
-    expect(repository.getById).not.toHaveBeenCalled()
+  it('update() should return updated responsible without deletedAt', async () => {
+    ;(mockRepo.updateItem as jest.Mock).mockResolvedValue(mockRaw)
+    const result = await service.update('uuid-1', { name: 'Jane Doe' })
+    expect(mockRepo.updateItem).toHaveBeenCalledWith({
+      where: { id: 'uuid-1' },
+      data: { name: 'Jane Doe' },
+      include,
+    })
+    expect(result).toEqual(mockResponse)
   })
 
-  it('should delete company responsible', async () => {
-    const deleteResponse = { message: 'Responsible was deleted successfully' }
-    mockRepository.delete.mockResolvedValue(deleteResponse)
-
-    const result = await service.delete('123')
-
-    expect(result).toEqual(deleteResponse)
-    expect(repository.delete).toHaveBeenCalledWith('123')
+  it('delete() should return success message', async () => {
+    const message = { message: 'Deleted successfully' }
+    ;(mockRepo.softDelete as jest.Mock).mockResolvedValue(message)
+    const result = await service.delete('uuid-1')
+    expect(mockRepo.softDelete).toHaveBeenCalledWith({ id: 'uuid-1' })
+    expect(result).toEqual(message)
   })
 })

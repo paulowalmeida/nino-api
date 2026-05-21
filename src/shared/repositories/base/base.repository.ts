@@ -4,7 +4,7 @@ import { IBaseModel } from '@shared/interfaces/base-model.interface'
 import { IBaseRepository } from '@shared/interfaces/base-repository.interface'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
-import { Exists } from '@shared/types/base-repository/exists.type'
+import { FilterExists } from '@shared/types/base-repository/exists.type'
 import { FindByField } from '@shared/types/base-repository/find-by-field.type'
 import { FindManyPaginated } from '@shared/types/base-repository/find-many-paginated.type'
 import { FindMany } from '@shared/types/base-repository/find-many.type'
@@ -15,8 +15,7 @@ import { PaginatedResponse } from '@shared/types/paginated-response.type'
 /**
  * Abstract base for all domain repositories. Wraps Prisma operations,
  * centralizes error handling via ErrorService, and applies soft-delete
- * filters automatically. Domain repositories extend this class and expose
- * semantic methods (getAll, getById, etc.) built on top of these primitives.
+ * filters automatically. Domain services call these primitives directly.
  *
  * `Model` must be a Prisma delegate — the property on PrismaService that
  * matches the model name (e.g. `Prisma.PlanDelegate` → `prisma.plan`).
@@ -46,7 +45,9 @@ export abstract class BaseRepository<
     return this.executeFnWithTryCatch(() =>
       this.model.findMany({
         where: resolvedWhere,
-        orderBy: params?.orderBy,
+        orderBy: params?.order
+          ? { [params.order.target]: params.order.direction }
+          : undefined,
         include: params?.include,
       }),
     )
@@ -73,10 +74,12 @@ export abstract class BaseRepository<
     return this.executeFnWithTryCatch(() =>
       this.handlePagination<Entity>(
         resolvedWhere,
-        params.orderBy,
+        params.order
+          ? { [params.order.target]: params.order.direction }
+          : undefined,
         params.include,
-        params.page,
-        params.size,
+        params.page ?? 1,
+        params.size ?? 10,
       ),
     )
   }
@@ -107,7 +110,7 @@ export abstract class BaseRepository<
    * @param params - Where clause and optional `ignoreDeleted` flag.
    * @returns `true` if a matching record exists, `false` otherwise.
    */
-  async exists(params: Exists): Promise<boolean> {
+  async exists(params: FilterExists): Promise<boolean> {
     const resolvedWhere = this.buildWhere(
       params.where,
       params.ignoreDeleted ?? false,
@@ -126,7 +129,7 @@ export abstract class BaseRepository<
    * @returns The created record typed as `Entity`.
    */
   async insert<CreateDto, Entity>(params: Insert<CreateDto>): Promise<Entity> {
-    return this.executeFnWithTryCatch(() => this.model.create(params)) as Entity
+    return this.executeFnWithTryCatch(() => this.model.create(params))
   }
 
   /**
@@ -136,7 +139,9 @@ export abstract class BaseRepository<
    * @param params - Where clause, update data, and optional include.
    * @returns The updated record typed as `Entity`.
    */
-  async updateItem<UpdateDto, Entity>(params: UpdateItem<UpdateDto>): Promise<Entity> {
+  async updateItem<UpdateDto, Entity>(
+    params: UpdateItem<UpdateDto>,
+  ): Promise<Entity> {
     return this.executeFnWithTryCatch(() =>
       this.model.update({
         where: params.where,
@@ -157,13 +162,15 @@ export abstract class BaseRepository<
 
   /**
    * Sets `deletedAt` to now. Validates existence internally via P2025 → `NotFoundException`.
-   * @param id - UUID of the record to soft-delete.
+   * @param where - Prisma where clause identifying the record to soft-delete.
    * @returns `{ message: string }` confirmation.
    */
-  async softDelete(id: string): Promise<{ message: string }> {
+  async softDelete(
+    where: Record<string, unknown>,
+  ): Promise<{ message: string }> {
     return this.executeFnWithTryCatch(async () => {
       await this.model.update({
-        where: { id },
+        where,
         data: { deletedAt: new Date() },
       })
       return { message: 'Deleted successfully' }
@@ -185,11 +192,13 @@ export abstract class BaseRepository<
   }
 
   /** Wraps any async operation with ErrorService error handling. */
-  private async executeFnWithTryCatch<Result>(fn: () => Promise<Result>): Promise<Result> {
+  private async executeFnWithTryCatch<Result>(
+    fn: () => Promise<Result>,
+  ): Promise<Result> {
     try {
       return await fn()
     } catch (error) {
-      this.errorService.handle(error)
+      return this.errorService.handle(error)
     }
   }
 

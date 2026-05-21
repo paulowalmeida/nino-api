@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
 
-import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
+import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { LoyaltyTransactionController } from './loyalty-transaction.controller'
 import { LoyaltyTransactionRepository } from './loyalty-transaction.repository'
 import { LoyaltyTransactionService } from './loyalty-transaction.service'

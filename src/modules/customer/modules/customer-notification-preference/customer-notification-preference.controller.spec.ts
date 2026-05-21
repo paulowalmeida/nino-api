@@ -5,7 +5,7 @@ import { CustomerNotificationPreference } from '@prisma/client'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 
-import { CustomerOwnerGuard } from '../../guards/customer-owner.guard'
+import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { CustomerNotificationPreferenceController } from './customer-notification-preference.controller'
 import { CustomerNotificationPreferenceService } from './customer-notification-preference.service'
 
@@ -52,10 +52,9 @@ describe(CustomerNotificationPreferenceController.name, () => {
       .useValue({ canActivate: () => true })
       .compile()
 
-    controller =
-      module.get<CustomerNotificationPreferenceController>(
-        CustomerNotificationPreferenceController,
-      )
+    controller = module.get<CustomerNotificationPreferenceController>(
+      CustomerNotificationPreferenceController,
+    )
   })
 
   it('getAll() should return preferences for customer', async () => {
@@ -67,11 +66,7 @@ describe(CustomerNotificationPreferenceController.name, () => {
   it('upsert() should delegate with all params', async () => {
     const dto = { emailEnabled: false }
     const result = await controller.upsert('customer-1', 'type-1', dto)
-    expect(mockService.upsert).toHaveBeenCalledWith(
-      'customer-1',
-      'type-1',
-      dto,
-    )
+    expect(mockService.upsert).toHaveBeenCalledWith('customer-1', 'type-1', dto)
     expect(result).toEqual(mockPreference)
   })
 

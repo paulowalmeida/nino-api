@@ -1,87 +1,117 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
+import { RolesGuard } from '@shared/guards/roles.guard'
+import { PaginationMeta } from '@shared/types/pagination-meta.type'
+
 import { SessionController } from './session.controller'
 import { SessionService } from './session.service'
+import { SessionOrderBy } from './types/session-order-by.type'
+import { SessionResponse } from './types/session.response.type'
 
-describe('SessionController', () => {
+describe(SessionController.name, () => {
   let controller: SessionController
-  let service: SessionService
 
-  const mockSession = {
+  const mockSessionResponse = {
     id: 'session-id',
-    userId: 'user-id',
-    refreshToken: 'token',
     expiresAt: new Date(),
+    ipAddress: null,
+    userAgent: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    user: {
+      id: 'user-id',
+      name: 'Test',
+      credentials: [],
+      role: { name: 'ADMIN' },
+    },
+  } as unknown as SessionResponse
+
+  const mockMeta: PaginationMeta = {
+    total: 1,
+    page: 1,
+    size: 20,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
+  }
+
+  const mockService: Pick<
+    SessionService,
+    'getAll' | 'create' | 'getListByUserId' | 'getById' | 'update' | 'delete'
+  > = {
+    getAll: jest
+      .fn()
+      .mockResolvedValue({ data: [mockSessionResponse], pagination: mockMeta }),
+    create: jest.fn().mockResolvedValue(mockSessionResponse),
+    getListByUserId: jest
+      .fn()
+      .mockResolvedValue({ data: [mockSessionResponse], pagination: mockMeta }),
+    getById: jest.fn().mockResolvedValue(mockSessionResponse),
+    update: jest.fn().mockResolvedValue(mockSessionResponse),
+    delete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Session deleted successfully' }),
   }
 
   beforeEach(async () => {
+    jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SessionController],
-      providers: [
-        {
-          provide: SessionService,
-          useValue: {
-            create: jest.fn().mockResolvedValue(mockSession),
-            getListByUserId: jest
-              .fn()
-              .mockResolvedValue({
-                data: [mockSession],
-                pagination: {
-                  page: 1,
-                  size: 20,
-                  total: 1,
-                  totalPages: 1,
-                  previousPage: null,
-                  nextPage: null,
-                },
-              }),
-            getById: jest.fn().mockResolvedValue(mockSession),
-            update: jest.fn().mockResolvedValue(undefined),
-            delete: jest.fn().mockResolvedValue(undefined),
-          },
-        },
-      ],
-    }).compile()
+      providers: [{ provide: SessionService, useValue: mockService }],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile()
 
     controller = module.get<SessionController>(SessionController)
-    service = module.get<SessionService>(SessionService)
   })
 
-  it('should create a session', async () => {
+  it('getAll() should return paginated sessions', async () => {
+    const query = { page: 1, size: 20, target: SessionOrderBy.CREATED_AT }
+    const result = await controller.getAll(query as never)
+    expect(mockService.getAll).toHaveBeenCalledWith(query)
+    expect(result.data).toEqual([mockSessionResponse])
+    expect(result.pagination).toEqual(mockMeta)
+  })
+
+  it('create() should create a session', async () => {
     const dto = {
       userId: 'user-id',
       refreshToken: 'token',
       expiresAt: new Date(),
     }
     const result = await controller.create(dto)
-    expect(service.create).toHaveBeenCalledWith(dto)
-    expect(result).toEqual(mockSession)
+    expect(mockService.create).toHaveBeenCalledWith(dto)
+    expect(result).toEqual(mockSessionResponse)
   })
 
-  it('should get a list of sessions by user id with pagination', async () => {
-    const query = { page: 1, size: 20 }
-    const result = await controller.getListByUserId('user-id', query as any)
-    expect(service.getListByUserId).toHaveBeenCalledWith('user-id', query)
-    expect(result.data).toEqual([mockSession])
+  it('getListByUserId() should return paginated sessions', async () => {
+    const query = { page: 1, size: 20, target: SessionOrderBy.CREATED_AT }
+    const result = await controller.getListByUserId('user-id', query as never)
+    expect(mockService.getListByUserId).toHaveBeenCalledWith('user-id', query)
+    expect(result.data).toEqual([mockSessionResponse])
+    expect(result.pagination).toEqual(mockMeta)
   })
 
-  it('should get a session by id', async () => {
+  it('getById() should return a session by id', async () => {
     const result = await controller.getById('session-id')
-    expect(service.getById).toHaveBeenCalledWith('session-id')
-    expect(result).toEqual(mockSession)
+    expect(mockService.getById).toHaveBeenCalledWith('session-id')
+    expect(result).toEqual(mockSessionResponse)
   })
 
-  it('should update a session and return the updated entity', async () => {
+  it('update() should update and return SessionResponse', async () => {
     const dto = { refreshToken: 'new-token' }
     const result = await controller.update('session-id', dto)
-    expect(service.update).toHaveBeenCalledWith('session-id', dto)
-    expect(service.getById).toHaveBeenCalledWith('session-id')
-    expect(result).toEqual(mockSession)
+    expect(mockService.update).toHaveBeenCalledWith('session-id', dto)
+    expect(result).toEqual(mockSessionResponse)
   })
 
-  it('should delete a session and return a success message', async () => {
+  it('delete() should return success message', async () => {
     const result = await controller.delete('session-id')
-    expect(service.delete).toHaveBeenCalledWith('session-id')
-    expect(result).toEqual({ message: 'session deleted successfully' })
+    expect(mockService.delete).toHaveBeenCalledWith('session-id')
+    expect(result).toEqual({ message: 'Session deleted successfully' })
   })
 })

@@ -1,4 +1,4 @@
-export type Exists = {
+export type FilterExists = {
   where: Record<string, unknown>
   ignoreDeleted?: boolean
 }

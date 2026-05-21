@@ -2,8 +2,9 @@ import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 
 import { CredentialsModule } from '@credential/credential.module'
-import { GlobalRoleModule } from '@role/modules/global-role/global-role.module'
+import { GlobalRoleModule } from '@global-role/global-role.module'
 import { SessionModule } from '@session/session.module'
+import { CommonModule } from '@shared/modules/common/common.module'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'
 import { JwtAuthStrategy } from '@shared/strategies/jwt-auth.strategy'
@@ -19,6 +20,7 @@ import { JwtRefreshStrategy } from './jwt-refresh.strategy'
     CredentialsModule,
     SessionModule,
     GlobalRoleModule,
+    CommonModule.forFeature('globalRole', 'Global Role'),
   ],
   controllers: [AuthController],
   providers: [

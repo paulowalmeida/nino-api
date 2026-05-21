@@ -6,18 +6,22 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 
 import { TenantPhone } from '@prisma/client'
 
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+
 import { CreateTenantPhoneDto } from './dtos/create-tenant-phone.dto'
 import { UpdateTenantPhoneDto } from './dtos/update-tenant-phone.dto'
 import { TenantPhoneService } from './tenant-phone.service'
+import { TenantPhonePaginatedResponse } from './types/tenant-phone-paginated-response.type'
 
 @Controller('tenants/:tenantId/phones')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -26,8 +30,11 @@ export class TenantPhoneController {
 
   @Get()
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
-  async getAll(@Param('tenantId') tenantId: string): Promise<TenantPhone[]> {
-    return this.service.getAll(tenantId)
+  async getAll(
+    @Param('tenantId') tenantId: string,
+    @Query() query: PaginatedQueryDto,
+  ): Promise<TenantPhonePaginatedResponse> {
+    return this.service.getAll(tenantId, query)
   }
 
   @Post()

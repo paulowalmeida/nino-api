@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common'
 
-import { ErrorService } from '@shared/services/error/error.service'
+import { CommonModule } from '@shared/modules/common/common.module'
+
 import { TenantStatusController } from './tenant-status.controller'
-import { TenantStatusRepository } from './tenant-status.repository'
-import { TenantStatusService } from './tenant-status.service'
 
 @Module({
+  imports: [CommonModule.forFeature('tenantStatus', 'Tenant Status')],
   controllers: [TenantStatusController],
-  providers: [TenantStatusService, TenantStatusRepository, ErrorService],
-  exports: [TenantStatusService],
 })
 export class TenantStatusModule {}

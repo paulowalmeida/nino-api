@@ -2,7 +2,7 @@ import { UnauthorizedException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { CredentialsService } from '@credential/credential.service'
-import { GlobalRoleService } from '@role/modules/global-role/global-role.service'
+import { CommonService } from '@shared/modules/common/common.service'
 import { SessionService } from '@session/session.service'
 import { PasswordService } from '@shared/services/password/password.service'
 import { TokenService } from '@shared/services/token/token.service'
@@ -16,7 +16,7 @@ describe(AuthService.name, () => {
   let sessionService: SessionService
   let passService: PasswordService
   let tokenService: TokenService
-  let roleService: GlobalRoleService
+  let roleService: CommonService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -53,8 +53,8 @@ describe(AuthService.name, () => {
           },
         },
         {
-          provide: GlobalRoleService,
-          useValue: { getByName: jest.fn() },
+          provide: CommonService,
+          useValue: { getByField: jest.fn() },
         },
       ],
     }).compile()
@@ -65,7 +65,7 @@ describe(AuthService.name, () => {
     sessionService = module.get<SessionService>(SessionService)
     passService = module.get<PasswordService>(PasswordService)
     tokenService = module.get<TokenService>(TokenService)
-    roleService = module.get<GlobalRoleService>(GlobalRoleService)
+    roleService = module.get<CommonService>(CommonService)
   })
 
   it('should login successfully', async () => {
@@ -73,7 +73,9 @@ describe(AuthService.name, () => {
     const mockUser = { id: 'u1', globalRoleId: 'r1', role: { name: 'ADMIN' } }
     const mockTokens = { accessToken: 'a', refreshToken: 'r' }
 
-    jest.spyOn(credService, 'getByEmailWithPassword').mockResolvedValue(mockCred as any)
+    jest
+      .spyOn(credService, 'getByEmailWithPassword')
+      .mockResolvedValue(mockCred as any)
     jest.spyOn(passService, 'compare').mockResolvedValue(true)
     jest.spyOn(userService, 'getById').mockResolvedValue(mockUser as any)
     jest.spyOn(tokenService, 'generateTokens').mockResolvedValue(mockTokens)
@@ -115,13 +117,16 @@ describe(AuthService.name, () => {
   it('should register a new user and credentials', async () => {
     const dto = { name: 'N', email: 'e', password: 'p', globalRole: 'ADMIN' }
     jest
-      .spyOn(roleService, 'getByName')
+      .spyOn(roleService, 'getByField')
       .mockResolvedValue({ id: 'r1', name: 'ADMIN' } as any)
     jest.spyOn(userService, 'create').mockResolvedValue({ id: 'u1' } as any)
 
     await service.register(dto as any)
-    expect(roleService.getByName).toHaveBeenCalledWith('ADMIN')
-    expect(userService.create).toHaveBeenCalledWith({ name: 'N', globalRoleId: 'r1' })
+    expect(roleService.getByField).toHaveBeenCalledWith('name', 'ADMIN')
+    expect(userService.create).toHaveBeenCalledWith({
+      name: 'N',
+      globalRoleId: 'r1',
+    })
     expect(credService.create).toHaveBeenCalled()
   })
 
@@ -155,7 +160,9 @@ describe(AuthService.name, () => {
       .mockResolvedValue({ sub: 'u1', role: 'r' })
     jest.spyOn(sessionService, 'findByRefreshToken').mockResolvedValue(null)
 
-    await expect(service.refresh('stolen-token')).rejects.toThrow(UnauthorizedException)
+    await expect(service.refresh('stolen-token')).rejects.toThrow(
+      UnauthorizedException,
+    )
     expect(sessionService.deleteAllByUserId).toHaveBeenCalledWith('u1')
     expect(sessionService.update).not.toHaveBeenCalled()
   })

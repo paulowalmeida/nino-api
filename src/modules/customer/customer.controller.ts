@@ -17,7 +17,7 @@ import { RolesGuard } from '@shared/guards/roles.guard'
 
 import { CreateCustomerDto } from './dtos/create-customer.dto'
 import { CustomerOwnerGuard } from './guards/customer-owner.guard'
-import { CustomerQueryDto } from './dtos/customer-query.dto'
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { UpdateCustomerDto } from './dtos/update-customer.dto'
 import { CustomerService } from './customer.service'
 import { CustomerPaginatedResponse } from './types/customer-paginated-response.type'
@@ -37,7 +37,7 @@ export class CustomerController {
   @Get()
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT)
   async getAll(
-    @Query() query: CustomerQueryDto,
+    @Query() query: PaginatedQueryDto,
   ): Promise<CustomerPaginatedResponse> {
     return this.service.getAll(query)
   }

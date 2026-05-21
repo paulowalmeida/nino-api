@@ -93,10 +93,7 @@ describe(CustomerOwnerGuard.name, () => {
   })
 
   it('should return false when no customerId or id param is present', async () => {
-    const ctx = makeContext(
-      { sub: 'user-1', role: GlobalRole.CUSTOMER },
-      {},
-    )
+    const ctx = makeContext({ sub: 'user-1', role: GlobalRole.CUSTOMER }, {})
     const result = await guard.canActivate(ctx)
     expect(result).toBe(false)
   })

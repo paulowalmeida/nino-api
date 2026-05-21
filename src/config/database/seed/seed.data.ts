@@ -73,7 +73,10 @@ export const businessCategories = [
   { name: 'Chinesa', description: 'Culinária chinesa' },
   { name: 'Churrascaria', description: 'Especializada em carnes e churrasco' },
   { name: 'Vegetariana', description: 'Opções vegetarianas e veganas' },
-  { name: 'Frutos do Mar', description: 'Especializada em peixes e frutos do mar' },
+  {
+    name: 'Frutos do Mar',
+    description: 'Especializada em peixes e frutos do mar',
+  },
   { name: 'Padaria e Café', description: 'Pães, doces e bebidas quentes' },
   { name: 'Sorveteria', description: 'Sorvetes e sobremesas geladas' },
   { name: 'Saudável', description: 'Alimentação saudável e fitness' },
@@ -88,13 +91,19 @@ export const businessCategories = [
 export const tenantTypes = [
   { name: TenantType.RESTAURANT, description: 'Restaurante tradicional' },
   { name: TenantType.FOOD_TRUCK, description: 'Food truck' },
-  { name: TenantType.DARK_KITCHEN, description: 'Cozinha exclusiva para delivery' },
+  {
+    name: TenantType.DARK_KITCHEN,
+    description: 'Cozinha exclusiva para delivery',
+  },
   { name: TenantType.FRANCHISE, description: 'Unidade franqueada' },
 ]
 
 export const orderStatuses = [
   { name: OrderStatus.PENDING, description: 'Aguardando confirmação' },
-  { name: OrderStatus.CONFIRMED, description: 'Confirmado pelo estabelecimento' },
+  {
+    name: OrderStatus.CONFIRMED,
+    description: 'Confirmado pelo estabelecimento',
+  },
   { name: OrderStatus.PREPARING, description: 'Em preparo' },
   { name: OrderStatus.READY, description: 'Pronto para retirada ou entrega' },
   { name: OrderStatus.OUT_FOR_DELIVERY, description: 'Saiu para entrega' },

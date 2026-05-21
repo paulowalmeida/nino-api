@@ -10,9 +10,9 @@ import {
 } from 'class-validator'
 
 export class CreateOpeningHoursDto {
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  tenantId: string
+  tenantId?: string
 
   @IsInt()
   @Min(0)

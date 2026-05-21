@@ -10,17 +10,27 @@ export class TenantSettingsService {
   constructor(private readonly repo: TenantSettingsRepository) {}
 
   async getByTenantId(tenantId: string): Promise<TenantSettings> {
-    return this.repo.getByTenantId(tenantId)
+    return this.repo.findItem<TenantSettings>({ where: { tenantId } })
   }
 
   async upsert(
     tenantId: string,
     data: UpsertTenantSettingsDto,
   ): Promise<TenantSettings> {
-    return this.repo.upsert(tenantId, data)
+    const exists = await this.repo.exists({ where: { tenantId } })
+    if (exists) {
+      return this.repo.updateItem<UpsertTenantSettingsDto, TenantSettings>({
+        where: { tenantId },
+        data,
+      })
+    }
+    return this.repo.insert<
+      UpsertTenantSettingsDto & { tenantId: string },
+      TenantSettings
+    >({ data: { tenantId, ...data } })
   }
 
   async delete(id: string): Promise<{ message: string }> {
-    return this.repo.delete(id)
+    return this.repo.softDelete({ id })
   }
 }

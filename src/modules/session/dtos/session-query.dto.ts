@@ -6,5 +6,5 @@ import { SessionOrderBy } from '../types/session-order-by.type'
 export class SessionQueryDto extends PaginatedQueryDto {
   @IsOptional()
   @IsEnum(SessionOrderBy)
-  orderBy?: SessionOrderBy = SessionOrderBy.CREATED_AT
+  target: SessionOrderBy = SessionOrderBy.CREATED_AT
 }

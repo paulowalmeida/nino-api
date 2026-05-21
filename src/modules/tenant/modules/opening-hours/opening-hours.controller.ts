@@ -6,18 +6,22 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common'
 
 import { OpeningHours } from '@prisma/client'
 
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+
 import { CreateOpeningHoursDto } from './dtos/create-opening-hours.dto'
 import { UpdateOpeningHoursDto } from './dtos/update-opening-hours.dto'
 import { OpeningHoursService } from './opening-hours.service'
+import { OpeningHoursPaginatedResponse } from './types/opening-hours-paginated-response.type'
 
 @Controller('tenants/:tenantId/opening-hours')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,8 +32,9 @@ export class OpeningHoursController {
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
   async getAll(
     @Param('tenantId') tenantId: string,
-  ): Promise<OpeningHours[]> {
-    return this.service.getAll(tenantId)
+    @Query() query: PaginatedQueryDto,
+  ): Promise<OpeningHoursPaginatedResponse> {
+    return this.service.getAll(tenantId, query)
   }
 
   @Post()

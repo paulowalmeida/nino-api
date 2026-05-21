@@ -114,7 +114,7 @@
       "^@business-category/(.*)$": "<rootDir>/modules/company/modules/business-category/$1",
       "^@company/(.*)$": "<rootDir>/modules/company/$1",
       "^@company-responsible/(.*)$": "<rootDir>/modules/company/modules/company-responsible/$1",
-      "^@credential/(.*)$": "<rootDir>/modules/credential/$1",
+      "^@credential/(.*)$": "<rootDir>/modules/user/modules/credential/$1",
       "^@invoice-status/(.*)$": "<rootDir>/modules/invoice-status/$1",
       "^@mocks/(.*)$": "<rootDir>/mocks/$1",
       "^@notification-type/(.*)$": "<rootDir>/modules/notification-type/$1",
@@ -134,6 +134,7 @@
       "^@customer-address/(.*)$": "<rootDir>/modules/customer/modules/customer-address/$1",
       "^@customer-tenant/(.*)$": "<rootDir>/modules/customer/modules/customer-tenant/$1",
       "^@customer-payment-method/(.*)$": "<rootDir>/modules/customer/modules/customer-payment-method/$1",
+      "^@payment-method/(.*)$": "<rootDir>/modules/payment-method/$1",
       "^@user/(.*)$": "<rootDir>/modules/user/$1",
       "^@user-tenant/(.*)$": "<rootDir>/modules/user-tenant/$1"
     }

@@ -1,116 +1,113 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
+import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
+import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
+import { RolesGuard } from '@shared/guards/roles.guard'
+import { PaginationMeta } from '@shared/types/pagination-meta.type'
+
 import { CompanyResponsibleController } from './company-responsible.controller'
 import { CompanyResponsibleService } from './company-responsible.service'
 import { CreateCompanyResponsibleDto } from './dto/create-company-responsible.dto'
 import { UpdateCompanyResponsibleDto } from './dto/update-company-responsible.dto'
+import { CompanyResponsibleResponse } from './types/company-responsible.type'
 
 describe(CompanyResponsibleController.name, () => {
   let controller: CompanyResponsibleController
-  let service: CompanyResponsibleService
 
   const mockResponsible = {
-    id: '123',
+    id: 'uuid-1',
     name: 'John Doe',
     cpf: '12345678900',
     email: 'john@example.com',
     phone: '11999999999',
     createdAt: new Date(),
     updatedAt: new Date(),
+    companies: [],
+  } as unknown as CompanyResponsibleResponse
+
+  const mockMeta: PaginationMeta = {
+    total: 1,
+    page: 1,
+    size: 10,
+    totalPages: 1,
+    previousPage: null,
+    nextPage: null,
   }
 
-  const mockService = {
-    getAll: jest.fn(),
-    getById: jest.fn(),
-    getByCpf: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
+  const mockService: Pick<
+    CompanyResponsibleService,
+    'getAll' | 'getByField' | 'create' | 'update' | 'delete'
+  > = {
+    getAll: jest
+      .fn()
+      .mockResolvedValue({ data: [mockResponsible], pagination: mockMeta }),
+    getByField: jest.fn().mockResolvedValue(mockResponsible),
+    create: jest.fn().mockResolvedValue(mockResponsible),
+    update: jest.fn().mockResolvedValue(mockResponsible),
+    delete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
+    jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CompanyResponsibleController],
       providers: [
-        {
-          provide: CompanyResponsibleService,
-          useValue: mockService,
-        },
+        { provide: CompanyResponsibleService, useValue: mockService },
       ],
-    }).compile()
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile()
 
     controller = module.get<CompanyResponsibleController>(
       CompanyResponsibleController,
     )
-    service = module.get<CompanyResponsibleService>(CompanyResponsibleService)
   })
 
-  afterEach(() => {
-    jest.clearAllMocks()
+  it('getAll() should return paginated responsibles', async () => {
+    const query: PaginatedQueryDto = { page: 1, size: 10 }
+    const result = await controller.getAll(query)
+    expect(mockService.getAll).toHaveBeenCalledWith(query)
+    expect(result.data).toEqual([mockResponsible])
+    expect(result.pagination).toEqual(mockMeta)
   })
 
-  it('should return array of company responsibles', async () => {
-    mockService.getAll.mockResolvedValue([mockResponsible])
-
-    const result = await controller.getAll()
-
-    expect(result).toEqual([mockResponsible])
-    expect(service.getAll).toHaveBeenCalledTimes(1)
-  })
-
-  it('should return company responsible by id', async () => {
-    mockService.getById.mockResolvedValue(mockResponsible)
-
-    const result = await controller.getById('123')
-
+  it('getById() should return responsible by id', async () => {
+    const result = await controller.getById('uuid-1')
+    expect(mockService.getByField).toHaveBeenCalledWith('id', 'uuid-1')
     expect(result).toEqual(mockResponsible)
-    expect(service.getById).toHaveBeenCalledWith('123')
   })
 
-  it('should return company responsible by cpf', async () => {
-    mockService.getByCpf.mockResolvedValue(mockResponsible)
-
+  it('getByCpf() should return responsible by cpf', async () => {
     const result = await controller.getByCpf('12345678900')
-
+    expect(mockService.getByField).toHaveBeenCalledWith('cpf', '12345678900')
     expect(result).toEqual(mockResponsible)
-    expect(service.getByCpf).toHaveBeenCalledWith('12345678900')
   })
 
-  it('should create new company responsible', async () => {
+  it('create() should create and return responsible', async () => {
     const dto: CreateCompanyResponsibleDto = {
       name: 'John Doe',
       cpf: '12345678900',
       email: 'john@example.com',
       phone: '11999999999',
     }
-    mockService.create.mockResolvedValue(mockResponsible)
-
     const result = await controller.create(dto)
-
+    expect(mockService.create).toHaveBeenCalledWith(dto)
     expect(result).toEqual(mockResponsible)
-    expect(service.create).toHaveBeenCalledWith(dto)
   })
 
-  it('should update company responsible', async () => {
-    const dto: UpdateCompanyResponsibleDto = {
-      name: 'Jane Doe',
-    }
-    const updated = { ...mockResponsible, name: 'Jane Doe' }
-    mockService.update.mockResolvedValue(updated)
-
-    const result = await controller.update('123', dto)
-
-    expect(result).toEqual(updated)
-    expect(service.update).toHaveBeenCalledWith('123', dto)
+  it('update() should update and return responsible', async () => {
+    const dto: UpdateCompanyResponsibleDto = { name: 'Jane Doe' }
+    const result = await controller.update('uuid-1', dto)
+    expect(mockService.update).toHaveBeenCalledWith('uuid-1', dto)
+    expect(result).toEqual(mockResponsible)
   })
 
-  it('should delete company responsible', async () => {
-    const deleteResponse = { message: 'Responsible was deleted successfully' }
-    mockService.delete.mockResolvedValue(deleteResponse)
-
-    const result = await controller.delete('123')
-
-    expect(result).toEqual(deleteResponse)
-    expect(service.delete).toHaveBeenCalledWith('123')
+  it('delete() should return success message', async () => {
+    const result = await controller.delete('uuid-1')
+    expect(mockService.delete).toHaveBeenCalledWith('uuid-1')
+    expect(result).toEqual({ message: 'Deleted successfully' })
   })
 })

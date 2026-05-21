@@ -4,6 +4,7 @@ import { CustomerNotificationPreference } from '@prisma/client'
 
 import { CustomerNotificationPreferenceRepository } from './customer-notification-preference.repository'
 import { CustomerNotificationPreferenceService } from './customer-notification-preference.service'
+import { UpsertCustomerNotificationPreferenceDto } from './dtos/upsert-customer-notification-preference.dto'
 
 describe(CustomerNotificationPreferenceService.name, () => {
   let service: CustomerNotificationPreferenceService
@@ -22,11 +23,15 @@ describe(CustomerNotificationPreferenceService.name, () => {
 
   const mockRepo: Pick<
     CustomerNotificationPreferenceRepository,
-    'getAll' | 'upsert' | 'delete'
+    'findAll' | 'findItem' | 'updateItem' | 'insert' | 'softDelete'
   > = {
-    getAll: jest.fn().mockResolvedValue([mockPreference]),
-    upsert: jest.fn().mockResolvedValue(mockPreference),
-    delete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    findAll: jest.fn().mockResolvedValue([mockPreference]),
+    findItem: jest.fn().mockResolvedValue(mockPreference),
+    updateItem: jest.fn().mockResolvedValue(mockPreference),
+    insert: jest.fn().mockResolvedValue(mockPreference),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -46,22 +51,60 @@ describe(CustomerNotificationPreferenceService.name, () => {
     )
   })
 
-  it('getAll() should delegate to repository', async () => {
+  it('getAll() should call findAll with customerId filter', async () => {
     const result = await service.getAll('customer-1')
-    expect(mockRepo.getAll).toHaveBeenCalledWith('customer-1')
+    expect(mockRepo.findAll).toHaveBeenCalledWith({
+      where: { customerId: 'customer-1' },
+    })
     expect(result).toEqual([mockPreference])
   })
 
-  it('upsert() should delegate to repository', async () => {
-    const dto = { emailEnabled: false }
+  it('upsert() should call updateItem when preference exists', async () => {
+    const dto: UpsertCustomerNotificationPreferenceDto = {
+      emailEnabled: false,
+    }
     const result = await service.upsert('customer-1', 'type-1', dto)
-    expect(mockRepo.upsert).toHaveBeenCalledWith('customer-1', 'type-1', dto)
+    expect(mockRepo.findItem).toHaveBeenCalledWith({
+      where: { customerId: 'customer-1', notificationTypeId: 'type-1' },
+    })
+    expect(mockRepo.updateItem).toHaveBeenCalledWith({
+      where: {
+        customerId_notificationTypeId: {
+          customerId: 'customer-1',
+          notificationTypeId: 'type-1',
+        },
+      },
+      data: dto,
+    })
     expect(result).toEqual(mockPreference)
   })
 
-  it('delete() should delegate to repository', async () => {
+  it('upsert() should call insert when preference does not exist', async () => {
+    ;(mockRepo.findItem as jest.Mock).mockRejectedValueOnce(
+      new Error('not found'),
+    )
+    const dto: UpsertCustomerNotificationPreferenceDto = {
+      emailEnabled: false,
+    }
+    const result = await service.upsert('customer-1', 'type-1', dto)
+    expect(mockRepo.insert).toHaveBeenCalledWith({
+      data: {
+        ...dto,
+        customerId: 'customer-1',
+        notificationTypeId: 'type-1',
+      },
+    })
+    expect(result).toEqual(mockPreference)
+  })
+
+  it('delete() should call softDelete with composite key', async () => {
     const result = await service.delete('customer-1', 'type-1')
-    expect(mockRepo.delete).toHaveBeenCalledWith('customer-1', 'type-1')
+    expect(mockRepo.softDelete).toHaveBeenCalledWith({
+      customerId_notificationTypeId: {
+        customerId: 'customer-1',
+        notificationTypeId: 'type-1',
+      },
+    })
     expect(result).toEqual({ message: 'Deleted successfully' })
   })
 })
