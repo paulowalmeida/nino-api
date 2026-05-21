@@ -30,7 +30,10 @@ export class CredentialsService {
   ): Promise<CredentialPaginatedResponse> {
     const result = await this.repo.findAllPaginated<Credential>({
       where: { userId },
-      order: { target: query.target ?? 'createdAt', direction: query.direction ?? 'asc' },
+      order: {
+        target: query.target ?? 'createdAt',
+        direction: query.direction ?? 'asc',
+      },
       page: query.page,
       size: query.size,
     })

@@ -33,7 +33,10 @@ export class LoyaltyTransactionService {
       page: query.page,
       size: query.size,
       where,
-      order: { target: 'createdAt', direction: 'desc' },
+      order: {
+        target: 'createdAt',
+        direction: 'desc',
+      },
       include: this.include,
       ignoreDeleted: true,
     })

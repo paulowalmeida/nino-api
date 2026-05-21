@@ -49,7 +49,10 @@ export class UserTenantService {
       page: query.page,
       size: query.size,
       where: { userId },
-      order: { target: query.target ?? 'createdAt', direction: query.direction ?? 'asc' },
+      order: {
+        target: query.target ?? 'createdAt',
+        direction: query.direction ?? 'asc',
+      },
       include: this.include,
       ignoreDeleted: true,
     })
@@ -64,7 +67,10 @@ export class UserTenantService {
       page: query.page,
       size: query.size,
       where: { tenantId },
-      order: { target: query.target ?? 'createdAt', direction: query.direction ?? 'asc' },
+      order: {
+        target: query.target ?? 'createdAt',
+        direction: query.direction ?? 'asc',
+      },
       include: this.include,
       ignoreDeleted: true,
     })
