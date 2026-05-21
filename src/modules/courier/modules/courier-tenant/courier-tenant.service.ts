@@ -12,7 +12,7 @@ import { CourierTenantRepository } from './courier-tenant.repository'
 @Injectable()
 export class CourierTenantService {
   private readonly include = {
-    courier: { include: { globalRole: true } },
+    courier: { include: { globalRole: true, credentials: true } },
     tenant: true,
   } as const
 
@@ -20,8 +20,24 @@ export class CourierTenantService {
 
   private toResponse(item: CourierTenantFull): CourierTenantResponse {
     const { courierId: _, tenantId: _t, courier, tenant, ...rest } = item
-    const { deletedAt: _d, globalRoleId: _r, globalRole: role, ...courierRest } = courier
-    return { ...rest, courier: { ...courierRest, role }, tenant }
+    const {
+      deletedAt: _d,
+      globalRoleId: _r,
+      globalRole: role,
+      credentials: rawCredentials,
+      ...courierRest
+    } = courier
+    return {
+      ...rest,
+      courier: {
+        ...courierRest,
+        role,
+        credentials: rawCredentials.map(
+          ({ password: _p, deletedAt: _cd, ...c }) => c,
+        ),
+      },
+      tenant,
+    }
   }
 
   async create(data: CreateCourierTenantDto): Promise<CourierTenantResponse> {
