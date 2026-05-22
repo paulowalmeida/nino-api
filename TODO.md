@@ -4,7 +4,7 @@ Lista de itens pendentes sem ordem de prioridade.
 
 ## API
 
-- [ ] Tornar endpoints de browse públicos — `GET /tenants/slug/:slug` e `GET /tenants/:id/products` sem JWT (necessário para o fluxo guest funcionar de ponta a ponta)
+- [x] Tornar endpoints de browse públicos — `GET /tenants/slug/:slug` e `GET /tenants/:id/products` sem JWT (necessário para o fluxo guest funcionar de ponta a ponta)
 - [ ] Mock services — abstract class para pagamento e notificação, permitindo desenvolvimento e testes sem integração real
 - [ ] Forgot/reset password — fluxo de recuperação de senha por e-mail
 - [ ] CORS + Helmet — configuração de segurança mínima para produção
