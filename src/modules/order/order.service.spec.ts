@@ -131,7 +131,7 @@ describe(OrderService.name, () => {
         createdAt: now,
         updatedAt: now,
       }),
-    } as PrismaService['orderStatus'],
+    } as unknown as PrismaService['orderStatus'],
   }
 
   beforeEach(async () => {
