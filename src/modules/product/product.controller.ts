@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Public } from '@shared/decorators/public.decorator'
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
@@ -28,7 +29,7 @@ export class ProductController {
   constructor(private readonly service: ProductService) {}
 
   @Get()
-  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
+  @Public()
   async getAll(
     @Param('tenantId') tenantId: string,
     @Query() query: ProductQueryDto,
