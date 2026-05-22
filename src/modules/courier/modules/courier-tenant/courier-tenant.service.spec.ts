@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { PaginationMeta } from '@shared/types/pagination-meta.type'
 
+import { CredentialInfo } from '@credential/types/credential-info.type'
+
 import { CourierTenantRepository } from './courier-tenant.repository'
 import { CourierTenantService } from './courier-tenant.service'
 import { CreateCourierTenantDto } from './dtos/create-courier-tenant.dto'
@@ -46,13 +48,13 @@ describe(CourierTenantService.name, () => {
           userId: 'courier-1',
           email: 'joao@test.com',
           password: 'hashed',
-          providerCode: null,
+          providerCode: 'LOCAL',
           provider: 'LOCAL',
-          emailVerified: false,
-          emailVerificationToken: null,
+          emailVerifiedAt: null,
+          resetTokenHash: null,
+          resetTokenExpiresAt: null,
+          emailVerificationTokenHash: null,
           emailVerificationExpiresAt: null,
-          passwordResetToken: null,
-          passwordResetExpiresAt: null,
           createdAt: now,
           updatedAt: now,
           deletedAt: null,
@@ -107,16 +109,16 @@ describe(CourierTenantService.name, () => {
           id: 'cred-1',
           userId: 'courier-1',
           email: 'joao@test.com',
-          providerCode: null,
+          providerCode: 'LOCAL',
           provider: 'LOCAL',
-          emailVerified: false,
-          emailVerificationToken: null,
+          emailVerifiedAt: null,
+          resetTokenHash: null,
+          resetTokenExpiresAt: null,
+          emailVerificationTokenHash: null,
           emailVerificationExpiresAt: null,
-          passwordResetToken: null,
-          passwordResetExpiresAt: null,
           createdAt: now,
           updatedAt: now,
-        },
+        } as unknown as CredentialInfo,
       ],
     },
     tenant: mockFull.tenant,
