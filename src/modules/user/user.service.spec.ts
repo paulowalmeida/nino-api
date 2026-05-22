@@ -110,6 +110,15 @@ describe(UserService.name, () => {
     ).toBeUndefined()
   })
 
+  it('getAll() should default orderBy to name and use provided direction', async () => {
+    await service.getAll({ direction: 'desc' } as never)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { target: 'name', direction: 'desc' },
+      }),
+    )
+  })
+
   it('getById() should return mapped UserResponse', async () => {
     const result = await service.getById('user-id')
     expect(mockRepo.findItem).toHaveBeenCalledWith({

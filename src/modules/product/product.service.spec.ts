@@ -115,6 +115,26 @@ describe(ProductService.name, () => {
     )
   })
 
+  it('getAll() should include isActive filter when provided', async () => {
+    const query = { isActive: false } as ProductQueryDto
+    await service.getAll('tenant-1', query)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tenantId: 'tenant-1', isActive: false },
+      }),
+    )
+  })
+
+  it('getAll() should default target to position and use provided direction', async () => {
+    const query = { direction: 'desc' } as ProductQueryDto
+    await service.getAll('tenant-1', query)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { target: 'position', direction: 'desc' },
+      }),
+    )
+  })
+
   it('getById() should return mapped ProductResponse', async () => {
     const result = await service.getById('prod-1')
     expect(mockRepo.findItem).toHaveBeenCalledWith({

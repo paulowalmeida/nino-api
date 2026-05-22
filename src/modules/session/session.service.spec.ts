@@ -109,6 +109,24 @@ describe(SessionService.name, () => {
     ).toBeUndefined()
   })
 
+  it('getAll() should use defaults when target and direction are absent', async () => {
+    await service.getAll({} as never)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { target: 'createdAt', direction: 'asc' },
+      }),
+    )
+  })
+
+  it('getAll() should use provided direction', async () => {
+    await service.getAll({ direction: 'desc' } as never)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { target: 'createdAt', direction: 'desc' },
+      }),
+    )
+  })
+
   it('create() should insert and return Session', async () => {
     const dto: CreateSessionDto = {
       userId: 'user-id',
@@ -138,6 +156,15 @@ describe(SessionService.name, () => {
       (result.data[0] as Record<string, unknown>).refreshToken,
     ).toBeUndefined()
     expect((result.data[0] as Record<string, unknown>).userId).toBeUndefined()
+  })
+
+  it('getListByUserId() should use defaults when target absent and respect direction', async () => {
+    await service.getListByUserId('user-id', { direction: 'desc' } as never)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { target: 'createdAt', direction: 'desc' },
+      }),
+    )
   })
 
   it('getById() should return mapped SessionResponse', async () => {
