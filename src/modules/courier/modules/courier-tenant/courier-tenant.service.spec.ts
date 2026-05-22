@@ -141,7 +141,9 @@ describe(CourierTenantService.name, () => {
     findAllPaginated: jest
       .fn()
       .mockResolvedValue({ data: [mockFull], pagination: mockMeta }),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
