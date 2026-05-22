@@ -1,35 +1,60 @@
 type: collection.insomnia.rest/5.0
 schema_version: "5.1"
-name: Session Module
+name: Onboarding — Courier (Entregador)
 meta:
-  id: wrk_session_module
+  id: wrk_onboarding_courier
   created: 1776000000000
   modified: 1776000000000
-  description: "Session management"
+  description: "Caminho feliz do entregador: login → vínculos → pedidos → entrega"
 collection:
-  - name: session
+  - name: courier
     meta:
-      id: fld_session_module
+      id: fld_onboarding_courier
       created: 1776000000000
       modified: 1776000000000
       sortKey: -1
-      description: "Session endpoints"
+      description: "Execute os requests em ordem. O courier é um User com role COURIER — sem perfil separado."
     children:
-      - url: "{{BASE_URL}}/sessions"
-        name: get-all
+      - url: "{{BASE_URL}}/auth/sessions"
+        name: 1-login
         meta:
-          id: req_session_get_all
+          id: req_ocr_login
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
+          description: "Login com role COURIER — copie o accessToken para ACCESS_TOKEN e o userId para COURIER_ID"
           sortKey: -1
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"email\": \"entregador@example.com\",\n  \"password\": \"Senha@123\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/courier-tenants/courier/{{COURIER_ID}}"
+        name: 2-my-tenants
+        meta:
+          id: req_ocr_my_tenants
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Lista os tenants vinculados a este entregador — copie o tenantId para TENANT_ID"
+          sortKey: -2
         method: GET
         parameters:
-          - id: pair_session_getall_p1
+          - id: pair_ocr_p1
             name: page
             value: "1"
-          - id: pair_session_getall_p2
+          - id: pair_ocr_p2
             name: size
             value: "10"
         headers: []
@@ -46,40 +71,26 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/sessions/list-by-user-id/{{USER_ID}}"
-        name: list-by-user
+      - url: "{{BASE_URL}}/orders"
+        name: 3-list-orders
         meta:
-          id: req_session_list
+          id: req_ocr_list_orders
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
-          sortKey: -2
-        method: GET
-        headers: []
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
-        name: by-id
-        meta:
-          id: req_session_get
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
+          description: "Lista pedidos do tenant — copie o id de um pedido para ORDER_ID"
           sortKey: -3
         method: GET
+        parameters:
+          - id: pair_ocr_p3
+            name: tenantId
+            value: "{{TENANT_ID}}"
+          - id: pair_ocr_p4
+            name: page
+            value: "1"
+          - id: pair_ocr_p5
+            name: size
+            value: "10"
         headers: []
         authentication:
           type: bearer
@@ -94,19 +105,19 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/sessions"
-        name: create
+      - url: "{{BASE_URL}}/orders/{{ORDER_ID}}/status"
+        name: 4-mark-out-for-delivery
         meta:
-          id: req_session_create
+          id: req_ocr_out_for_delivery
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: "Roles: ADMIN"
+          description: "Marca pedido como saiu para entrega — Roles: OWNER, MANAGER, STAFF"
           sortKey: -4
-        method: POST
+        method: PATCH
         body:
           mimeType: application/json
-          text: "{\n  \"userId\": \"{{USER_ID}}\",\n  \"refreshToken\": \"{{REFRESH_TOKEN}}\",\n  \"ipAddress\": \"127.0.0.1\",\n  \"userAgent\": \"Insomnia\",\n  \"expiresAt\": \"2027-01-01T00:00:00.000Z\"\n}"
+          text: "{\n  \"statusId\": \"{{STATUS_OUT_FOR_DELIVERY_ID}}\"\n}"
         headers:
           - name: Content-Type
             value: application/json
@@ -123,46 +134,22 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
-        name: update
+      - url: "{{BASE_URL}}/orders/{{ORDER_ID}}/status"
+        name: 5-mark-delivered
         meta:
-          id: req_session_update
+          id: req_ocr_delivered
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: "Roles: ADMIN"
+          description: "Confirma entrega realizada"
           sortKey: -5
         method: PATCH
         body:
           mimeType: application/json
-          text: "{\n  \"expiresAt\": \"2027-01-01T00:00:00.000Z\"\n}"
+          text: "{\n  \"statusId\": \"{{STATUS_DELIVERED_ID}}\"\n}"
         headers:
           - name: Content-Type
             value: application/json
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
-        name: delete
-        meta:
-          id: req_session_delete
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
-          sortKey: -6
-        method: DELETE
-        headers: []
         authentication:
           type: bearer
           token: "{{ACCESS_TOKEN}}"
@@ -179,21 +166,21 @@ collection:
 cookieJar:
   name: Default Jar
   meta:
-    id: jar_session
+    id: jar_onboarding_courier
     created: 1776000000000
     modified: 1776000000000
 
 environments:
   name: Base Environment
   meta:
-    id: env_session
+    id: env_onboarding_courier
     created: 1776000000000
     modified: 1776000000000
     isPrivate: false
   subEnvironments:
     - name: nino
       meta:
-        id: env_session_nino
+        id: env_onboarding_courier_nino
         created: 1776000000000
         modified: 1776000000000
         isPrivate: false
@@ -201,6 +188,8 @@ environments:
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
-        USER_ID: ""
-        SESSION_ID: ""
-        REFRESH_TOKEN: ""
+        COURIER_ID: ""
+        TENANT_ID: ""
+        ORDER_ID: ""
+        STATUS_OUT_FOR_DELIVERY_ID: ""
+        STATUS_DELIVERED_ID: ""

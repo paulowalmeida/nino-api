@@ -1,0 +1,313 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Onboarding — Manager (Gestor)
+meta:
+  id: wrk_onboarding_manager
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Caminho feliz do gestor: login → tenant → configurações → cardápio → pedidos"
+collection:
+  - name: manager
+    meta:
+      id: fld_onboarding_manager
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Execute os requests em ordem"
+    children:
+      - url: "{{BASE_URL}}/auth/sessions"
+        name: 1-login
+        meta:
+          id: req_om_login
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Login com role MERCHANT — copie o accessToken para ACCESS_TOKEN"
+          sortKey: -1
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"email\": \"gestor@example.com\",\n  \"password\": \"Senha@123\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants"
+        name: 2-create-tenant
+        meta:
+          id: req_om_create_tenant
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria o tenant (estabelecimento) — copie o id para TENANT_ID. Pré-requisito: obter COMPANY_ID, TENANT_STATUS_ID e TENANT_TYPE_ID via backoffice"
+          sortKey: -2
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"slug\": \"meu-restaurante\",\n  \"companyId\": \"{{COMPANY_ID}}\",\n  \"statusId\": \"{{TENANT_STATUS_ID}}\",\n  \"typeId\": \"{{TENANT_TYPE_ID}}\",\n  \"customName\": \"Meu Restaurante\",\n  \"zipCode\": \"66000-000\",\n  \"street\": \"Av. Nazaré\",\n  \"number\": \"500\",\n  \"neighborhood\": \"Nazaré\",\n  \"city\": \"Belém\",\n  \"state\": \"PA\",\n  \"primaryColor\": \"#E63946\",\n  \"secondaryColor\": \"#F1FAEE\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/settings"
+        name: 3-configure-settings
+        meta:
+          id: req_om_settings
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Configura entrega, pedido mínimo, fidelidade e pedido guest"
+          sortKey: -3
+        method: PUT
+        body:
+          mimeType: application/json
+          text: "{\n  \"allowGuestOrder\": true,\n  \"isDeliveryEnabled\": true,\n  \"isPickupEnabled\": true,\n  \"deliveryFee\": 5.00,\n  \"minOrderAmount\": 20.00,\n  \"deliveryRadius\": 5,\n  \"loyaltyEnabled\": true,\n  \"loyaltyPointsPerOrder\": 10,\n  \"loyaltyPointValue\": 0.10\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/opening-hours"
+        name: 4-add-opening-hours-seg
+        meta:
+          id: req_om_opening_hours_1
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Adiciona horário de funcionamento — dayOfWeek: 0=Dom 1=Seg 2=Ter 3=Qua 4=Qui 5=Sex 6=Sáb"
+          sortKey: -4
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"dayOfWeek\": 1,\n  \"openTime\": \"08:00\",\n  \"closeTime\": \"22:00\",\n  \"isOpen\": true\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/payment-methods"
+        name: 5-add-payment-method
+        meta:
+          id: req_om_payment_method
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Habilita método de pagamento no tenant — copie o id de um payment-method via backoffice"
+          sortKey: -5
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"methodId\": \"{{PAYMENT_METHOD_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/product-categories"
+        name: 6-create-category
+        meta:
+          id: req_om_create_category
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria categoria do cardápio — copie o id para PRODUCT_CATEGORY_ID"
+          sortKey: -6
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Lanches\",\n  \"description\": \"Hambúrgueres e sanduíches\",\n  \"position\": 1\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/products"
+        name: 7-create-product
+        meta:
+          id: req_om_create_product
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria produto no cardápio — copie o id para PRODUCT_ID"
+          sortKey: -7
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"X-Burguer\",\n  \"description\": \"Pão, carne 180g, queijo e alface\",\n  \"price\": 25.90,\n  \"categoryId\": \"{{PRODUCT_CATEGORY_ID}}\",\n  \"position\": 1,\n  \"isActive\": true\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/orders"
+        name: 8-list-orders
+        meta:
+          id: req_om_list_orders
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Lista pedidos do tenant — copie o id de um pedido para ORDER_ID"
+          sortKey: -8
+        method: GET
+        parameters:
+          - id: pair_om_p1
+            name: tenantId
+            value: "{{TENANT_ID}}"
+          - id: pair_om_p2
+            name: page
+            value: "1"
+          - id: pair_om_p3
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/orders/{{ORDER_ID}}/status"
+        name: 9-update-order-status
+        meta:
+          id: req_om_update_order_status
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Avança status do pedido — Roles: OWNER, MANAGER, STAFF"
+          sortKey: -9
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"statusId\": \"{{ORDER_STATUS_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_onboarding_manager
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_onboarding_manager
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_onboarding_manager_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        COMPANY_ID: ""
+        TENANT_STATUS_ID: ""
+        TENANT_TYPE_ID: ""
+        TENANT_ID: ""
+        PAYMENT_METHOD_ID: ""
+        PRODUCT_CATEGORY_ID: ""
+        PRODUCT_ID: ""
+        ORDER_ID: ""
+        ORDER_STATUS_ID: ""

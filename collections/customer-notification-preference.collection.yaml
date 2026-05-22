@@ -1,0 +1,121 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Customer Notification Preference Module
+meta:
+  id: wrk_customer_notification_preference_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Customer notification preference management"
+collection:
+  - name: customer-notification-preference
+    meta:
+      id: fld_customer_notification_preference_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Customer notification preference endpoints"
+    children:
+      - url: "{{BASE_URL}}/customers/{{CUSTOMER_ID}}/notification-preferences"
+        name: get-all
+        meta:
+          id: req_cnp_get_all
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, CUSTOMER"
+          sortKey: -1
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/customers/{{CUSTOMER_ID}}/notification-preferences/{{NOTIFICATION_TYPE_ID}}"
+        name: upsert
+        meta:
+          id: req_cnp_upsert
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, CUSTOMER"
+          sortKey: -2
+        method: PUT
+        body:
+          mimeType: application/json
+          text: "{\n  \"emailEnabled\": true,\n  \"pushEnabled\": true,\n  \"smsEnabled\": false\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/customers/{{CUSTOMER_ID}}/notification-preferences/{{NOTIFICATION_TYPE_ID}}"
+        name: delete
+        meta:
+          id: req_cnp_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, CUSTOMER"
+          sortKey: -3
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_customer_notification_preference
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_customer_notification_preference
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_customer_notification_preference_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        CUSTOMER_ID: ""
+        NOTIFICATION_TYPE_ID: ""
