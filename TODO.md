@@ -1,0 +1,26 @@
+# TODO
+
+Lista de itens pendentes sem ordem de prioridade.
+
+## API
+
+- [ ] Tornar endpoints de browse públicos — `GET /tenants/slug/:slug` e `GET /tenants/:id/products` sem JWT (necessário para o fluxo guest funcionar de ponta a ponta)
+- [ ] Mock services — abstract class para pagamento e notificação, permitindo desenvolvimento e testes sem integração real
+- [ ] Forgot/reset password — fluxo de recuperação de senha por e-mail
+- [ ] CORS + Helmet — configuração de segurança mínima para produção
+- [ ] Integração Pagar.me — gateway de pagamento real (depende do mock pronto)
+- [ ] Integração Resend — e-mail transacional (depende do mock pronto)
+- [ ] Integração Z-API — notificações WhatsApp (depende do mock pronto)
+- [ ] Integração FCM — push notifications mobile (depende do mock pronto)
+- [ ] Billing / invoices — geração e gestão de faturas de assinatura
+- [ ] Invite — convidar usuários para um tenant (staff, manager)
+- [ ] Sugestão de descrição de produto via LLM — `POST /tenants/:tenantId/products/suggest-description`, integração com API da Anthropic
+
+## Frontend (nino-app)
+
+- [ ] @nino/lib — API client tipado e types compartilhados entre os apps
+- [ ] @nino/ui — componentes base com Radix UI e tokens CSS para white-label
+- [ ] nino-consumer — app do consumidor (Next.js SSR)
+- [ ] nino-manager — app do gestor (Next.js)
+- [ ] nino-courier — app do entregador (Next.js)
+- [ ] nino-backoffice — app administrativo (Next.js)
