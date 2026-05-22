@@ -55,7 +55,12 @@ describe(UserService.name, () => {
 
   const mockRepo: Pick<
     UserRepository,
-    'findAllPaginated' | 'findAll' | 'findItem' | 'insert' | 'updateItem' | 'softDelete'
+    | 'findAllPaginated'
+    | 'findAll'
+    | 'findItem'
+    | 'insert'
+    | 'updateItem'
+    | 'softDelete'
   > = {
     findAllPaginated: jest
       .fn()
@@ -64,16 +69,15 @@ describe(UserService.name, () => {
     findItem: jest.fn().mockResolvedValue(mockUserFull),
     insert: jest.fn().mockResolvedValue(mockUserFull),
     updateItem: jest.fn().mockResolvedValue(mockUserFull),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
     jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        UserService,
-        { provide: UserRepository, useValue: mockRepo },
-      ],
+      providers: [UserService, { provide: UserRepository, useValue: mockRepo }],
     }).compile()
 
     service = module.get<UserService>(UserService)
@@ -101,7 +105,18 @@ describe(UserService.name, () => {
       }),
     )
     expect(result.pagination).toEqual(mockMeta)
-    expect((result.data[0] as Record<string, unknown>).deletedAt).toBeUndefined()
+    expect(
+      (result.data[0] as Record<string, unknown>).deletedAt,
+    ).toBeUndefined()
+  })
+
+  it('getAll() should default orderBy to name and use provided direction', async () => {
+    await service.getAll({ direction: 'desc' } as never)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { target: 'name', direction: 'desc' },
+      }),
+    )
   })
 
   it('getById() should return mapped UserResponse', async () => {
@@ -117,7 +132,9 @@ describe(UserService.name, () => {
     const result = await service.getByCompanyId('company-id')
     expect(mockRepo.findAll).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userTenants: { some: { tenant: { companyId: 'company-id' } } } },
+        where: {
+          userTenants: { some: { tenant: { companyId: 'company-id' } } },
+        },
       }),
     )
     expect(result).toHaveLength(1)

@@ -34,24 +34,24 @@ describe(JwtRefreshStrategy.name, () => {
     )
   })
 
-  it('should validate and return payload with hashedRefreshToken', async () => {
+  it('should validate and return payload with hashedRefreshToken', () => {
     const req: RefreshRequest = {
       headers: { authorization: 'Bearer my-token' },
       user: undefined,
     }
     const payload: UserTokenData = { sub: 'u1', role: 'admin' }
 
-    const result = await strategy.validate(req, payload)
+    const result = strategy.validate(req, payload)
 
     expect(result).toEqual({ ...payload, hashedRefreshToken: 'my-token' })
     expect(req['user']).toEqual(result)
   })
 
-  it('should use empty string when authorization header is absent', async () => {
+  it('should use empty string when authorization header is absent', () => {
     const req: RefreshRequest = { headers: {}, user: undefined }
     const payload: UserTokenData = { sub: 'u1', role: 'admin' }
 
-    const result = await strategy.validate(req, payload)
+    const result = strategy.validate(req, payload)
 
     expect(result.hashedRefreshToken).toBe('')
   })

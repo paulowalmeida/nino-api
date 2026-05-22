@@ -36,7 +36,9 @@ describe(TenantSettingsService.name, () => {
     exists: jest.fn(),
     insert: jest.fn().mockResolvedValue(mockSettings),
     updateItem: jest.fn().mockResolvedValue(mockSettings),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {

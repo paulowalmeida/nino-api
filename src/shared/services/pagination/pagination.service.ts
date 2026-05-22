@@ -29,7 +29,10 @@ export class PaginationService {
    * @param query - `{ page, size }` used for this request.
    * @returns `PaginationMeta` with `totalPages`, `previousPage`, and `nextPage`.
    */
-  build(total: number, query: { page?: number; size?: number }): PaginationMeta {
+  build(
+    total: number,
+    query: { page?: number; size?: number },
+  ): PaginationMeta {
     const { page = 1, size = 20 } = query
     const totalPages = Math.ceil(total / size)
     return {

@@ -61,6 +61,8 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@swc/core": "^1.15.33",
+    "@swc/jest": "^0.2.39",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
@@ -94,7 +96,27 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": [
+        "@swc/jest",
+        {
+          "jsc": {
+            "parser": {
+              "syntax": "typescript",
+              "decorators": true,
+              "dynamicImport": true
+            },
+            "transform": {
+              "legacyDecorator": true,
+              "decoratorMetadata": true
+            },
+            "target": "es2021",
+            "keepClassNames": true
+          },
+          "module": {
+            "type": "commonjs"
+          }
+        }
+      ]
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s",
@@ -152,5 +174,8 @@
       "^@user/(.*)$": "<rootDir>/modules/user/$1",
       "^@user-tenant/(.*)$": "<rootDir>/modules/user-tenant/$1"
     }
+  },
+  "overrides": {
+    "get-up": "npm:find-up@5.0.0"
   }
 }

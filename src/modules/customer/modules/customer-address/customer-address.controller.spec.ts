@@ -10,7 +10,6 @@ import { PaginatedResponse } from '@shared/types/paginated-response.type'
 import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { CustomerAddressController } from './customer-address.controller'
 import { CustomerAddressService } from './customer-address.service'
-import { CreateCustomerAddressDto } from './dtos/create-customer-address.dto'
 
 describe(CustomerAddressController.name, () => {
   let controller: CustomerAddressController

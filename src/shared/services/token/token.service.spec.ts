@@ -8,7 +8,7 @@ import { TokenService } from './token.service'
 describe('TokenService', () => {
   let service: TokenService
   let jwtService: JwtService
-  let configService: ConfigService
+  let _configService: ConfigService
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -36,7 +36,7 @@ describe('TokenService', () => {
 
     service = module.get<TokenService>(TokenService)
     jwtService = module.get<JwtService>(JwtService)
-    configService = module.get<ConfigService>(ConfigService)
+    _configService = module.get<ConfigService>(ConfigService)
   })
 
   it('should generate access and refresh tokens', async () => {

@@ -43,10 +43,7 @@ export class OrderRepository extends BaseRepository<Prisma.OrderDelegate> {
     }
   }
 
-  async updateStatus(
-    id: string,
-    statusId: string,
-  ): Promise<OrderFull> {
+  async updateStatus(id: string, statusId: string): Promise<OrderFull> {
     try {
       return await this.prisma.$transaction(async (tx) => {
         await tx.orderStatusHistory.create({ data: { orderId: id, statusId } })

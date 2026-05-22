@@ -11,9 +11,14 @@ describe(CompanyBusinessCategoryRepository.name, () => {
 
   const mockPrisma = { companyBusinessCategory: {} }
   const mockErrorService: jest.Mocked<Pick<ErrorService, 'handle'>> = {
-    handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => { throw e }),
+    handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => {
+      throw e
+    }),
   }
-  const mockPaginationService: Pick<PaginationService, 'getPaginationParams' | 'paginate'> = {
+  const mockPaginationService: Pick<
+    PaginationService,
+    'getPaginationParams' | 'paginate'
+  > = {
     getPaginationParams: jest.fn(),
     paginate: jest.fn(),
   }

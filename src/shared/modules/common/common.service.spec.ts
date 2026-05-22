@@ -20,14 +20,23 @@ describe(CommonService.name, () => {
 
   const mockRepo: Pick<
     CommonRepository,
-    'findAll' | 'findAllPaginated' | 'findItem' | 'insert' | 'updateItem' | 'softDelete'
+    | 'findAll'
+    | 'findAllPaginated'
+    | 'findItem'
+    | 'insert'
+    | 'updateItem'
+    | 'softDelete'
   > = {
     findAll: jest.fn().mockResolvedValue([mockEntity]),
-    findAllPaginated: jest.fn().mockResolvedValue({ data: [mockEntity], pagination: {} }),
+    findAllPaginated: jest
+      .fn()
+      .mockResolvedValue({ data: [mockEntity], pagination: {} }),
     findItem: jest.fn().mockResolvedValue(mockEntity),
     insert: jest.fn().mockResolvedValue(mockEntity),
     updateItem: jest.fn().mockResolvedValue(mockEntity),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -54,10 +63,15 @@ describe(CommonService.name, () => {
     expect(mockRepo.findAll).toHaveBeenCalledWith({ order })
   })
 
-  it('getAllPaginated() should call findAllPaginated', async () => {
+  it('getAllPaginated() should call findAllPaginated with provided params', async () => {
     const params = { page: 1, size: 10 }
     await service.getAllPaginated(params)
     expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(params)
+  })
+
+  it('getAllPaginated() should use empty object when params is undefined', async () => {
+    await service.getAllPaginated()
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({})
   })
 
   it('getByField() should call findItem with field and value', async () => {

@@ -59,16 +59,15 @@ describe(PlanService.name, () => {
     findItem: jest.fn().mockResolvedValue(mockPlanWithType),
     insert: jest.fn().mockResolvedValue(mockPlanWithType),
     updateItem: jest.fn().mockResolvedValue(mockPlanWithType),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
     jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PlanService,
-        { provide: PlanRepository, useValue: mockRepo },
-      ],
+      providers: [PlanService, { provide: PlanRepository, useValue: mockRepo }],
     }).compile()
 
     service = module.get<PlanService>(PlanService)

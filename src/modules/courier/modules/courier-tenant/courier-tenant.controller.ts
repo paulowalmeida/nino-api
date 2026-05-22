@@ -27,12 +27,19 @@ export class CourierTenantController {
 
   @Post()
   @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
-  async create(@Body() body: CreateCourierTenantDto): Promise<CourierTenantResponse> {
+  async create(
+    @Body() body: CreateCourierTenantDto,
+  ): Promise<CourierTenantResponse> {
     return this.service.create(body)
   }
 
   @Get('courier/:courierId')
-  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT, GlobalRole.COURIER)
+  @Roles(
+    GlobalRole.ADMIN,
+    GlobalRole.SUPPORT,
+    GlobalRole.MERCHANT,
+    GlobalRole.COURIER,
+  )
   async getByCourierId(
     @Param('courierId') courierId: string,
     @Query() query: PaginatedQueryDto,

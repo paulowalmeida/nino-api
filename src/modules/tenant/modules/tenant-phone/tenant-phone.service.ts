@@ -21,7 +21,7 @@ export class TenantPhoneService {
       where: { tenantId },
       order: {
         target: query.target ?? 'createdAt',
-        direction: query.direction ?? 'asc'
+        direction: query.direction ?? 'asc',
       },
       page: query.page,
       size: query.size,

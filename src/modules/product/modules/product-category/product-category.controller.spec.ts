@@ -50,9 +50,7 @@ describe(ProductCategoryController.name, () => {
     jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProductCategoryController],
-      providers: [
-        { provide: ProductCategoryService, useValue: mockService },
-      ],
+      providers: [{ provide: ProductCategoryService, useValue: mockService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
@@ -60,7 +58,9 @@ describe(ProductCategoryController.name, () => {
       .useValue({ canActivate: () => true })
       .compile()
 
-    controller = module.get<ProductCategoryController>(ProductCategoryController)
+    controller = module.get<ProductCategoryController>(
+      ProductCategoryController,
+    )
   })
 
   it('getAll() should return paginated categories for tenant', async () => {
@@ -80,7 +80,9 @@ describe(ProductCategoryController.name, () => {
   it('create() should pass tenantId from param', async () => {
     const dto = { name: 'Burgers' }
     const result = await controller.create('tenant-1', dto)
-    expect(mockService.create).toHaveBeenCalledWith(dto, { tenantId: 'tenant-1' })
+    expect(mockService.create).toHaveBeenCalledWith(dto, {
+      tenantId: 'tenant-1',
+    })
     expect(result).toEqual(mockCategory)
   })
 
