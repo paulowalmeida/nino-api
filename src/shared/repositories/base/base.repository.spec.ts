@@ -70,7 +70,10 @@ describe(BaseRepository.name, () => {
 
     it('should omit deletedAt filter when ignoreDeleted is true', async () => {
       jest.mocked(mockModel.findMany).mockResolvedValue([item])
-      await repo.findAll<Item>({ ignoreDeleted: true, where: { tenantId: 't1' } })
+      await repo.findAll<Item>({
+        ignoreDeleted: true,
+        where: { tenantId: 't1' },
+      })
       expect(mockModel.findMany).toHaveBeenCalledWith(
         expect.objectContaining({ where: { tenantId: 't1' } }),
       )
