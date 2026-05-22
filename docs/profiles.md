@@ -30,12 +30,14 @@ A atribuição de pedidos é feita pela loja (MANAGER ou OWNER) — o entregador
 ### CUSTOMER
 Dois modos de uso:
 
-**Sem conta:** faz pedido informando apenas nome e telefone. Rota pública, sem JWT.
+**Sem conta (guest):** faz pedido informando nome, telefone, endereço e itens via `POST /orders/guest`. Rota pública, sem JWT. O status inicial `PENDING` é resolvido automaticamente pelo servidor. Dados de pagamento são preenchidos no checkout mas não são persistidos (sem conta = sem histórico).
+
+Para navegar o cardápio antes do pedido, os endpoints `GET /tenants/slug/:slug` e `GET /tenants/:tenantId/products` também são públicos.
 
 **Com conta:** OAuth (Google, Facebook ou email) emite JWT com role `GUEST` → completa perfil obrigatório (nome, CPF, telefone) → endereço com opção de geolocalização → métodos de pagamento (opcional) → vira `CUSTOMER` → redirecionado para a loja de origem.
 
 ### GUEST
-Role JWT exclusivo do fluxo OAuth incompleto. Permissão única: acessar a rota de completar perfil. Ao completar, vira `CUSTOMER`. Pedidos sem conta são rota pública — não precisam de JWT.
+Role JWT exclusivo do fluxo OAuth incompleto. Permissão única: acessar a rota de completar perfil. Ao completar, vira `CUSTOMER`. Pedidos sem conta usam `POST /orders/guest` (rota pública) — não precisam de JWT.
 
 ---
 
