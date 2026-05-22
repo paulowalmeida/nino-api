@@ -22,6 +22,7 @@ jobs:
 
   typecheck:
     name: Typecheck
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +36,7 @@ jobs:
 
   prisma:
     name: Prisma Schema
+    needs: typecheck
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +49,7 @@ jobs:
 
   build:
     name: Build
+    needs: prisma
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,6 +63,7 @@ jobs:
 
   test:
     name: Tests + Coverage
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
