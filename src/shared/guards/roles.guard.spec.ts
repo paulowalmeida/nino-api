@@ -36,6 +36,12 @@ describe(RolesGuard.name, () => {
     expect(guard.canActivate(ctx)).toBe(true)
   })
 
+  it('should return true when roles list is empty', () => {
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue([])
+    const ctx = mockContext([], GlobalRole.ADMIN)
+    expect(guard.canActivate(ctx)).toBe(true)
+  })
+
   it('should return true when user role matches required role', () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')

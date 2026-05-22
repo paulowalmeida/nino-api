@@ -63,6 +63,24 @@ describe(BusinessCategoryService.name, () => {
     })
   })
 
+  it('getAll() should use default direction when target is set but direction is absent', async () => {
+    await service.getAll({ target: 'name' })
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      page: undefined,
+      size: undefined,
+      order: { target: 'name', direction: 'asc' },
+    })
+  })
+
+  it('getAll() should handle no params passed', async () => {
+    await service.getAll()
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      page: undefined,
+      size: undefined,
+      order: undefined,
+    })
+  })
+
   it('getById() should return record by id', async () => {
     const result = await service.getById('uuid-1')
     expect(mockRepo.findItem).toHaveBeenCalledWith({ where: { id: 'uuid-1' } })
