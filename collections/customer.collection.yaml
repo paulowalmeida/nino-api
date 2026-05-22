@@ -1,24 +1,24 @@
 type: collection.insomnia.rest/5.0
 schema_version: "5.1"
-name: Session Module
+name: Customer Module
 meta:
-  id: wrk_session_module
+  id: wrk_customer_module
   created: 1776000000000
   modified: 1776000000000
-  description: "Session management"
+  description: "Customer management"
 collection:
-  - name: session
+  - name: customer
     meta:
-      id: fld_session_module
+      id: fld_customer_module
       created: 1776000000000
       modified: 1776000000000
       sortKey: -1
-      description: "Session endpoints"
+      description: "Customer endpoints"
     children:
-      - url: "{{BASE_URL}}/sessions"
+      - url: "{{BASE_URL}}/customers"
         name: get-all
         meta:
-          id: req_session_get_all
+          id: req_customer_get_all
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
@@ -26,10 +26,10 @@ collection:
           sortKey: -1
         method: GET
         parameters:
-          - id: pair_session_getall_p1
+          - id: pair_customer_p1
             name: page
             value: "1"
-          - id: pair_session_getall_p2
+          - id: pair_customer_p2
             name: size
             value: "10"
         headers: []
@@ -46,14 +46,14 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/sessions/list-by-user-id/{{USER_ID}}"
-        name: list-by-user
+      - url: "{{BASE_URL}}/customers/{{CUSTOMER_ID}}"
+        name: by-id
         meta:
-          id: req_session_list
+          id: req_customer_get_by_id
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
+          description: "Roles: ADMIN, SUPPORT, CUSTOMER"
           sortKey: -2
         method: GET
         headers: []
@@ -70,43 +70,19 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
-        name: by-id
+      - url: "{{BASE_URL}}/customers"
+        name: create
         meta:
-          id: req_session_get
+          id: req_customer_create
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
           description: "Roles: ADMIN, SUPPORT"
           sortKey: -3
-        method: GET
-        headers: []
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/sessions"
-        name: create
-        meta:
-          id: req_session_create
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: "Roles: ADMIN"
-          sortKey: -4
         method: POST
         body:
           mimeType: application/json
-          text: "{\n  \"userId\": \"{{USER_ID}}\",\n  \"refreshToken\": \"{{REFRESH_TOKEN}}\",\n  \"ipAddress\": \"127.0.0.1\",\n  \"userAgent\": \"Insomnia\",\n  \"expiresAt\": \"2027-01-01T00:00:00.000Z\"\n}"
+          text: "{\n  \"userId\": \"{{USER_ID}}\",\n  \"cpf\": \"000.000.000-00\"\n}"
         headers:
           - name: Content-Type
             value: application/json
@@ -123,44 +99,44 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
+      - url: "{{BASE_URL}}/customers/{{CUSTOMER_ID}}"
         name: update
         meta:
-          id: req_session_update
+          id: req_customer_update
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, CUSTOMER"
+          sortKey: -4
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"cpf\": \"111.111.111-11\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/customers/{{CUSTOMER_ID}}"
+        name: delete
+        meta:
+          id: req_customer_delete
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
           description: "Roles: ADMIN"
           sortKey: -5
-        method: PATCH
-        body:
-          mimeType: application/json
-          text: "{\n  \"expiresAt\": \"2027-01-01T00:00:00.000Z\"\n}"
-        headers:
-          - name: Content-Type
-            value: application/json
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
-        name: delete
-        meta:
-          id: req_session_delete
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
-          sortKey: -6
         method: DELETE
         headers: []
         authentication:
@@ -179,21 +155,21 @@ collection:
 cookieJar:
   name: Default Jar
   meta:
-    id: jar_session
+    id: jar_customer
     created: 1776000000000
     modified: 1776000000000
 
 environments:
   name: Base Environment
   meta:
-    id: env_session
+    id: env_customer
     created: 1776000000000
     modified: 1776000000000
     isPrivate: false
   subEnvironments:
     - name: nino
       meta:
-        id: env_session_nino
+        id: env_customer_nino
         created: 1776000000000
         modified: 1776000000000
         isPrivate: false
@@ -201,6 +177,5 @@ environments:
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
+        CUSTOMER_ID: ""
         USER_ID: ""
-        SESSION_ID: ""
-        REFRESH_TOKEN: ""

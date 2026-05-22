@@ -1,35 +1,35 @@
 type: collection.insomnia.rest/5.0
 schema_version: "5.1"
-name: Session Module
+name: Tenant Payment Method Module
 meta:
-  id: wrk_session_module
+  id: wrk_tenant_payment_method_module
   created: 1776000000000
   modified: 1776000000000
-  description: "Session management"
+  description: "Tenant payment method management"
 collection:
-  - name: session
+  - name: tenant-payment-method
     meta:
-      id: fld_session_module
+      id: fld_tenant_payment_method_module
       created: 1776000000000
       modified: 1776000000000
       sortKey: -1
-      description: "Session endpoints"
+      description: "Tenant payment method endpoints"
     children:
-      - url: "{{BASE_URL}}/sessions"
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/payment-methods"
         name: get-all
         meta:
-          id: req_session_get_all
+          id: req_tenant_pm_get_all
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
           sortKey: -1
         method: GET
         parameters:
-          - id: pair_session_getall_p1
+          - id: pair_tenant_pm_p1
             name: page
             value: "1"
-          - id: pair_session_getall_p2
+          - id: pair_tenant_pm_p2
             name: size
             value: "10"
         headers: []
@@ -46,121 +46,73 @@ collection:
             store: true
           rebuildPath: true
 
-      - url: "{{BASE_URL}}/sessions/list-by-user-id/{{USER_ID}}"
-        name: list-by-user
-        meta:
-          id: req_session_list
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
-          sortKey: -2
-        method: GET
-        headers: []
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
-        name: by-id
-        meta:
-          id: req_session_get
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
-          sortKey: -3
-        method: GET
-        headers: []
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/sessions"
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/payment-methods"
         name: create
         meta:
-          id: req_session_create
+          id: req_tenant_pm_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT"
+          sortKey: -2
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"methodId\": \"{{PAYMENT_METHOD_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/payment-methods/{{PAYMENT_METHOD_ID}}"
+        name: update
+        meta:
+          id: req_tenant_pm_update
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT"
+          sortKey: -3
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"isActive\": true\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/payment-methods/{{PAYMENT_METHOD_ID}}"
+        name: delete
+        meta:
+          id: req_tenant_pm_delete
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
           description: "Roles: ADMIN"
           sortKey: -4
-        method: POST
-        body:
-          mimeType: application/json
-          text: "{\n  \"userId\": \"{{USER_ID}}\",\n  \"refreshToken\": \"{{REFRESH_TOKEN}}\",\n  \"ipAddress\": \"127.0.0.1\",\n  \"userAgent\": \"Insomnia\",\n  \"expiresAt\": \"2027-01-01T00:00:00.000Z\"\n}"
-        headers:
-          - name: Content-Type
-            value: application/json
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
-        name: update
-        meta:
-          id: req_session_update
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: "Roles: ADMIN"
-          sortKey: -5
-        method: PATCH
-        body:
-          mimeType: application/json
-          text: "{\n  \"expiresAt\": \"2027-01-01T00:00:00.000Z\"\n}"
-        headers:
-          - name: Content-Type
-            value: application/json
-        authentication:
-          type: bearer
-          token: "{{ACCESS_TOKEN}}"
-          prefix: Bearer
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-
-      - url: "{{BASE_URL}}/sessions/{{SESSION_ID}}"
-        name: delete
-        meta:
-          id: req_session_delete
-          created: 1776000000000
-          modified: 1776000000000
-          isPrivate: false
-          description: "Roles: ADMIN, SUPPORT"
-          sortKey: -6
         method: DELETE
         headers: []
         authentication:
@@ -179,21 +131,21 @@ collection:
 cookieJar:
   name: Default Jar
   meta:
-    id: jar_session
+    id: jar_tenant_payment_method
     created: 1776000000000
     modified: 1776000000000
 
 environments:
   name: Base Environment
   meta:
-    id: env_session
+    id: env_tenant_payment_method
     created: 1776000000000
     modified: 1776000000000
     isPrivate: false
   subEnvironments:
     - name: nino
       meta:
-        id: env_session_nino
+        id: env_tenant_payment_method_nino
         created: 1776000000000
         modified: 1776000000000
         isPrivate: false
@@ -201,6 +153,5 @@ environments:
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
-        USER_ID: ""
-        SESSION_ID: ""
-        REFRESH_TOKEN: ""
+        TENANT_ID: ""
+        PAYMENT_METHOD_ID: ""
