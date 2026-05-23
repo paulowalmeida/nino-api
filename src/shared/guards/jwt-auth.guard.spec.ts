@@ -43,7 +43,7 @@ describe(JwtAuthGuard.name, () => {
       .spyOn(AuthGuard('jwt').prototype, 'canActivate')
       .mockReturnValue(true)
     const ctx = mockContext()
-    guard.canActivate(ctx)
+    void guard.canActivate(ctx)
     expect(superSpy).toHaveBeenCalledWith(ctx)
   })
 })
