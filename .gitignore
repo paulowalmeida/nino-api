@@ -13,3 +13,7 @@ CLAUDE.local.md
 .claude/settings.local.json
 .claude/MEMORY.md
 .claude/memory/
+.claude/
+TODO.md
+STATUS.md
+FRONTEND.md
