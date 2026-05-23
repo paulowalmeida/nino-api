@@ -4,76 +4,29 @@ on:
   push:
     branches: [main, develop, 'release/*']
   pull_request:
-    branches: [main, develop, 'release/*']
+    branches: [main, develop]
 
 jobs:
-  lint:
-    name: Lint
+  ci:
+    name: CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+
       - run: npm ci
       - run: npx prisma generate
+
       - run: npm run lint:ci
-
-  typecheck:
-    name: Typecheck
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npx prisma generate
       - run: npx tsc --noEmit
-
-  prisma:
-    name: Prisma Schema
-    needs: typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
       - run: npx prisma validate
-
-  build:
-    name: Build
-    needs: prisma
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npx prisma generate
       - run: npm run build
-
-  test:
-    name: Tests + Coverage
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npx prisma generate
       - run: npm run test:cov -- --passWithNoTests
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
