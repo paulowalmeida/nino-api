@@ -1,0 +1,305 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Onboarding — Consumer (Logado)
+meta:
+  id: wrk_onboarding_consumer_logged
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Caminho feliz do consumidor autenticado: login → perfil → endereço → pagamento → pedido"
+collection:
+  - name: consumer-logado
+    meta:
+      id: fld_onboarding_consumer_logged
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Execute os requests em ordem"
+    children:
+      - url: "{{BASE_URL}}/auth/sessions"
+        name: 1-login
+        meta:
+          id: req_ocl_login
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Login com role CUSTOMER — copie o accessToken para ACCESS_TOKEN"
+          sortKey: -1
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"email\": \"consumer@example.com\",\n  \"password\": \"Senha@123\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/customers"
+        name: 2-create-customer
+        meta:
+          id: req_ocl_create_customer
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria perfil de customer — copie o id para CUSTOMER_ID"
+          sortKey: -2
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"userId\": \"{{USER_ID}}\",\n  \"cpf\": \"000.000.000-00\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/customers/{{CUSTOMER_ID}}/addresses"
+        name: 3-add-address
+        meta:
+          id: req_ocl_add_address
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Adiciona endereço de entrega — copie o id para ADDRESS_ID"
+          sortKey: -3
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"zipCode\": \"66000-000\",\n  \"street\": \"Av. Nazaré\",\n  \"number\": \"100\",\n  \"complement\": \"Apto 1\",\n  \"neighborhood\": \"Nazaré\",\n  \"city\": \"Belém\",\n  \"state\": \"PA\",\n  \"isPrimary\": true\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/customers/{{CUSTOMER_ID}}/payment-methods"
+        name: 4-add-payment-method
+        meta:
+          id: req_ocl_add_payment_method
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Salva cartão — copie o id para CUSTOMER_PAYMENT_METHOD_ID"
+          sortKey: -4
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"methodId\": \"{{PAYMENT_METHOD_ID}}\",\n  \"gatewayToken\": \"tok_test_xxxxxxxxxxxx\",\n  \"brand\": \"Visa\",\n  \"lastFour\": \"4242\",\n  \"expiresAt\": \"2028-12-01T00:00:00.000Z\",\n  \"isDefault\": true\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/slug/{{TENANT_SLUG}}"
+        name: 5-find-tenant-by-slug
+        meta:
+          id: req_ocl_find_tenant
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Busca tenant pelo slug — copie o id para TENANT_ID"
+          sortKey: -5
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/product-categories"
+        name: 6-browse-categories
+        meta:
+          id: req_ocl_browse_categories
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Lista categorias do cardápio"
+          sortKey: -6
+        method: GET
+        parameters:
+          - id: pair_ocl_p1
+            name: page
+            value: "1"
+          - id: pair_ocl_p2
+            name: size
+            value: "20"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/products"
+        name: 7-browse-products
+        meta:
+          id: req_ocl_browse_products
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Lista produtos ativos — copie o id do produto para PRODUCT_ID"
+          sortKey: -7
+        method: GET
+        parameters:
+          - id: pair_ocl_p3
+            name: page
+            value: "1"
+          - id: pair_ocl_p4
+            name: size
+            value: "20"
+          - id: pair_ocl_p5
+            name: isActive
+            value: "true"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/orders"
+        name: 8-place-order
+        meta:
+          id: req_ocl_place_order
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria pedido com entrega — copie o id para ORDER_ID"
+          sortKey: -8
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"tenantId\": \"{{TENANT_ID}}\",\n  \"statusId\": \"{{ORDER_STATUS_ID}}\",\n  \"customerId\": \"{{CUSTOMER_ID}}\",\n  \"deliveryAddressId\": \"{{ADDRESS_ID}}\",\n  \"isDelivery\": true,\n  \"deliveryFee\": 5.00,\n  \"notes\": \"Sem cebola\",\n  \"items\": [\n    {\n      \"productId\": \"{{PRODUCT_ID}}\",\n      \"quantity\": 2,\n      \"unitPrice\": 25.90\n    }\n  ]\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/orders/{{ORDER_ID}}"
+        name: 9-track-order
+        meta:
+          id: req_ocl_track_order
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Acompanha status do pedido"
+          sortKey: -9
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_onboarding_consumer_logged
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_onboarding_consumer_logged
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_onboarding_consumer_logged_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        USER_ID: ""
+        CUSTOMER_ID: ""
+        ADDRESS_ID: ""
+        PAYMENT_METHOD_ID: ""
+        TENANT_SLUG: "meu-restaurante"
+        TENANT_ID: ""
+        PRODUCT_ID: ""
+        ORDER_STATUS_ID: ""
+        ORDER_ID: ""

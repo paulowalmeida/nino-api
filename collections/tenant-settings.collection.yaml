@@ -1,0 +1,121 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Tenant Settings Module
+meta:
+  id: wrk_tenant_settings_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Tenant settings management"
+collection:
+  - name: tenant-settings
+    meta:
+      id: fld_tenant_settings_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Tenant settings endpoints"
+    children:
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/settings"
+        name: get
+        meta:
+          id: req_tenant_settings_get
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -1
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/settings"
+        name: upsert
+        meta:
+          id: req_tenant_settings_upsert
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT — cria ou atualiza as configurações do tenant"
+          sortKey: -2
+        method: PUT
+        body:
+          mimeType: application/json
+          text: "{\n  \"requireAccount\": false,\n  \"requireCpf\": false,\n  \"allowGuestOrder\": true,\n  \"deliveryFee\": 5.00,\n  \"minOrderAmount\": 20.00,\n  \"deliveryRadius\": 5,\n  \"isDeliveryEnabled\": true,\n  \"isPickupEnabled\": true,\n  \"loyaltyEnabled\": false,\n  \"loyaltyPointsPerOrder\": 10,\n  \"loyaltyPointValue\": 0.10,\n  \"allowSharedStaff\": false\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/settings/{{TENANT_SETTINGS_ID}}"
+        name: delete
+        meta:
+          id: req_tenant_settings_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN"
+          sortKey: -3
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_tenant_settings
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_tenant_settings
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_tenant_settings_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        TENANT_ID: ""
+        TENANT_SETTINGS_ID: ""

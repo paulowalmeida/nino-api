@@ -2,8 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { Order } from '@prisma/client'
 
+import { PrismaService } from '@shared/services/prisma/prisma.service'
+
 import { OrderRepository } from './order.repository'
 import { OrderService } from './order.service'
+import { CreateGuestOrderDto } from './dtos/create-guest-order.dto'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { QueryOrderDto } from './dtos/query-order.dto'
 import { UpdateOrderStatusDto } from './dtos/update-order-status.dto'
@@ -119,12 +122,25 @@ describe(OrderService.name, () => {
     updateStatus: jest.fn().mockResolvedValue(mockFull),
   }
 
+  const mockPrisma: Pick<PrismaService, 'orderStatus'> = {
+    orderStatus: {
+      findFirstOrThrow: jest.fn().mockResolvedValue({
+        id: 'status-1',
+        name: 'PENDING',
+        description: null,
+        createdAt: now,
+        updatedAt: now,
+      }),
+    } as unknown as PrismaService['orderStatus'],
+  }
+
   beforeEach(async () => {
     jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrderService,
         { provide: OrderRepository, useValue: mockRepo },
+        { provide: PrismaService, useValue: mockPrisma },
       ],
     }).compile()
 
@@ -237,6 +253,38 @@ describe(OrderService.name, () => {
         }),
       }),
     )
+  })
+
+  it('createGuest() should resolve PENDING status and call createWithItems', async () => {
+    const dto: CreateGuestOrderDto = {
+      tenantId: 'tenant-1',
+      isDelivery: true,
+      deliveryFee: 5,
+      guestName: 'João Silva',
+      guestPhone: '91999990000',
+      guestStreet: 'Av. Nazaré',
+      guestNumber: '100',
+      guestNeighborhood: 'Nazaré',
+      guestCity: 'Belém',
+      guestState: 'PA',
+      items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
+    }
+    const result = await service.createGuest(dto)
+    expect(mockPrisma.orderStatus.findFirstOrThrow).toHaveBeenCalledWith({
+      where: { name: 'PENDING' },
+    })
+    expect(mockRepo.createWithItems).toHaveBeenCalledWith({
+      order: expect.objectContaining({
+        tenantId: 'tenant-1',
+        statusId: 'status-1',
+        subtotal: 10,
+        totalAmount: 15,
+        guestName: 'João Silva',
+        guestPhone: '91999990000',
+      }),
+      items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
+    })
+    expect(result).toEqual(mockResponse)
   })
 
   it('updateStatus() should delegate to repo.updateStatus', async () => {

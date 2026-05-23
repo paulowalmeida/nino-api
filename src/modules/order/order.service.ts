@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common'
 
+import { OrderStatus } from '@shared/enums/order-status.enum'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
+
 import { OrderRepository } from './order.repository'
+import { CreateGuestOrderDto } from './dtos/create-guest-order.dto'
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { QueryOrderDto } from './dtos/query-order.dto'
 import { UpdateOrderStatusDto } from './dtos/update-order-status.dto'
@@ -16,7 +20,10 @@ export class OrderService {
     statusHistory: { include: { status: true } },
   } as const
 
-  constructor(private readonly repo: OrderRepository) {}
+  constructor(
+    private readonly repo: OrderRepository,
+    private readonly prisma: PrismaService,
+  ) {}
 
   private toResponse(item: OrderFull): OrderResponse {
     const { statusId: _, ...rest } = item
@@ -73,6 +80,41 @@ export class OrderService {
           : undefined,
         loyaltyPointsUsed: dto.loyaltyPointsUsed,
         loyaltyDiscount: dto.loyaltyDiscount,
+        guestName: dto.guestName,
+        guestPhone: dto.guestPhone,
+        guestEmail: dto.guestEmail,
+        guestCpf: dto.guestCpf,
+        guestZipCode: dto.guestZipCode,
+        guestStreet: dto.guestStreet,
+        guestNumber: dto.guestNumber,
+        guestComplement: dto.guestComplement,
+        guestNeighborhood: dto.guestNeighborhood,
+        guestCity: dto.guestCity,
+        guestState: dto.guestState,
+      },
+      items: dto.items,
+    })
+    return this.toResponse(order)
+  }
+
+  async createGuest(dto: CreateGuestOrderDto): Promise<OrderResponse> {
+    const status = await this.prisma.orderStatus.findFirstOrThrow({
+      where: { name: OrderStatus.PENDING },
+    })
+    const subtotal = dto.items.reduce(
+      (sum, i) => sum + i.unitPrice * i.quantity,
+      0,
+    )
+    const deliveryFee = dto.deliveryFee ?? 0
+    const order = await this.repo.createWithItems({
+      order: {
+        tenantId: dto.tenantId,
+        statusId: status.id,
+        isDelivery: dto.isDelivery,
+        deliveryFee,
+        subtotal,
+        totalAmount: subtotal + deliveryFee,
+        notes: dto.notes,
         guestName: dto.guestName,
         guestPhone: dto.guestPhone,
         guestEmail: dto.guestEmail,
