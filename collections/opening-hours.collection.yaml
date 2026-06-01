@@ -1,0 +1,157 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Opening Hours Module
+meta:
+  id: wrk_opening_hours_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Tenant opening hours management"
+collection:
+  - name: opening-hours
+    meta:
+      id: fld_opening_hours_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Opening hours endpoints — dayOfWeek: 0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb"
+    children:
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/opening-hours"
+        name: get-all
+        meta:
+          id: req_opening_hours_get_all
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -1
+        method: GET
+        parameters:
+          - id: pair_oh_p1
+            name: page
+            value: "1"
+          - id: pair_oh_p2
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/opening-hours"
+        name: create
+        meta:
+          id: req_opening_hours_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT"
+          sortKey: -2
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"dayOfWeek\": 1,\n  \"openTime\": \"08:00\",\n  \"closeTime\": \"22:00\",\n  \"isOpen\": true\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/opening-hours/{{OPENING_HOURS_ID}}"
+        name: update
+        meta:
+          id: req_opening_hours_update
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT"
+          sortKey: -3
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"openTime\": \"09:00\",\n  \"closeTime\": \"23:00\",\n  \"isOpen\": true\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/opening-hours/{{OPENING_HOURS_ID}}"
+        name: delete
+        meta:
+          id: req_opening_hours_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT"
+          sortKey: -4
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_opening_hours
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_opening_hours
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_opening_hours_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        TENANT_ID: ""
+        OPENING_HOURS_ID: ""

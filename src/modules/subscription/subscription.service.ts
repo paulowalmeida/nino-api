@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 
 import { SubscriptionRepository } from './subscription.repository'
 import { ActivateSubscriptionDto } from './dtos/activate-subscription.dto'
@@ -21,11 +22,28 @@ export class SubscriptionService {
     subscriptionStatus: true,
   } as const
 
-  constructor(private readonly repo: SubscriptionRepository) {}
+  constructor(
+    private readonly repo: SubscriptionRepository,
+    private readonly prisma: PrismaService,
+  ) {}
 
   private toResponse(item: SubscriptionFull): SubscriptionResponse {
     const { planId: _, subscriptionStatusId: __, deletedAt: _d, ...rest } = item
     return rest
+  }
+
+  private async assertCompanyAccess(
+    subscriptionId: string,
+    userId: string,
+  ): Promise<void> {
+    const subscription = await this.repo.findItem<SubscriptionFull>({
+      where: { id: subscriptionId },
+      include: this.include,
+    })
+    const membership = await this.prisma.userTenant.findFirst({
+      where: { userId, tenant: { companyId: subscription.companyId } },
+    })
+    if (!membership) throw new ForbiddenException()
   }
 
   async getAll(
@@ -82,7 +100,15 @@ export class SubscriptionService {
     id: string,
     dto: ActivateSubscriptionDto,
   ): Promise<SubscriptionResponse> {
-    const expiresAt = new Date()
+    const current = await this.repo.findItem<SubscriptionFull>({
+      where: { id },
+      include: this.include,
+    })
+    const base =
+      current.expiresAt && current.expiresAt > new Date()
+        ? current.expiresAt
+        : new Date()
+    const expiresAt = new Date(base)
     expiresAt.setMonth(expiresAt.getMonth() + 1)
     const item = await this.repo.updateItem<
       SubscriptionActivateData,
@@ -102,12 +128,18 @@ export class SubscriptionService {
   async cancel(
     id: string,
     dto: CancelSubscriptionDto,
+    requestingUserId?: string,
   ): Promise<SubscriptionResponse> {
+    if (requestingUserId) await this.assertCompanyAccess(id, requestingUserId)
     const item = await this.repo.updateItem<
       SubscriptionCancelData,
       SubscriptionFull
     >({
       where: { id },
+      // isActive: null is intentional — NULL != NULL in PostgreSQL allows
+      // multiple cancelled subscriptions per company without breaking the
+      // @@unique([companyId, isActive]) constraint. Query with isActive: null
+      // (not isActive: false) to find cancelled subscriptions.
       data: { subscriptionStatusId: dto.subscriptionStatusId, isActive: null },
       include: this.include,
     })
@@ -117,7 +149,9 @@ export class SubscriptionService {
   async changePlan(
     id: string,
     dto: ChangePlanDto,
+    requestingUserId?: string,
   ): Promise<SubscriptionResponse> {
+    if (requestingUserId) await this.assertCompanyAccess(id, requestingUserId)
     const item = await this.repo.updateItem<ChangePlanDto, SubscriptionFull>({
       where: { id },
       data: dto,

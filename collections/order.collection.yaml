@@ -1,0 +1,193 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Order Module
+meta:
+  id: wrk_order_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Order management"
+collection:
+  - name: order
+    meta:
+      id: fld_order_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Order endpoints"
+    children:
+      - url: "{{BASE_URL}}/orders"
+        name: get-all
+        meta:
+          id: req_order_get_all
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, OWNER, MANAGER"
+          sortKey: -1
+        method: GET
+        parameters:
+          - id: pair_order_p1
+            name: page
+            value: "1"
+          - id: pair_order_p2
+            name: size
+            value: "10"
+          - id: pair_order_p3
+            name: tenantId
+            value: "{{TENANT_ID}}"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/orders/{{ORDER_ID}}"
+        name: by-id
+        meta:
+          id: req_order_get_by_id
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, OWNER, MANAGER, STAFF"
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/orders"
+        name: create
+        meta:
+          id: req_order_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: CUSTOMER, OWNER, MANAGER, STAFF"
+          sortKey: -3
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"tenantId\": \"{{TENANT_ID}}\",\n  \"statusId\": \"{{ORDER_STATUS_ID}}\",\n  \"customerId\": \"{{CUSTOMER_ID}}\",\n  \"isDelivery\": true,\n  \"deliveryFee\": 5.00,\n  \"deliveryAddressId\": \"{{CUSTOMER_ADDRESS_ID}}\",\n  \"notes\": \"Sem cebola\",\n  \"items\": [\n    {\n      \"productId\": \"{{PRODUCT_ID}}\",\n      \"quantity\": 2,\n      \"unitPrice\": 25.90\n    }\n  ]\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/orders"
+        name: create (guest)
+        meta:
+          id: req_order_create_guest
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: CUSTOMER, OWNER, MANAGER, STAFF — pedido sem conta"
+          sortKey: -4
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"tenantId\": \"{{TENANT_ID}}\",\n  \"statusId\": \"{{ORDER_STATUS_ID}}\",\n  \"isDelivery\": true,\n  \"deliveryFee\": 5.00,\n  \"guestName\": \"João Silva\",\n  \"guestPhone\": \"+559112345678\",\n  \"guestEmail\": \"joao@email.com\",\n  \"guestZipCode\": \"66000-000\",\n  \"guestStreet\": \"Av. Nazaré\",\n  \"guestNumber\": \"100\",\n  \"guestNeighborhood\": \"Nazaré\",\n  \"guestCity\": \"Belém\",\n  \"guestState\": \"PA\",\n  \"items\": [\n    {\n      \"productId\": \"{{PRODUCT_ID}}\",\n      \"quantity\": 1,\n      \"unitPrice\": 25.90\n    }\n  ]\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/orders/{{ORDER_ID}}/status"
+        name: update-status
+        meta:
+          id: req_order_update_status
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: OWNER, MANAGER, STAFF"
+          sortKey: -5
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"statusId\": \"{{ORDER_STATUS_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_order
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_order
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_order_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        ORDER_ID: ""
+        TENANT_ID: ""
+        CUSTOMER_ID: ""
+        CUSTOMER_ADDRESS_ID: ""
+        ORDER_STATUS_ID: ""
+        PRODUCT_ID: ""

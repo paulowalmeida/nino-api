@@ -27,7 +27,7 @@ export class HealthController {
     try {
       await this.prisma.$queryRaw`SELECT 1`
       return { database: { status: 'up' } }
-    } catch (error) {
+    } catch {
       throw new HealthCheckError('database', { database: { status: 'down' } })
     }
   }

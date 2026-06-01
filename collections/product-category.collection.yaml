@@ -1,0 +1,181 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Product Category Module
+meta:
+  id: wrk_product_category_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Product category management (scoped by tenant)"
+collection:
+  - name: product-category
+    meta:
+      id: fld_product_category_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Product category endpoints"
+    children:
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/product-categories"
+        name: get-all
+        meta:
+          id: req_product_category_get_all
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -1
+        method: GET
+        parameters:
+          - id: pair_pc_p1
+            name: page
+            value: "1"
+          - id: pair_pc_p2
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/product-categories/{{PRODUCT_CATEGORY_ID}}"
+        name: by-id
+        meta:
+          id: req_product_category_get_by_id
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/product-categories"
+        name: create
+        meta:
+          id: req_product_category_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT"
+          sortKey: -3
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Lanches\",\n  \"description\": \"Hambúrgueres e sanduíches\",\n  \"position\": 1\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/product-categories/{{PRODUCT_CATEGORY_ID}}"
+        name: update
+        meta:
+          id: req_product_category_update
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT"
+          sortKey: -4
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Lanches Especiais\",\n  \"position\": 2\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants/{{TENANT_ID}}/product-categories/{{PRODUCT_CATEGORY_ID}}"
+        name: delete
+        meta:
+          id: req_product_category_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT"
+          sortKey: -5
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_product_category
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_product_category
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_product_category_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        TENANT_ID: ""
+        PRODUCT_CATEGORY_ID: ""

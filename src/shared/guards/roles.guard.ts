@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 
+import { IS_PUBLIC_KEY } from '@shared/decorators/public.decorator'
 import { ROLES_KEY } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { TenantRole } from '@shared/enums/tenant-role.enum'
@@ -28,6 +29,12 @@ export class RolesGuard implements CanActivate {
    * @returns `true` if access is allowed, `false` otherwise (NestJS converts to 403).
    */
   canActivate(context: ExecutionContext): boolean {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ])
+    if (isPublic) return true
+
     const endpointRoles = this.reflector.getAllAndOverride<AnyRole[]>(
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
@@ -36,6 +43,7 @@ export class RolesGuard implements CanActivate {
     if (!endpointRoles?.length) return true
 
     const { user } = context.switchToHttp().getRequest<AuthRequest>()
+    if (!user) return false
     return endpointRoles.includes(user.role as AnyRole)
   }
 }

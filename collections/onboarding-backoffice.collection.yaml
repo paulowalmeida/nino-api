@@ -1,0 +1,307 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Onboarding — Backoffice (Admin)
+meta:
+  id: wrk_onboarding_backoffice
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Caminho feliz do admin: configurar plataforma → criar tenant → ativar assinatura → monitorar"
+collection:
+  - name: backoffice
+    meta:
+      id: fld_onboarding_backoffice
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Execute os requests em ordem. Pré-requisitos seedados: order-statuses, plans, subscription-statuses."
+    children:
+      - url: "{{BASE_URL}}/auth/sessions"
+        name: 1-login
+        meta:
+          id: req_ob_login
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Login com role ADMIN — copie o accessToken para ACCESS_TOKEN"
+          sortKey: -1
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"email\": \"admin@nino.com\",\n  \"password\": \"Senha@123\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenant-types"
+        name: 2-create-tenant-type
+        meta:
+          id: req_ob_tenant_type
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria tipo de estabelecimento — copie o id para TENANT_TYPE_ID"
+          sortKey: -2
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Restaurante\",\n  \"description\": \"Estabelecimento de alimentação\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/payment-methods"
+        name: 3-create-payment-method
+        meta:
+          id: req_ob_payment_method
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria método de pagamento disponível na plataforma — copie o id para PAYMENT_METHOD_ID"
+          sortKey: -3
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Cartão de Crédito\",\n  \"description\": \"Pagamento via cartão de crédito\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/users"
+        name: 4-create-merchant-user
+        meta:
+          id: req_ob_create_user
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria usuário com role MERCHANT — copie o id para USER_ID"
+          sortKey: -4
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"João Gestor\",\n  \"email\": \"gestor@example.com\",\n  \"password\": \"Senha@123\",\n  \"role\": \"MERCHANT\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants"
+        name: 5-create-tenant
+        meta:
+          id: req_ob_create_tenant
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria o tenant — copie o id para TENANT_ID. COMPANY_ID = id da empresa vinculada ao usuário MERCHANT"
+          sortKey: -5
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"slug\": \"meu-restaurante\",\n  \"companyId\": \"{{COMPANY_ID}}\",\n  \"statusId\": \"{{TENANT_STATUS_ID}}\",\n  \"typeId\": \"{{TENANT_TYPE_ID}}\",\n  \"customName\": \"Meu Restaurante\",\n  \"zipCode\": \"66000-000\",\n  \"street\": \"Av. Nazaré\",\n  \"number\": \"500\",\n  \"neighborhood\": \"Nazaré\",\n  \"city\": \"Belém\",\n  \"state\": \"PA\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/subscriptions"
+        name: 6-create-subscription
+        meta:
+          id: req_ob_create_subscription
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Cria assinatura para a empresa — copie o id para SUBSCRIPTION_ID. PLAN_ID e SUBSCRIPTION_STATUS_ID via seed."
+          sortKey: -6
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"companyId\": \"{{COMPANY_ID}}\",\n  \"planId\": \"{{PLAN_ID}}\",\n  \"subscriptionStatusId\": \"{{SUBSCRIPTION_STATUS_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/subscriptions/{{SUBSCRIPTION_ID}}/activate"
+        name: 7-activate-subscription
+        meta:
+          id: req_ob_activate_subscription
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Ativa a assinatura — habilita acesso do tenant à plataforma"
+          sortKey: -7
+        method: PATCH
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/tenants"
+        name: 8-list-tenants
+        meta:
+          id: req_ob_list_tenants
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Monitora todos os tenants da plataforma"
+          sortKey: -8
+        method: GET
+        parameters:
+          - id: pair_ob_p1
+            name: page
+            value: "1"
+          - id: pair_ob_p2
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/orders"
+        name: 9-list-all-orders
+        meta:
+          id: req_ob_list_orders
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Monitora todos os pedidos da plataforma"
+          sortKey: -9
+        method: GET
+        parameters:
+          - id: pair_ob_p3
+            name: page
+            value: "1"
+          - id: pair_ob_p4
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_onboarding_backoffice
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_onboarding_backoffice
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_onboarding_backoffice_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        TENANT_TYPE_ID: ""
+        TENANT_STATUS_ID: ""
+        PAYMENT_METHOD_ID: ""
+        USER_ID: ""
+        COMPANY_ID: ""
+        TENANT_ID: ""
+        PLAN_ID: ""
+        SUBSCRIPTION_STATUS_ID: ""
+        SUBSCRIPTION_ID: ""

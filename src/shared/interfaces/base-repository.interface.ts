@@ -6,7 +6,6 @@ import { Insert } from '@shared/types/base-repository/insert.type'
 import { UpdateItem } from '@shared/types/base-repository/update-item.type'
 import { PaginatedResponse } from '@shared/types/paginated-response.type'
 
-
 export interface IBaseRepository {
   findAll<Entity>(params?: FindMany): Promise<Entity[]>
   findAllPaginated<Entity>(

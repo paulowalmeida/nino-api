@@ -15,6 +15,37 @@ collection:
       sortKey: -1
       description: "Session endpoints"
     children:
+      - url: "{{BASE_URL}}/sessions"
+        name: get-all
+        meta:
+          id: req_session_get_all
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT"
+          sortKey: -1
+        method: GET
+        parameters:
+          - id: pair_session_getall_p1
+            name: page
+            value: "1"
+          - id: pair_session_getall_p2
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
       - url: "{{BASE_URL}}/sessions/list-by-user-id/{{USER_ID}}"
         name: list-by-user
         meta:
@@ -22,8 +53,8 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -1
+          description: "Roles: ADMIN, SUPPORT"
+          sortKey: -2
         method: GET
         headers: []
         authentication:
@@ -46,8 +77,8 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -2
+          description: "Roles: ADMIN, SUPPORT"
+          sortKey: -3
         method: GET
         headers: []
         authentication:
@@ -70,8 +101,8 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -3
+          description: "Roles: ADMIN"
+          sortKey: -4
         method: POST
         body:
           mimeType: application/json
@@ -99,8 +130,8 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -4
+          description: "Roles: ADMIN"
+          sortKey: -5
         method: PATCH
         body:
           mimeType: application/json
@@ -128,8 +159,8 @@ collection:
           created: 1776000000000
           modified: 1776000000000
           isPrivate: false
-          description: ""
-          sortKey: -5
+          description: "Roles: ADMIN, SUPPORT"
+          sortKey: -6
         method: DELETE
         headers: []
         authentication:
@@ -166,9 +197,10 @@ environments:
         created: 1776000000000
         modified: 1776000000000
         isPrivate: false
+        sortKey: 1776000000000
       data:
         BASE_URL: http://localhost:3000
         ACCESS_TOKEN: ""
-        REFRESH_TOKEN: ""
         USER_ID: ""
         SESSION_ID: ""
+        REFRESH_TOKEN: ""

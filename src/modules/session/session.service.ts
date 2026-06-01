@@ -47,9 +47,9 @@ export class SessionService {
     const result = await this.repo.findAllPaginated<SessionFull>({
       page: query.page,
       size: query.size,
-      order: { 
+      order: {
         target: query.target ?? 'createdAt',
-        direction: query.direction ?? 'asc'
+        direction: query.direction ?? 'asc',
       },
       include: this.include,
       ignoreDeleted: true,
@@ -65,7 +65,10 @@ export class SessionService {
       page: query.page,
       size: query.size,
       where: { userId },
-      order: { target: query.target ?? 'createdAt', direction: query.direction ?? 'asc' },
+      order: {
+        target: query.target ?? 'createdAt',
+        direction: query.direction ?? 'asc',
+      },
       include: this.include,
       ignoreDeleted: true,
     })

@@ -8,14 +8,17 @@ import { PaginationService } from '@shared/services/pagination/pagination.servic
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 
 @Injectable()
-export class CustomerAddressRepository
-  extends BaseRepository<Prisma.CustomerAddressDelegate>
-{
+export class CustomerAddressRepository extends BaseRepository<Prisma.CustomerAddressDelegate> {
   constructor(
     prisma: PrismaService,
     errorService: ErrorService,
     paginationService: PaginationService,
   ) {
-    super(errorService, prisma.customerAddress, 'Customer Address', paginationService)
+    super(
+      errorService,
+      prisma.customerAddress,
+      'Customer Address',
+      paginationService,
+    )
   }
 }

@@ -59,7 +59,9 @@ describe(ProductService.name, () => {
     findItem: jest.fn().mockResolvedValue(mockProductFull),
     insert: jest.fn().mockResolvedValue(mockProductFull),
     updateItem: jest.fn().mockResolvedValue(mockProductFull),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -89,8 +91,12 @@ describe(ProductService.name, () => {
       }),
     )
     expect(result.pagination).toEqual(mockMeta)
-    expect((result.data[0] as Record<string, unknown>).categoryId).toBeUndefined()
-    expect((result.data[0] as Record<string, unknown>).deletedAt).toBeUndefined()
+    expect(
+      (result.data[0] as Record<string, unknown>).categoryId,
+    ).toBeUndefined()
+    expect(
+      (result.data[0] as Record<string, unknown>).deletedAt,
+    ).toBeUndefined()
     expect(result.data[0].category).toEqual({ id: 'cat-1', name: 'Burgers' })
   })
 
@@ -105,6 +111,26 @@ describe(ProductService.name, () => {
     expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { tenantId: 'tenant-1', categoryId: 'cat-1' },
+      }),
+    )
+  })
+
+  it('getAll() should include isActive filter when provided', async () => {
+    const query = { isActive: false } as ProductQueryDto
+    await service.getAll('tenant-1', query)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tenantId: 'tenant-1', isActive: false },
+      }),
+    )
+  })
+
+  it('getAll() should default target to position and use provided direction', async () => {
+    const query = { direction: 'desc' } as ProductQueryDto
+    await service.getAll('tenant-1', query)
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: { target: 'position', direction: 'desc' },
       }),
     )
   })

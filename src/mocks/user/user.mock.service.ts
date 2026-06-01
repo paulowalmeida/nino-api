@@ -11,7 +11,7 @@ import { CnpjMockService } from '../cnpj/cnpj.mock.service'
 
 @Injectable()
 export class UserMockService {
-  pick = (arr: any[]) => arr[Math.floor(Math.random() * arr.length)]
+  pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
 
   getOneMock() {
     return this.generateFakeUser()

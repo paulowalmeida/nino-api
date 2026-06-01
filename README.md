@@ -130,7 +130,7 @@ nino-api/
 │   │   └── user/
 │   │       └── modules/           # credential, user-tenant
 │   └── shared/
-│       ├── decorators/            # @Roles
+│       ├── decorators/            # @Roles, @Public
 │       ├── enums/                 # GlobalRole, TenantRole, status enums
 │       ├── guards/                # JwtAuthGuard, RolesGuard
 │       ├── interceptors/          # LoggingInterceptor
@@ -286,48 +286,101 @@ export class UserController {
 }
 ```
 
+### Endpoints Públicos (`@Public()`)
+
+Endpoints marcados com `@Public()` ignoram JWT e roles — acessíveis sem autenticação:
+
+| Endpoint | Descrição |
+|---|---|
+| `GET /tenants/slug/:slug` | Busca tenant pelo slug (cardápio público) |
+| `GET /tenants/:tenantId/products` | Lista produtos ativos do cardápio |
+| `POST /orders/guest` | Pedido sem conta — nome + telefone + endereço + itens |
+
 ### Matriz de Permissões
 
-Roles: `ADMIN` = `GlobalRole.ADMIN` · `SUPPORT` = `GlobalRole.SUPPORT` · `MERCHANT` = `GlobalRole.MERCHANT`
+Roles: `ADMIN` · `SUPPORT` · `MERCHANT` · `CUSTOMER` · `COURIER` · `OWNER` · `MANAGER` · `STAFF`
 
-| Endpoint | ADMIN | SUPPORT | MERCHANT |
-|---|:---:|:---:|:---:|
-| `GET /users` | ✓ | ✓ | — |
-| `GET /users/:id` | ✓ | ✓ | ✓ |
-| `POST /users` | ✓ | — | — |
-| `PATCH /users/:id` | ✓ | ✓ | ✓ |
-| `DELETE /users/:id` | ✓ | — | — |
-| `GET /companies` | ✓ | ✓ | — |
-| `GET /companies/:id` | ✓ | ✓ | ✓ |
-| `POST /companies` | ✓ | ✓ | — |
-| `PUT /companies/:id` | ✓ | ✓ | — |
-| `DELETE /companies/:id` | ✓ | — | — |
-| `PATCH /companies/:id/activate` | ✓ | ✓ | — |
-| `PATCH /companies/:id/deactivate` | ✓ | ✓ | — |
-| `* /company-responsibles` | ✓ | ✓ | — |
-| `GET /business-categories` | ✓ | ✓ | ✓ |
-| `POST/PUT/DELETE /business-categories` | ✓ | — | — |
-| `GET /plans` | ✓ | ✓ | ✓ |
-| `POST/PATCH/DELETE /plans` | ✓ | — | — |
-| `GET /global-roles` | ✓ | ✓ | — |
-| `POST/PUT/DELETE /global-roles` | ✓ | — | — |
-| `GET /tenant-roles` | ✓ | ✓ | ✓ |
-| `POST/PUT/DELETE /tenant-roles` | ✓ | — | ✓ |
-| `GET /subscription-statuses` | ✓ | ✓ | ✓ |
-| `POST/PUT/DELETE /subscription-statuses` | ✓ | — | — |
-| `POST /user-tenants` | ✓ | ✓ | — |
-| `GET /user-tenants/user/:userId` | ✓ | ✓ | ✓ |
-| `DELETE /user-tenants/:userId/:tenantId` | ✓ | ✓ | — |
-| `GET /sessions/list-by-user-id/:userId` | ✓ | ✓ | — |
-| `DELETE /sessions/:id` | ✓ | ✓ | — |
+| Endpoint | ADMIN | SUPPORT | MERCHANT | CUSTOMER | COURIER | OWNER | MANAGER | STAFF |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| `GET /users` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /users/:id` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST /users` | ✓ | — | — | — | — | — | — | — |
+| `PATCH /users/:id` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `DELETE /users/:id` | ✓ | — | — | — | — | — | — | — |
+| `GET /companies` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /companies/:id` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST /companies` | ✓ | ✓ | — | — | — | — | — | — |
+| `PUT /companies/:id` | ✓ | ✓ | — | — | — | — | — | — |
+| `DELETE /companies/:id` | ✓ | — | — | — | — | — | — | — |
+| `PATCH /companies/:id/activate` | ✓ | ✓ | — | — | — | — | — | — |
+| `PATCH /companies/:id/deactivate` | ✓ | ✓ | — | — | — | — | — | — |
+| `* /company-responsibles` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /business-categories` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST/PUT/DELETE /business-categories` | ✓ | — | — | — | — | — | — | — |
+| `GET /plans` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST/PATCH/DELETE /plans` | ✓ | — | — | — | — | — | — | — |
+| `GET /global-roles` | ✓ | ✓ | — | — | — | — | — | — |
+| `POST/PUT/DELETE /global-roles` | ✓ | — | — | — | — | — | — | — |
+| `GET /tenant-roles` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST/PUT/DELETE /tenant-roles` | ✓ | — | ✓ | — | — | — | — | — |
+| `GET /subscription-statuses` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST/PUT/DELETE /subscription-statuses` | ✓ | — | — | — | — | — | — | — |
+| `GET /subscriptions` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /subscriptions/:id` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST /subscriptions` | ✓ | — | ✓ | — | — | — | — | — |
+| `PATCH /subscriptions/:id/activate` | ✓ | — | — | — | — | — | — | — |
+| `PATCH /subscriptions/:id/cancel` | ✓ | — | ✓ | — | — | — | — | — |
+| `PATCH /subscriptions/:id/plan` | ✓ | — | ✓ | — | — | — | — | — |
+| `DELETE /subscriptions/:id` | ✓ | — | — | — | — | — | — | — |
+| `POST /user-tenants` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /user-tenants/user/:userId` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `DELETE /user-tenants/:userId/:tenantId` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /sessions` | ✓ | ✓ | — | — | — | — | — | — |
+| `DELETE /sessions/:id` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /tenants` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /tenants/:id` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST /tenants` | ✓ | — | ✓ | — | — | — | — | — |
+| `PATCH /tenants/:id` | ✓ | — | ✓ | — | — | — | — | — |
+| `DELETE /tenants/:id` | ✓ | — | — | — | — | — | — | — |
+| `GET /tenants/:id/settings` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `PUT /tenants/:id/settings` | ✓ | — | ✓ | — | — | — | — | — |
+| `* /tenants/:id/opening-hours` | ✓ | — | ✓ | — | — | — | — | — |
+| `GET /tenants/:id/payment-methods` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST/PATCH /tenants/:id/payment-methods` | ✓ | — | ✓ | — | — | — | — | — |
+| `DELETE /tenants/:id/payment-methods/:methodId` | ✓ | — | — | — | — | — | — | — |
+| `GET /tenants/:id/products` | 🌐 | 🌐 | 🌐 | 🌐 | 🌐 | 🌐 | 🌐 | 🌐 |
+| `POST /tenants/:id/products` | ✓ | — | ✓ | — | — | — | — | — |
+| `PATCH/DELETE /tenants/:id/products/:id` | ✓ | — | ✓ | — | — | — | — | — |
+| `GET /tenants/:id/product-categories` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST/PATCH/DELETE /tenants/:id/product-categories` | ✓ | — | ✓ | — | — | — | — | — |
+| `GET /customers` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /customers/:id` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST /customers` | ✓ | ✓ | — | — | — | — | — | — |
+| `PATCH /customers/:id` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `DELETE /customers/:id` | ✓ | — | — | — | — | — | — | — |
+| `* /customers/:id/addresses` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `* /customers/:id/payment-methods` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `GET /customers/:id/tenants` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST /customers/:id/tenants` | ✓ | ✓ | — | — | — | — | — | — |
+| `DELETE /customers/:id/tenants/:tenantId` | ✓ | — | — | — | — | — | — | — |
+| `GET/PUT/DELETE /customers/:id/notification-preferences` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `GET /customers/:id/loyalty-transactions` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST /customers/:id/loyalty-transactions` | ✓ | ✓ | — | — | — | — | — | — |
+| `GET /orders` | ✓ | ✓ | — | — | — | ✓ | ✓ | — |
+| `GET /orders/:id` | ✓ | ✓ | — | — | — | ✓ | ✓ | ✓ |
+| `POST /orders` | — | — | — | ✓ | — | ✓ | ✓ | ✓ |
+| `PATCH /orders/:id/status` | — | — | — | — | — | ✓ | ✓ | ✓ |
+| `GET /courier-tenants/courier/:id` | ✓ | ✓ | ✓ | — | ✓ | — | — | — |
+| `GET /courier-tenants/tenant/:id` | ✓ | ✓ | ✓ | — | — | — | — | — |
+| `POST/DELETE /courier-tenants` | ✓ | ✓ | ✓ | — | — | — | — | — |
 
-> Lista completa de endpoints: `/api/docs` (Swagger)
+> 🌐 = público (sem JWT) · Lista completa de endpoints: `/api/docs` (Swagger)
 
 ---
 
 ## 8. Status dos Módulos
 
-**Última atualização:** Maio 2026 · **Desenvolvedor:** Paulo (Solo) · **Status:** MVP ~75%
+**Última atualização:** Maio 2026 · **Desenvolvedor:** Paulo (Solo) · **Status:** MVP ~90%
 
 | Módulo | Status |
 |---|---|
@@ -346,6 +399,7 @@ Roles: `ADMIN` = `GlobalRole.ADMIN` · `SUPPORT` = `GlobalRole.SUPPORT` · `MERC
 | plan | ✅ |
 | plan-type | ✅ |
 | subscription-status | ✅ |
+| subscription | ✅ |
 | invoice-status | ✅ |
 | payment-method | ✅ |
 | notification-type | ✅ |
@@ -364,13 +418,12 @@ Roles: `ADMIN` = `GlobalRole.ADMIN` · `SUPPORT` = `GlobalRole.SUPPORT` · `MERC
 | customer-tenant | ✅ |
 | customer-notification-preference | ✅ |
 | loyalty-transaction | ✅ |
+| order / order-status | ✅ |
 | health | ✅ |
-| mocks | ✅ |
 | invite | ⏳ |
-| subscription | ⏳ |
-| order / order-status | ⏳ |
-| payment | ⏳ |
-| notification | ⏳ |
+| mock services (payment + notification) | ⏳ |
+| payment (Pagar.me) | ⏳ |
+| notification (Resend / Z-API / FCM) | ⏳ |
 | billing | ⏳ |
 
 ---
@@ -379,22 +432,25 @@ Roles: `ADMIN` = `GlobalRole.ADMIN` · `SUPPORT` = `GlobalRole.SUPPORT` · `MERC
 
 ### Curto prazo
 
+- [ ] CORS + Helmet — segurança mínima para produção
 - [ ] `POST /auth/forgot-password` + `POST /auth/reset-password` (depende Resend)
-- [ ] Testes completos para todos os módulos
+- [ ] Mock services — abstract class para pagamento e notificação (desbloqueia testes E2E)
 
 ### Médio prazo
 
-- [ ] Módulo Tenant (CRUD + row-level isolation + middleware de identificação)
+- [ ] Invite — convidar usuários para tenant (OWNER, MANAGER, STAFF)
+- [ ] Integração Pagar.me — gateway de pagamento (depende mock pronto)
+- [ ] Integração Resend — e-mail transacional (depende mock pronto)
+- [ ] Integração Z-API — notificações WhatsApp (depende mock pronto)
+- [ ] Integração FCM — push notifications mobile (depende mock pronto)
+- [ ] Billing — geração e gestão de faturas de assinatura
+
+### Futuro
+
+- [ ] Sugestão de descrição de produto via LLM (API Anthropic)
+- [ ] Rastreamento de entrega real-time (SSE)
 - [ ] Rate limiting com Redis
 - [ ] BullMQ — filas para email, WhatsApp, push
-
-### MVP completo
-
-- [ ] Cardápio completo (produto, categoria, modificador)
-- [ ] Módulo Order + histórico
-- [ ] Integração Pagar.me (split payments, webhooks)
-- [ ] Delivery: rastreamento real-time (SSE)
-- [ ] Notifications: Resend, Z-API, FCM
 - [ ] Analytics: PostHog
 
 ---

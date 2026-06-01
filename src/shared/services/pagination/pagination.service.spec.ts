@@ -43,6 +43,15 @@ describe('PaginationService', () => {
       const meta = service.build(47, { page: 1, size: 10 })
       expect(meta.totalPages).toBe(5)
     })
+
+    it('should use default page 1 and size 20 when not provided', () => {
+      const meta = service.build(20, {})
+      expect(meta.page).toBe(1)
+      expect(meta.size).toBe(20)
+      expect(meta.totalPages).toBe(1)
+      expect(meta.previousPage).toBeNull()
+      expect(meta.nextPage).toBeNull()
+    })
   })
 
   describe('wrap', () => {
@@ -51,6 +60,12 @@ describe('PaginationService', () => {
       expect(result.data).toEqual(['a', 'b'])
       expect(result.pagination.total).toBe(2)
       expect(result.pagination.totalPages).toBe(1)
+    })
+
+    it('should use default page and size when not provided', () => {
+      const result = service.paginate(['x'], 1, {})
+      expect(result.pagination.page).toBe(1)
+      expect(result.pagination.size).toBe(20)
     })
   })
 })

@@ -22,7 +22,9 @@ describe(TenantPaymentMethodRepository.name, () => {
       ],
     }).compile()
 
-    repository = module.get<TenantPaymentMethodRepository>(TenantPaymentMethodRepository)
+    repository = module.get<TenantPaymentMethodRepository>(
+      TenantPaymentMethodRepository,
+    )
   })
 
   it('should be defined', () => {

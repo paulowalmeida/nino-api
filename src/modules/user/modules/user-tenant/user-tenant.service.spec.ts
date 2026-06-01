@@ -93,7 +93,9 @@ describe(UserTenantService.name, () => {
   > = {
     findAllPaginated: jest.fn(),
     insert: jest.fn().mockResolvedValue(mockFull),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Deleted successfully' }),
   }
 
   beforeEach(async () => {

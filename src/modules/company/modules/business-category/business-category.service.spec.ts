@@ -21,11 +21,15 @@ describe(BusinessCategoryService.name, () => {
     BusinessCategoryRepository,
     'findAllPaginated' | 'findItem' | 'insert' | 'updateItem' | 'softDelete'
   > = {
-    findAllPaginated: jest.fn().mockResolvedValue({ data: [mockRecord], total: 1 }),
+    findAllPaginated: jest
+      .fn()
+      .mockResolvedValue({ data: [mockRecord], total: 1 }),
     findItem: jest.fn().mockResolvedValue(mockRecord),
     insert: jest.fn().mockResolvedValue(mockRecord),
     updateItem: jest.fn().mockResolvedValue(mockRecord),
-    softDelete: jest.fn().mockResolvedValue({ message: 'Business Category deleted successfully' }),
+    softDelete: jest
+      .fn()
+      .mockResolvedValue({ message: 'Business Category deleted successfully' }),
   }
 
   beforeEach(async () => {
@@ -59,6 +63,24 @@ describe(BusinessCategoryService.name, () => {
     })
   })
 
+  it('getAll() should use default direction when target is set but direction is absent', async () => {
+    await service.getAll({ target: 'name' })
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      page: undefined,
+      size: undefined,
+      order: { target: 'name', direction: 'asc' },
+    })
+  })
+
+  it('getAll() should handle no params passed', async () => {
+    await service.getAll()
+    expect(mockRepo.findAllPaginated).toHaveBeenCalledWith({
+      page: undefined,
+      size: undefined,
+      order: undefined,
+    })
+  })
+
   it('getById() should return record by id', async () => {
     const result = await service.getById('uuid-1')
     expect(mockRepo.findItem).toHaveBeenCalledWith({ where: { id: 'uuid-1' } })
@@ -85,6 +107,8 @@ describe(BusinessCategoryService.name, () => {
   it('delete() should return success message', async () => {
     const result = await service.delete('uuid-1')
     expect(mockRepo.softDelete).toHaveBeenCalledWith({ id: 'uuid-1' })
-    expect(result).toEqual({ message: 'Business Category deleted successfully' })
+    expect(result).toEqual({
+      message: 'Business Category deleted successfully',
+    })
   })
 })

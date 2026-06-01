@@ -1,0 +1,159 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Courier Tenant Module
+meta:
+  id: wrk_courier_tenant_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Courier-tenant association management"
+collection:
+  - name: courier-tenant
+    meta:
+      id: fld_courier_tenant_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Courier tenant endpoints"
+    children:
+      - url: "{{BASE_URL}}/courier-tenants/courier/{{COURIER_ID}}"
+        name: by-courier-id
+        meta:
+          id: req_courier_tenant_by_courier
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT, COURIER"
+          sortKey: -1
+        method: GET
+        parameters:
+          - id: pair_crt_p1
+            name: page
+            value: "1"
+          - id: pair_crt_p2
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/courier-tenants/tenant/{{TENANT_ID}}"
+        name: by-tenant-id
+        meta:
+          id: req_courier_tenant_by_tenant
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -2
+        method: GET
+        parameters:
+          - id: pair_crt_p3
+            name: page
+            value: "1"
+          - id: pair_crt_p4
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/courier-tenants"
+        name: create
+        meta:
+          id: req_courier_tenant_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -3
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"courierId\": \"{{COURIER_ID}}\",\n  \"tenantId\": \"{{TENANT_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/courier-tenants/{{COURIER_ID}}/{{TENANT_ID}}"
+        name: delete
+        meta:
+          id: req_courier_tenant_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -4
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_courier_tenant
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_courier_tenant
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_courier_tenant_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        COURIER_ID: ""
+        TENANT_ID: ""

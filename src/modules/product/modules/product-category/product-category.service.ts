@@ -19,9 +19,9 @@ export class ProductCategoryService {
   ): Promise<ProductCategoryPaginatedResponse> {
     return this.repo.findAllPaginated<ProductCategory>({
       where: { tenantId },
-      order: { 
+      order: {
         target: query.target ?? 'position',
-        direction: query.direction ?? 'asc'
+        direction: query.direction ?? 'asc',
       },
       page: query.page,
       size: query.size,

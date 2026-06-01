@@ -10,9 +10,9 @@ describe(CustomerNotificationPreferenceRepository.name, () => {
 
   const mockPrisma = { customerNotificationPreference: {} }
   const mockErrorService: jest.Mocked<Pick<ErrorService, 'handle'>> = {
-    handle: jest
-      .fn<never, [unknown, string?]>()
-      .mockImplementation((e) => { throw e }),
+    handle: jest.fn<never, [unknown, string?]>().mockImplementation((e) => {
+      throw e
+    }),
   }
 
   beforeEach(async () => {

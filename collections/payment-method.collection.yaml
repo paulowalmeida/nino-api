@@ -1,0 +1,180 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Payment Method Module
+meta:
+  id: wrk_payment_method_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Payment method management (lookup table)"
+collection:
+  - name: payment-method
+    meta:
+      id: fld_payment_method_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Payment method endpoints"
+    children:
+      - url: "{{BASE_URL}}/payment-methods"
+        name: get-all
+        meta:
+          id: req_payment_method_get_all
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT, CUSTOMER"
+          sortKey: -1
+        method: GET
+        parameters:
+          - id: pair_pm_p1
+            name: page
+            value: "1"
+          - id: pair_pm_p2
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/payment-methods/{{PAYMENT_METHOD_ID}}"
+        name: by-id
+        meta:
+          id: req_payment_method_get_by_id
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT, CUSTOMER"
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/payment-methods"
+        name: create
+        meta:
+          id: req_payment_method_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN"
+          sortKey: -3
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Pix\",\n  \"description\": \"Pagamento via Pix\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/payment-methods/{{PAYMENT_METHOD_ID}}"
+        name: update
+        meta:
+          id: req_payment_method_update
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN"
+          sortKey: -4
+        method: PUT
+        body:
+          mimeType: application/json
+          text: "{\n  \"name\": \"Pix\",\n  \"description\": \"Descrição atualizada\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/payment-methods/{{PAYMENT_METHOD_ID}}"
+        name: delete
+        meta:
+          id: req_payment_method_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN"
+          sortKey: -5
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_payment_method
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_payment_method
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_payment_method_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        PAYMENT_METHOD_ID: ""

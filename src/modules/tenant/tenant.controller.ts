@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 
+import { Public } from '@shared/decorators/public.decorator'
 import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
@@ -48,7 +49,7 @@ export class TenantController {
   }
 
   @Get('slug/:slug')
-  @Roles(GlobalRole.ADMIN, GlobalRole.SUPPORT, GlobalRole.MERCHANT)
+  @Public()
   async getBySlug(@Param('slug') slug: string): Promise<TenantResponse> {
     return this.service.getBySlug(slug)
   }

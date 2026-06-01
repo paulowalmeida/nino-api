@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { Plan } from '@prisma/client'
 
 import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
+import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 
@@ -143,15 +144,17 @@ describe(SubscriptionController.name, () => {
     const dto: CancelSubscriptionDto = {
       subscriptionStatusId: 'status-cancelled',
     }
-    const result = await controller.cancel('sub-1', dto)
-    expect(mockService.cancel).toHaveBeenCalledWith('sub-1', dto)
+    const req = { user: { role: GlobalRole.ADMIN, sub: 'admin-1' } } as any
+    const result = await controller.cancel(req, 'sub-1', dto)
+    expect(mockService.cancel).toHaveBeenCalledWith('sub-1', dto, undefined)
     expect(result).toEqual(mockResponse)
   })
 
   it('changePlan() should change the plan of a subscription', async () => {
     const dto: ChangePlanDto = { planId: 'plan-2' }
-    const result = await controller.changePlan('sub-1', dto)
-    expect(mockService.changePlan).toHaveBeenCalledWith('sub-1', dto)
+    const req = { user: { role: GlobalRole.ADMIN, sub: 'admin-1' } } as any
+    const result = await controller.changePlan(req, 'sub-1', dto)
+    expect(mockService.changePlan).toHaveBeenCalledWith('sub-1', dto, undefined)
     expect(result).toEqual(mockResponse)
   })
 

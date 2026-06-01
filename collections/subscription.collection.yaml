@@ -1,0 +1,265 @@
+type: collection.insomnia.rest/5.0
+schema_version: "5.1"
+name: Subscription Module
+meta:
+  id: wrk_subscription_module
+  created: 1776000000000
+  modified: 1776000000000
+  description: "Subscription management"
+collection:
+  - name: subscription
+    meta:
+      id: fld_subscription_module
+      created: 1776000000000
+      modified: 1776000000000
+      sortKey: -1
+      description: "Subscription endpoints"
+    children:
+      - url: "{{BASE_URL}}/subscriptions"
+        name: get-all
+        meta:
+          id: req_subscription_get_all
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT"
+          sortKey: -1
+        method: GET
+        parameters:
+          - id: pair_sub_p1
+            name: page
+            value: "1"
+          - id: pair_sub_p2
+            name: size
+            value: "10"
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/subscriptions/{{SUBSCRIPTION_ID}}"
+        name: by-id
+        meta:
+          id: req_subscription_get_by_id
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -2
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/subscriptions/company/{{COMPANY_ID}}"
+        name: active-by-company
+        meta:
+          id: req_subscription_active_by_company
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, SUPPORT, MERCHANT"
+          sortKey: -3
+        method: GET
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/subscriptions"
+        name: create
+        meta:
+          id: req_subscription_create
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT — inicia trial de 30 dias automaticamente"
+          sortKey: -4
+        method: POST
+        body:
+          mimeType: application/json
+          text: "{\n  \"companyId\": \"{{COMPANY_ID}}\",\n  \"planId\": \"{{PLAN_ID}}\",\n  \"subscriptionStatusId\": \"{{SUBSCRIPTION_STATUS_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/subscriptions/{{SUBSCRIPTION_ID}}/activate"
+        name: activate
+        meta:
+          id: req_subscription_activate
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN — encerra trial, seta expiresAt +1 mês"
+          sortKey: -5
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"subscriptionStatusId\": \"{{SUBSCRIPTION_STATUS_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/subscriptions/{{SUBSCRIPTION_ID}}/cancel"
+        name: cancel
+        meta:
+          id: req_subscription_cancel
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT — seta isActive=null"
+          sortKey: -6
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"subscriptionStatusId\": \"{{SUBSCRIPTION_STATUS_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/subscriptions/{{SUBSCRIPTION_ID}}/plan"
+        name: change-plan
+        meta:
+          id: req_subscription_change_plan
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN, MERCHANT"
+          sortKey: -7
+        method: PATCH
+        body:
+          mimeType: application/json
+          text: "{\n  \"planId\": \"{{PLAN_ID}}\"\n}"
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+      - url: "{{BASE_URL}}/subscriptions/{{SUBSCRIPTION_ID}}"
+        name: delete
+        meta:
+          id: req_subscription_delete
+          created: 1776000000000
+          modified: 1776000000000
+          isPrivate: false
+          description: "Roles: ADMIN"
+          sortKey: -8
+        method: DELETE
+        headers: []
+        authentication:
+          type: bearer
+          token: "{{ACCESS_TOKEN}}"
+          prefix: Bearer
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_subscription
+    created: 1776000000000
+    modified: 1776000000000
+
+environments:
+  name: Base Environment
+  meta:
+    id: env_subscription
+    created: 1776000000000
+    modified: 1776000000000
+    isPrivate: false
+  subEnvironments:
+    - name: nino
+      meta:
+        id: env_subscription_nino
+        created: 1776000000000
+        modified: 1776000000000
+        isPrivate: false
+        sortKey: 1776000000000
+      data:
+        BASE_URL: http://localhost:3000
+        ACCESS_TOKEN: ""
+        SUBSCRIPTION_ID: ""
+        COMPANY_ID: ""
+        PLAN_ID: ""
+        SUBSCRIPTION_STATUS_ID: ""

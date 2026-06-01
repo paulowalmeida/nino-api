@@ -1,45 +1,32 @@
 name: CI
 
 on:
+  push:
+    branches: [main, develop, 'release/*']
   pull_request:
-    branches: [develop]
+    branches: [main, develop]
 
 jobs:
-  lint:
-    name: Lint
+  ci:
+    name: CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
+
       - run: npm ci
+      - run: npx prisma generate
+
       - run: npm run lint:ci
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
       - run: npx tsc --noEmit
-
-  test:
-    name: Tests + Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
+      - run: npx prisma validate
+      - run: npm run build
       - run: npm run test:cov -- --passWithNoTests
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

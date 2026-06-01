@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common'
 
@@ -14,6 +15,7 @@ import { Roles } from '@shared/decorators/roles.decorator'
 import { GlobalRole } from '@shared/enums/global-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+import type { AuthRequest } from '@shared/types/auth-request.type'
 
 import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
 
@@ -72,19 +74,29 @@ export class SubscriptionController {
   @Patch(':id/cancel')
   @Roles(GlobalRole.ADMIN, GlobalRole.MERCHANT)
   async cancel(
+    @Req() req: AuthRequest,
     @Param('id') id: string,
     @Body() dto: CancelSubscriptionDto,
   ): Promise<SubscriptionResponse> {
-    return this.service.cancel(id, dto)
+    const userId =
+      (req.user.role as GlobalRole) === GlobalRole.MERCHANT
+        ? req.user.sub
+        : undefined
+    return this.service.cancel(id, dto, userId)
   }
 
   @Patch(':id/plan')
   @Roles(GlobalRole.ADMIN, GlobalRole.MERCHANT)
   async changePlan(
+    @Req() req: AuthRequest,
     @Param('id') id: string,
     @Body() dto: ChangePlanDto,
   ): Promise<SubscriptionResponse> {
-    return this.service.changePlan(id, dto)
+    const userId =
+      (req.user.role as GlobalRole) === GlobalRole.MERCHANT
+        ? req.user.sub
+        : undefined
+    return this.service.changePlan(id, dto, userId)
   }
 
   @Delete(':id')
