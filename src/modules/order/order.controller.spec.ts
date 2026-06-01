@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { Order } from '@prisma/client'
 
+import { TenantRole } from '@shared/enums/tenant-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
 
@@ -99,7 +100,8 @@ describe(OrderController.name, () => {
       deliveryFee: 5,
       items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
     }
-    const result = await controller.create(dto)
+    const req = { user: { role: TenantRole.OWNER, sub: 'user-1' } } as any
+    const result = await controller.create(req, dto)
     expect(mockService.create).toHaveBeenCalledWith(dto)
     expect(result).toEqual(mockResponse)
   })

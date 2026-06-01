@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { Plan } from '@prisma/client'
 
 import { PaginatedQueryDto } from '@shared/dtos/paginated-query.dto'
+import { PrismaService } from '@shared/services/prisma/prisma.service'
 
 import { SubscriptionRepository } from './subscription.repository'
 import { SubscriptionService } from './subscription.service'
@@ -99,6 +100,7 @@ describe(SubscriptionService.name, () => {
       providers: [
         SubscriptionService,
         { provide: SubscriptionRepository, useValue: mockRepo },
+        { provide: PrismaService, useValue: { userTenant: { findFirst: jest.fn() } } },
       ],
     }).compile()
 
