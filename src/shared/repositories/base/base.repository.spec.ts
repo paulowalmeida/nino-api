@@ -5,7 +5,7 @@ import { IBaseModel } from '@shared/interfaces/base-model.interface'
 import { ErrorService } from '@shared/services/error/error.service'
 import { PaginationService } from '@shared/services/pagination/pagination.service'
 
-import { BaseRepository } from './base.repository'
+import { BaseRepository, SOFT_DELETE_MESSAGE } from './base.repository'
 
 type Item = { id: string; name: string; deletedAt: Date | null }
 
@@ -169,13 +169,13 @@ describe(BaseRepository.name, () => {
 
   describe('exists()', () => {
     it('should return true when a matching record is found', async () => {
-      jest.mocked(mockModel.findFirst).mockResolvedValue(item)
+      jest.mocked(mockModel.count).mockResolvedValue(1)
       const result = await repo.exists({ where: { id: '1' } })
       expect(result).toBe(true)
     })
 
     it('should return false when no matching record is found', async () => {
-      jest.mocked(mockModel.findFirst).mockResolvedValue(null)
+      jest.mocked(mockModel.count).mockResolvedValue(0)
       const result = await repo.exists({ where: { id: '999' } })
       expect(result).toBe(false)
     })
@@ -230,7 +230,7 @@ describe(BaseRepository.name, () => {
           data: expect.objectContaining({ deletedAt: expect.any(Date) }),
         }),
       )
-      expect(result).toEqual({ message: 'Deleted successfully' })
+      expect(result).toEqual({ message: SOFT_DELETE_MESSAGE })
     })
   })
 

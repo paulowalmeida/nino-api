@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 
 import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 
 import { CustomerOwnerGuard } from '@customer/guards/customer-owner.guard'
 import { CustomerTenantController } from './customer-tenant.controller'
@@ -14,6 +15,7 @@ import { CustomerTenantService } from './customer-tenant.service'
     CustomerTenantRepository,
     CustomerOwnerGuard,
     ErrorService,
+    PaginationService,
   ],
   exports: [CustomerTenantService],
 })

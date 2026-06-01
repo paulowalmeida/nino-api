@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { ErrorService } from '@shared/services/error/error.service'
+import { PaginationService } from '@shared/services/pagination/pagination.service'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 
 import { CustomerPaymentMethodRepository } from './customer-payment-method.repository'
@@ -14,6 +15,12 @@ describe(CustomerPaymentMethodRepository.name, () => {
       throw e
     }),
   }
+  const mockPaginationService: jest.Mocked<
+    Pick<PaginationService, 'paginate' | 'getPaginationParams'>
+  > = {
+    paginate: jest.fn(),
+    getPaginationParams: jest.fn().mockReturnValue({ skip: 0, take: 20 }),
+  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -21,6 +28,7 @@ describe(CustomerPaymentMethodRepository.name, () => {
         CustomerPaymentMethodRepository,
         { provide: PrismaService, useValue: mockPrisma },
         { provide: ErrorService, useValue: mockErrorService },
+        { provide: PaginationService, useValue: mockPaginationService },
       ],
     }).compile()
 
