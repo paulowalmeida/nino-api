@@ -2,7 +2,6 @@ import {
   IsArray,
   IsBoolean,
   IsDateString,
-  IsEmail,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -14,15 +13,12 @@ import {
 import { Type } from 'class-transformer'
 
 import { CreateOrderItemDto } from './create-order-item.dto'
+import { GuestInfoDto } from './guest-info.dto'
 
-export class CreateOrderDto {
+export class CreateOrderDto extends GuestInfoDto {
   @IsUUID()
   @IsNotEmpty()
   tenantId: string
-
-  @IsUUID()
-  @IsNotEmpty()
-  statusId: string
 
   @IsUUID()
   @IsOptional()
@@ -64,42 +60,6 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional()
   guestPhone?: string
-
-  @IsEmail()
-  @IsOptional()
-  guestEmail?: string
-
-  @IsString()
-  @IsOptional()
-  guestCpf?: string
-
-  @IsString()
-  @IsOptional()
-  guestZipCode?: string
-
-  @IsString()
-  @IsOptional()
-  guestStreet?: string
-
-  @IsString()
-  @IsOptional()
-  guestNumber?: string
-
-  @IsString()
-  @IsOptional()
-  guestComplement?: string
-
-  @IsString()
-  @IsOptional()
-  guestNeighborhood?: string
-
-  @IsString()
-  @IsOptional()
-  guestCity?: string
-
-  @IsString()
-  @IsOptional()
-  guestState?: string
 
   @IsArray()
   @ValidateNested({ each: true })

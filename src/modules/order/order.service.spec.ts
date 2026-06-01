@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 
 import { Order } from '@prisma/client'
@@ -114,15 +115,14 @@ describe(OrderService.name, () => {
 
   const mockRepo: Pick<
     OrderRepository,
-    'findAllPaginated' | 'findItem' | 'createWithItems' | 'updateStatus'
+    'findAllPaginated' | 'findItem' | 'createWithItems'
   > = {
     findAllPaginated: jest.fn().mockResolvedValue(mockPaginated),
     findItem: jest.fn().mockResolvedValue(mockFull),
     createWithItems: jest.fn().mockResolvedValue(mockFull),
-    updateStatus: jest.fn().mockResolvedValue(mockFull),
   }
 
-  const mockPrisma: Pick<PrismaService, 'orderStatus'> = {
+  const mockPrisma = {
     orderStatus: {
       findFirstOrThrow: jest.fn().mockResolvedValue({
         id: 'status-1',
@@ -132,6 +132,20 @@ describe(OrderService.name, () => {
         updatedAt: now,
       }),
     } as unknown as PrismaService['orderStatus'],
+    customer: {
+      findFirstOrThrow: jest
+        .fn()
+        .mockResolvedValue({ id: 'customer-1', userId: 'user-1' }),
+    } as unknown as PrismaService['customer'],
+    $transaction: jest
+      .fn()
+      .mockImplementation(
+        async (fn: (tx: unknown) => Promise<unknown>) =>
+          fn({
+            orderStatusHistory: { create: jest.fn().mockResolvedValue({}) },
+            order: { update: jest.fn().mockResolvedValue(mockFull) },
+          }),
+      ),
   }
 
   beforeEach(async () => {
@@ -172,27 +186,6 @@ describe(OrderService.name, () => {
     expect(result).toEqual(mockResponse)
   })
 
-  it('create() should calculate subtotal/total and call createWithItems', async () => {
-    const dto: CreateOrderDto = {
-      tenantId: 'tenant-1',
-      statusId: 'status-1',
-      customerId: 'customer-1',
-      isDelivery: true,
-      deliveryFee: 5,
-      items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
-    }
-    const result = await service.create(dto)
-    expect(mockRepo.createWithItems).toHaveBeenCalledWith({
-      order: expect.objectContaining({
-        tenantId: 'tenant-1',
-        subtotal: 10,
-        totalAmount: 15,
-      }),
-      items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
-    })
-    expect(result).toEqual(mockResponse)
-  })
-
   it('getAll() should build empty where when no filters', async () => {
     await service.getAll({})
     expect(mockRepo.findAllPaginated).toHaveBeenCalledWith(
@@ -216,10 +209,51 @@ describe(OrderService.name, () => {
     )
   })
 
+  it('create() should resolve PENDING status, calculate subtotal/total and call createWithItems', async () => {
+    const dto: CreateOrderDto = {
+      tenantId: 'tenant-1',
+      customerId: 'customer-1',
+      isDelivery: true,
+      deliveryFee: 5,
+      items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
+    }
+    const result = await service.create(dto)
+    expect(mockPrisma.orderStatus.findFirstOrThrow).toHaveBeenCalledWith({
+      where: { name: 'PENDING' },
+    })
+    expect(mockRepo.createWithItems).toHaveBeenCalledWith({
+      order: expect.objectContaining({
+        tenantId: 'tenant-1',
+        statusId: 'status-1',
+        subtotal: 10,
+        totalAmount: 15,
+      }),
+      items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
+    })
+    expect(result).toEqual(mockResponse)
+  })
+
+  it('create() with callerUserId should look up Customer.id and use it as customerId', async () => {
+    const dto: CreateOrderDto = {
+      tenantId: 'tenant-1',
+      isDelivery: false,
+      deliveryFee: 0,
+      items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
+    }
+    await service.create(dto, 'user-1')
+    expect(mockPrisma.customer.findFirstOrThrow).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+    })
+    expect(mockRepo.createWithItems).toHaveBeenCalledWith(
+      expect.objectContaining({
+        order: expect.objectContaining({ customerId: 'customer-1' }),
+      }),
+    )
+  })
+
   it('create() should apply loyaltyDiscount when provided', async () => {
     const dto: CreateOrderDto = {
       tenantId: 'tenant-1',
-      statusId: 'status-1',
       customerId: 'customer-1',
       isDelivery: false,
       deliveryFee: 0,
@@ -234,11 +268,23 @@ describe(OrderService.name, () => {
     )
   })
 
+  it('create() should throw BadRequestException when loyaltyDiscount exceeds total', async () => {
+    const dto: CreateOrderDto = {
+      tenantId: 'tenant-1',
+      isDelivery: false,
+      deliveryFee: 0,
+      loyaltyDiscount: 100,
+      items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
+    }
+    await expect(service.create(dto)).rejects.toThrow(
+      'loyaltyDiscount cannot exceed subtotal + deliveryFee',
+    )
+  })
+
   it('create() should parse estimatedDeliveryAt when provided', async () => {
     const date = '2026-01-01T12:00:00.000Z'
     const dto: CreateOrderDto = {
       tenantId: 'tenant-1',
-      statusId: 'status-1',
       customerId: 'customer-1',
       isDelivery: false,
       deliveryFee: 0,
@@ -287,10 +333,24 @@ describe(OrderService.name, () => {
     expect(result).toEqual(mockResponse)
   })
 
-  it('updateStatus() should delegate to repo.updateStatus', async () => {
+  it('createGuest() should throw NotFoundException when PENDING status is not seeded', async () => {
+    ;(mockPrisma.orderStatus.findFirstOrThrow as jest.Mock).mockRejectedValueOnce(
+      new Error('Not found'),
+    )
+    const dto: CreateGuestOrderDto = {
+      tenantId: 'tenant-1',
+      isDelivery: false,
+      guestName: 'Ana',
+      guestPhone: '91999990000',
+      items: [{ productId: 'p-1', quantity: 1, unitPrice: 10 }],
+    }
+    await expect(service.createGuest(dto)).rejects.toThrow(NotFoundException)
+  })
+
+  it('updateStatus() should use $transaction to record history and update order', async () => {
     const dto: UpdateOrderStatusDto = { statusId: 'status-2' }
     const result = await service.updateStatus('order-1', dto)
-    expect(mockRepo.updateStatus).toHaveBeenCalledWith('order-1', 'status-2')
+    expect(mockPrisma.$transaction).toHaveBeenCalled()
     expect(result).toEqual(mockResponse)
   })
 })

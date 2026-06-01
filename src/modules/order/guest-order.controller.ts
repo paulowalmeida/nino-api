@@ -1,4 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 
 import { Public } from '@shared/decorators/public.decorator'
 
@@ -8,6 +9,7 @@ import { OrderResponse } from './types/order-response.type'
 
 @Controller('orders/guest')
 @Public()
+@Throttle({ default: { limit: 3, ttl: 60000 } })
 export class GuestOrderController {
   constructor(private readonly service: OrderService) {}
 

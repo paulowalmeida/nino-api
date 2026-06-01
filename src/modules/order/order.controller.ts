@@ -40,10 +40,11 @@ export class OrderController {
     @Req() req: AuthRequest,
     @Body() dto: CreateOrderDto,
   ): Promise<OrderResponse> {
-    if ((req.user.role as GlobalRole) === GlobalRole.CUSTOMER) {
-      dto.customerId = req.user.sub
-    }
-    return this.service.create(dto)
+    const callerUserId =
+      (req.user.role as GlobalRole) === GlobalRole.CUSTOMER
+        ? req.user.sub
+        : undefined
+    return this.service.create(dto, callerUserId)
   }
 
   @Get()

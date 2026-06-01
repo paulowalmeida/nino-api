@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 
 import { Order } from '@prisma/client'
 
+import { GlobalRole } from '@shared/enums/global-role.enum'
 import { TenantRole } from '@shared/enums/tenant-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
@@ -92,18 +93,29 @@ describe(OrderController.name, () => {
     controller = module.get<OrderController>(OrderController)
   })
 
-  it('create() should create an order', async () => {
+  it('create() as TenantRole should call service.create with undefined callerUserId', async () => {
     const dto: CreateOrderDto = {
       tenantId: 'tenant-1',
-      statusId: 'status-1',
       isDelivery: true,
       deliveryFee: 5,
       items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
     }
     const req = { user: { role: TenantRole.OWNER, sub: 'user-1' } } as any
     const result = await controller.create(req, dto)
-    expect(mockService.create).toHaveBeenCalledWith(dto)
+    expect(mockService.create).toHaveBeenCalledWith(dto, undefined)
     expect(result).toEqual(mockResponse)
+  })
+
+  it('create() as CUSTOMER should pass sub as callerUserId', async () => {
+    const dto: CreateOrderDto = {
+      tenantId: 'tenant-1',
+      isDelivery: false,
+      deliveryFee: 0,
+      items: [{ productId: 'product-1', quantity: 1, unitPrice: 10 }],
+    }
+    const req = { user: { role: GlobalRole.CUSTOMER, sub: 'user-1' } } as any
+    await controller.create(req, dto)
+    expect(mockService.create).toHaveBeenCalledWith(dto, 'user-1')
   })
 
   it('getAll() should return paginated orders', async () => {
