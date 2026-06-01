@@ -79,7 +79,9 @@ export class SubscriptionController {
     @Body() dto: CancelSubscriptionDto,
   ): Promise<SubscriptionResponse> {
     const userId =
-      req.user.role === GlobalRole.MERCHANT ? req.user.sub : undefined
+      (req.user.role as GlobalRole) === GlobalRole.MERCHANT
+        ? req.user.sub
+        : undefined
     return this.service.cancel(id, dto, userId)
   }
 
@@ -91,7 +93,9 @@ export class SubscriptionController {
     @Body() dto: ChangePlanDto,
   ): Promise<SubscriptionResponse> {
     const userId =
-      req.user.role === GlobalRole.MERCHANT ? req.user.sub : undefined
+      (req.user.role as GlobalRole) === GlobalRole.MERCHANT
+        ? req.user.sub
+        : undefined
     return this.service.changePlan(id, dto, userId)
   }
 

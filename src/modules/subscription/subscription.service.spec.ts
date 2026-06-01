@@ -100,7 +100,10 @@ describe(SubscriptionService.name, () => {
       providers: [
         SubscriptionService,
         { provide: SubscriptionRepository, useValue: mockRepo },
-        { provide: PrismaService, useValue: { userTenant: { findFirst: jest.fn() } } },
+        {
+          provide: PrismaService,
+          useValue: { userTenant: { findFirst: jest.fn() } },
+        },
       ],
     }).compile()
 

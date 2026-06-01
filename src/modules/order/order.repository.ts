@@ -18,7 +18,6 @@ export const ORDER_INCLUDE = {
 
 @Injectable()
 export class OrderRepository extends BaseRepository<Prisma.OrderDelegate> {
-
   constructor(
     private readonly prisma: PrismaService,
     errorService: ErrorService,
