@@ -43,6 +43,7 @@ export class RolesGuard implements CanActivate {
     if (!endpointRoles?.length) return true
 
     const { user } = context.switchToHttp().getRequest<AuthRequest>()
+    if (!user) return false
     return endpointRoles.includes(user.role as AnyRole)
   }
 }

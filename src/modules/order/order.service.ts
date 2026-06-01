@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 
 import { OrderStatus } from '@shared/enums/order-status.enum'
 import { PrismaService } from '@shared/services/prisma/prisma.service'
 
-import { OrderRepository } from './order.repository'
+import { ORDER_INCLUDE, OrderRepository } from './order.repository'
 import { CreateGuestOrderDto } from './dtos/create-guest-order.dto'
 import { CreateOrderDto } from './dtos/create-order.dto'
+import { CreateOrderItemDto } from './dtos/create-order-item.dto'
 import { QueryOrderDto } from './dtos/query-order.dto'
 import { UpdateOrderStatusDto } from './dtos/update-order-status.dto'
 import { OrderFull } from './types/order-full.type'
@@ -14,12 +15,6 @@ import { OrderResponse } from './types/order-response.type'
 
 @Injectable()
 export class OrderService {
-  private readonly include = {
-    status: true,
-    items: { include: { product: true } },
-    statusHistory: { include: { status: true } },
-  } as const
-
   constructor(
     private readonly repo: OrderRepository,
     private readonly prisma: PrismaService,
@@ -28,6 +23,10 @@ export class OrderService {
   private toResponse(item: OrderFull): OrderResponse {
     const { statusId: _, ...rest } = item
     return rest
+  }
+
+  private calcSubtotal(items: CreateOrderItemDto[]): number {
+    return items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
   }
 
   async getAll(params?: QueryOrderDto): Promise<OrderPaginatedResponse> {
@@ -43,7 +42,7 @@ export class OrderService {
         direction: params?.direction ?? 'desc',
       },
       where,
-      include: this.include,
+      include: ORDER_INCLUDE,
       ignoreDeleted: true,
     })
     return { ...result, data: result.data.map((o) => this.toResponse(o)) }
@@ -52,18 +51,23 @@ export class OrderService {
   async getById(id: string): Promise<OrderResponse> {
     const item = await this.repo.findItem<OrderFull>({
       where: { id },
-      include: this.include,
+      include: ORDER_INCLUDE,
       ignoreDeleted: true,
     })
     return this.toResponse(item)
   }
 
   async create(dto: CreateOrderDto): Promise<OrderResponse> {
-    const subtotal = dto.items.reduce(
-      (sum, i) => sum + i.unitPrice * i.quantity,
+    const subtotal = this.calcSubtotal(dto.items)
+    const totalAmount = Math.max(
       0,
+      subtotal + dto.deliveryFee - (dto.loyaltyDiscount ?? 0),
     )
-    const totalAmount = subtotal + dto.deliveryFee - (dto.loyaltyDiscount ?? 0)
+    if (subtotal + dto.deliveryFee < (dto.loyaltyDiscount ?? 0)) {
+      throw new BadRequestException(
+        'loyaltyDiscount cannot exceed subtotal + deliveryFee',
+      )
+    }
     const order = await this.repo.createWithItems({
       order: {
         tenantId: dto.tenantId,
@@ -101,10 +105,7 @@ export class OrderService {
     const status = await this.prisma.orderStatus.findFirstOrThrow({
       where: { name: OrderStatus.PENDING },
     })
-    const subtotal = dto.items.reduce(
-      (sum, i) => sum + i.unitPrice * i.quantity,
-      0,
-    )
+    const subtotal = this.calcSubtotal(dto.items)
     const deliveryFee = dto.deliveryFee ?? 0
     const order = await this.repo.createWithItems({
       order: {

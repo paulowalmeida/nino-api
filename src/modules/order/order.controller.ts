@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common'
 
@@ -14,6 +15,7 @@ import { GlobalRole } from '@shared/enums/global-role.enum'
 import { TenantRole } from '@shared/enums/tenant-role.enum'
 import { JwtAuthGuard } from '@shared/guards/jwt-auth.guard'
 import { RolesGuard } from '@shared/guards/roles.guard'
+import type { AuthRequest } from '@shared/types/auth-request.type'
 
 import { CreateOrderDto } from './dtos/create-order.dto'
 import { QueryOrderDto } from './dtos/query-order.dto'
@@ -34,7 +36,13 @@ export class OrderController {
     TenantRole.MANAGER,
     TenantRole.STAFF,
   )
-  async create(@Body() dto: CreateOrderDto): Promise<OrderResponse> {
+  async create(
+    @Req() req: AuthRequest,
+    @Body() dto: CreateOrderDto,
+  ): Promise<OrderResponse> {
+    if (req.user.role === GlobalRole.CUSTOMER) {
+      dto.customerId = req.user.sub
+    }
     return this.service.create(dto)
   }
 

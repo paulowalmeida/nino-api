@@ -10,13 +10,14 @@ import { PrismaService } from '@shared/services/prisma/prisma.service'
 import { OrderFull } from './types/order-full.type'
 import { OrderWithItemsData } from './types/order-with-items-data.type'
 
+export const ORDER_INCLUDE = {
+  status: true,
+  items: { include: { product: true } },
+  statusHistory: { include: { status: true } },
+} as const
+
 @Injectable()
 export class OrderRepository extends BaseRepository<Prisma.OrderDelegate> {
-  private readonly include = {
-    status: true,
-    items: { include: { product: true } },
-    statusHistory: { include: { status: true } },
-  } as const
 
   constructor(
     private readonly prisma: PrismaService,
@@ -35,7 +36,7 @@ export class OrderRepository extends BaseRepository<Prisma.OrderDelegate> {
         })
         return tx.order.findFirstOrThrow({
           where: { id: order.id },
-          include: this.include,
+          include: ORDER_INCLUDE,
         })
       })
     } catch (error) {
@@ -50,7 +51,7 @@ export class OrderRepository extends BaseRepository<Prisma.OrderDelegate> {
         return tx.order.update({
           where: { id },
           data: { statusId },
-          include: this.include,
+          include: ORDER_INCLUDE,
         })
       })
     } catch (error) {
