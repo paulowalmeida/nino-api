@@ -1,4 +1,3 @@
-token-waste.md
 node_modules/
 dist/
 build/
@@ -8,12 +7,8 @@ build/
 coverage/
 .idea/
 .continue/*
-CLAUDE.md
-CLAUDE.local.md
-.claude/settings.local.json
+docs/claude-workspace/
+.claude/settings*.json
 .claude/MEMORY.md
 .claude/memory/
-.claude/
-TODO.md
-STATUS.md
-FRONTEND.md
+*.svg
